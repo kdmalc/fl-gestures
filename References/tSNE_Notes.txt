@@ -1,0 +1,68 @@
+Examples of why t-SNE clustering is bad:
+https://stats.stackexchange.com/questions/263539/clustering-on-the-output-of-t-sne/264647#264647
+- https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1011288 --> This is the paper everyone points to about why t-SNE bad
+https://link.springer.com/chapter/10.1007/978-3-319-68474-1_13
+https://arxiv.org/abs/1706.02582
+^^ Both the above were linked in wikipedia, I forget why
+
+OG t-SNE paper (that introduced the t-distributed part): https://jmlr.org/papers/volume9/vandermaaten08a/vandermaaten08a.pdf
+
+How to use and tune t-SNE:
+https://stats.stackexchange.com/questions/222912/how-to-determine-parameters-for-t-sne-for-reducing-dimensions
+
+Whole wikipedia page on nonlinear dimesionality reduction:
+https://en.wikipedia.org/wiki/Nonlinear_dimensionality_reduction#Uniform_manifold_approximation_and_projection
+
+
+
+
+
+
+
+
+
+
+How to Use t-SNE Effectively 
+https://distill.pub/2016/misread-tsne/
+
+A second feature of t-SNE is a tuneable parameter, “perplexity,” which says (loosely) how to balance attention between local and global aspects of your data. The parameter is, in a sense, a guess about the number of close neighbors each point has. 
+
+1. Those hyperparameters really matter
+
+for the algorithm to operate properly, the perplexity really should be smaller than the number of points
+
+If you see a t-SNE plot with strange “pinched” shapes, chances are the process was stopped too early. Unfortunately, there’s no fixed number of steps that yields a stable result. Different data sets can require different numbers of iterations to converge.
+
+2. Cluster sizes in a t-SNE plot mean nothing
+
+So far, so good. But what if the two clusters have different standard deviations, and so different sizes? (By size we mean bounding box measurements, not number of points.)
+
+Below are t-SNE plots for a mixture of Gaussians in plane, where one is 10 times as dispersed as the other.
+
+Surprisingly, the two clusters look about same size in the t-SNE plots. What’s going on? The t-SNE algorithm adapts its notion of “distance” to regional density variations in the data set. As a result, it naturally expands dense clusters, and contracts sparse ones, evening out cluster sizes. To be clear, this is a different effect than the run-of-the-mill fact that any dimensionality reduction technique will distort distances.
+Rather, density equalization happens by design and is a predictable feature of t-SNE.
+
+3. Distances between clusters might not mean anything
+
+The next diagrams show three Gaussians of 50 points each, one pair being 5 times as far apart as another pair.
+
+It’s bad news that seeing global geometry requires fine-tuning perplexity. Real-world data would probably have multiple clusters with different numbers of elements. There may not be one perplexity value that will capture distances across all clusters—and sadly perplexity is a global parameter. Fixing this problem might be an interesting area for future research.
+
+The basic message is that distances between well-separated clusters in a t-SNE plot may mean nothing.
+
+4. Random noise doesn’t always look random.
+
+low perplexity values often lead to this kind of distribution [getting small clumps/clusters from even Guassian data]. Recognizing these clumps as random noise is an important part of reading t-SNE plots.
+
+There’s something else interesting, though, which may be a win for t-SNE. At first the perplexity 30 plot doesn’t look like a Gaussian distribution at all: there’s only a slight density difference across different regions of the cloud, and the points seem suspiciously evenly distributed. In fact, these features are saying useful things about high-dimensional normal distributions, which are very close to uniform distributions on a sphere: evenly distributed, with roughly equal spaces between points. Seen in this light, the t-SNE plot is more accurate than any linear projection could be.
+--> Don't fully understand this part
+
+5. You can see some shapes, sometimes
+
+It’s rare for data to be distributed in a perfectly symmetric way.
+
+For high enough perplexity values, the elongated shapes are easy to read. On the other hand, at low perplexity, local effects and meaningless “clumping” take center stage. More extreme shapes also come through, but again only at the right perplexity.
+
+Even in the best cases, though, there’s a subtle distortion: the lines are slightly curved outwards in the t-SNE diagram. The reason is that, as usual, t-SNE tends to expand denser regions of data. Since the middles of the clusters have less empty space around them than the ends, the algorithm magnifies them.
+
+6. For topology, you may need more than one plot
