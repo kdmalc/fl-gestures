@@ -44,8 +44,8 @@ def interpolate_df(df, num_rows=64, columns_to_exclude=None):
     
     return interpolated_df
 
-def interpolate_dataframe(df, num_rows=64):
-    '''Old version for Ben's code, remove this'''
+def interpolate_dataframe_Ben(df, num_rows=64):
+    '''Old version from Ben's code (/Momona?), assumes no meta data'''
     # Create a new index array with num_rows evenly spaced values
     new_index = np.linspace(0, len(df) - 1, num_rows)
     
