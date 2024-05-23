@@ -13,44 +13,6 @@ from sklearn.manifold import Isomap
 #from umap import UMAP
 
 
-def apply_model(model_str, input_df, num_dims, hp):
-    
-    # Drop the metadata columns (eg cols that are not the actual timeseries data)
-    #input_df.drop(columns=['Participant', 'Gesture_ID', 'Gesture_Num', 'Gesture_Type', 'File_Type'], inplace=True)
-    training_df = input_df.drop(columns=['Participant', 'Gesture_ID', 'Gesture_Num'])
-    
-    if not training_df.empty:
-        if model_str.upper() == 'PCA':
-            dim_reduc_model = PCA(n_components=num_dims)
-            dim_reduc_model.fit(training_df)
-            reduced_df = pd.DataFrame(dim_reduc_model.transform(training_df))
-        elif (model_str.upper() == 'T-SNE') or (model_str.upper() == 'TSNE'):
-            dim_reduc_model = TSNE(n_components=num_dims, perplexity=hp, random_state=42)
-            reduced_df = pd.DataFrame(dim_reduc_model.fit_transform(df))
-        elif (model_str.upper() == 'INCREMENTALPCA') or (model_str.upper() == 'IPCA'):
-            dim_reduc_model = IncrementalPCA(n_components=num_dims)
-            reduced_df = pd.DataFrame(dim_reduc_model.fit_transform(training_df))
-        elif (model_str.upper() == 'KERNELPCA') or (model_str.upper() == 'KPCA'):
-            dim_reduc_model = KernelPCA(n_components=num_dims)
-            reduced_df = pd.DataFrame(dim_reduc_model.fit_transform(training_df))
-        #elif model_str.upper() == 'UMAP':
-        #    raise ValueError("Need to install the umap library first...")
-        #    dim_reduc_model = UMAP(n_components=num_dims)
-        #    reduced_df = pd.DataFrame(dim_reduc_model.fit_transform(training_df))
-        elif model_str.upper() == 'MDS':
-            dim_reduc_model = MDS(n_components=num_dims, random_state=42)
-            reduced_df = pd.DataFrame(dim_reduc_model.fit_transform(training_df))
-        elif model_str.upper() == 'ISOMAP':
-            dim_reduc_model = Isomap(n_components=num_dims)
-            reduced_df = pd.DataFrame(dim_reduc_model.fit_transform(training_df))
-        else:
-            raise ValueError(f"{model_str} not implemented. Choose an implemented model.")
-    else:
-        raise ValueError(f"training_df is empty!")
-    
-    return reduced_df, dim_reduc_model
-
-
 def interpolate_df(df, num_rows=64, columns_to_exclude=None):
     """
     Interpolates the dataframe to have a specified number of rows.
