@@ -16,7 +16,6 @@ from sklearn.manifold import Isomap
 def apply_model(model_str, input_df, num_dims, hp):
     
     # Drop the metadata columns (eg cols that are not the actual timeseries data)
-    #input_df.drop(columns=['Participant', 'Gesture_ID', 'Gesture_Num', 'Gesture_Type', 'File_Type'], inplace=True)
     training_df = input_df.drop(columns=['Participant', 'Gesture_ID', 'Gesture_Num'])
     
     if not training_df.empty:
