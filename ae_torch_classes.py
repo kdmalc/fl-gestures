@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
+import matplotlib.pyplot as plt
+
 
 class GestureDatasetAE(Dataset):
     # NOTE: I think this formulation makes it so the dataloader won't return (X, Y) as per usual (eg like TensorDataset does). The AE doesn't need it (X,Y tho)
@@ -17,10 +19,11 @@ class GestureDatasetAE(Dataset):
 
 
 class RNNAutoencoder(nn.Module):
-    def __init__(self, input_dim, hidden_dim, num_layers, seq_len, mirror=False, progressive=False):
+    def __init__(self, input_dim, hidden_dim, num_layers, seq_len, mirror=False, progressive=False, verbose=False):
         super(RNNAutoencoder, self).__init__()
         self.seq_len = seq_len
         self.progressive = progressive
+        self.verbose = verbose
 
         # Check that only one of progressive or hidden_dim list is provided
         if isinstance(hidden_dim, list) and progressive:
@@ -34,9 +37,10 @@ class RNNAutoencoder(nn.Module):
         encoder_layers = []
         prev_dim = input_dim
         if progressive:
-            current_hidden_dim = hidden_dim
+            current_hidden_dim = hidden_dim[0]
             for i in range(num_layers):
-                #print(f"Encoder Layer {i}: prev_dim: {prev_dim}, current_hidden_dim: {current_hidden_dim}")
+                if self.verbose:
+                    print(f"Encoder Layer {i}: prev_dim: {prev_dim}, current_hidden_dim: {current_hidden_dim}")
                 encoder_layers.append(nn.RNN(prev_dim, current_hidden_dim, batch_first=True))
                 prev_dim = current_hidden_dim
                 if current_hidden_dim > 1:
@@ -48,24 +52,28 @@ class RNNAutoencoder(nn.Module):
                 prev_dim = current_hidden_dim
         self.encoder = nn.ModuleList(encoder_layers)
 
-        #print(f"Bottleneck current_hidden_dim: {current_hidden_dim}")
+        if self.verbose:
+            print(f"Bottleneck current_hidden_dim: {current_hidden_dim}")
 
         # Decoder
         decoder_layers = []
         if progressive:
             #current_hidden_dim = max(1, hidden_dim) // (2 ** (num_layers - 1)) * 2  # Start from the halved state at the end of encoder
             current_hidden_dim = max(1, current_hidden_dim) * 2
-            #print(f"Starting decoder: current_hidden_dim (post*2): {current_hidden_dim}")
+            if self.verbose:
+                print(f"Starting decoder: current_hidden_dim (post*2): {current_hidden_dim}")
             for i in range(num_layers):
-                next_hidden_dim = min(hidden_dim, current_hidden_dim * 2)
-                #print(f"Decoder Layer {i}: current_hidden_dim: {current_hidden_dim}, next_hidden_dim: {next_hidden_dim}")
+                next_hidden_dim = min(hidden_dim[0], current_hidden_dim * 2)
+                if self.verbose:
+                    print(f"Decoder Layer {i}: current_hidden_dim: {current_hidden_dim}, next_hidden_dim: {next_hidden_dim}")
                 decoder_layers.append(nn.RNN(current_hidden_dim, next_hidden_dim, batch_first=True))
                 current_hidden_dim = next_hidden_dim
         elif mirror:
             mirrored_hidden_dims = hidden_dim[::-1]
             for i in range(num_layers):
                 current_hidden_dim = mirrored_hidden_dims[i]
-                #print(f"Decoder Layer {i}: prev_dim: {prev_dim}, current_hidden_dim: {current_hidden_dim}")
+                if self.verbose:
+                    print(f"Decoder Layer {i}: prev_dim: {prev_dim}, current_hidden_dim: {current_hidden_dim}")
                 decoder_layers.append(nn.RNN(prev_dim, current_hidden_dim, batch_first=True))
                 prev_dim = current_hidden_dim
         else:
@@ -84,19 +92,23 @@ class RNNAutoencoder(nn.Module):
 
     def forward(self, x):
         batch_size = x.size(0)
-        #print(f'Initial input shape: {x.shape}')
+        if self.verbose:
+            print(f'FORWARD\nInitial input shape: {x.shape}')
 
         # Encoding
         for idx, rnn in enumerate(self.encoder):
             x, _ = rnn(x)
-            #print(f'After encoder layer {idx}, shape: {x.shape}')
+            if self.verbose:
+                print(f'After encoder layer {idx}, shape: {x.shape}')
         # Decoding
         for idx, rnn in enumerate(self.decoder[:-1]):
             x, _ = rnn(x)
-            #print(f'After decoder layer {idx}, shape: {x.shape}')
+            if self.verbose:
+                print(f'After decoder layer {idx}, shape: {x.shape}')
 
         x = self.decoder[-1](x)  # Final linear layer to match input dimension
-        #print(f'After final linear layer, shape: {x.shape}')
+        if self.verbose:
+            print(f'After final linear layer, shape: {x.shape}')
         return x
 
     def encode(self, x):
@@ -105,11 +117,11 @@ class RNNAutoencoder(nn.Module):
         return x
     
     
-def create_and_train_ae_model(input_dim, hidden_dim_lst, num_layers, train_loader, val_loader, mirror_bool=False, progressive_bool=False, ae_class_obj=RNNAutoencoder, seq_len=64, num_epochs=10):
+def create_and_train_ae_model(input_dim, hidden_dim_lst, num_layers, train_loader, val_loader, mirror_bool=False, progressive_bool=False, ae_class_obj=RNNAutoencoder, seq_len=64, num_epochs=10, verbose=False, plot_loss=True, learning_rate=0.001, fig_size=(7,5)):
     
-    model = ae_class_obj(input_dim, hidden_dim_lst, num_layers, seq_len, mirror=mirror_bool, progressive=progressive_bool)
+    model = ae_class_obj(input_dim, hidden_dim_lst, num_layers, seq_len, mirror=mirror_bool, progressive=progressive_bool, verbose=verbose)
     criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters())
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     # Training loop
     train_loss_log = []
@@ -137,6 +149,21 @@ def create_and_train_ae_model(input_dim, hidden_dim_lst, num_layers, train_loade
         val_loss /= len(val_loader)
         val_loss_log.append(val_loss)
         print(f'Epoch {epoch}: Train Loss: {train_loss};  Validation Loss: {val_loss}')
+
+    if plot_loss:
+        epochs_range = range(1, len(train_loss_log) + 1)
+        plt.figure(figsize=fig_size)
+        plt.plot(epochs_range, train_loss_log, 'b', label='Training Loss')
+        plt.plot(epochs_range, val_loss_log, 'purple', label='Validation Loss')
+        plt.title("Model Loss During Training")
+        plt.xlabel("Epoch Number")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.grid(True)
+        plt.gca().spines['top'].set_visible(False)
+        plt.gca().spines['right'].set_visible(False)
+        plt.show()
+        
     return model, train_loss_log, val_loss_log
     
     
