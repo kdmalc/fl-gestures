@@ -27,6 +27,8 @@ class RNNAutoencoder(nn.Module):
             raise ValueError("Both 'hidden_dim' as list and 'progressive' cannot be true simultaneously.")
         if isinstance(hidden_dim, list) and mirror:
             num_layers = len(hidden_dim)
+        if isinstance(hidden_dim, int):
+            hidden_dim = [hidden_dim]*num_layers*2 # Not sure if *2 is always necessary... is for how 
 
         # Encoder
         encoder_layers = []
@@ -88,7 +90,6 @@ class RNNAutoencoder(nn.Module):
         for idx, rnn in enumerate(self.encoder):
             x, _ = rnn(x)
             #print(f'After encoder layer {idx}, shape: {x.shape}')
-
         # Decoding
         for idx, rnn in enumerate(self.decoder[:-1]):
             x, _ = rnn(x)
@@ -96,6 +97,11 @@ class RNNAutoencoder(nn.Module):
 
         x = self.decoder[-1](x)  # Final linear layer to match input dimension
         #print(f'After final linear layer, shape: {x.shape}')
+        return x
+
+    def encode(self, x):
+        for rnn in self.encoder:
+            x, _ = rnn(x)
         return x
     
     
