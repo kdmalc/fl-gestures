@@ -37,6 +37,7 @@ def dunn_index(X, labels):
     max_intra_cluster_distance = max(intra_cluster_distances)
     return min_inter_cluster_distance / max_intra_cluster_distance
 
+
 def gap_statistics(X, labels):
     # Compute within-cluster dispersion
     Wk = np.sum([np.mean(np.linalg.norm(X[np.where(labels == k)] - np.mean(X[np.where(labels == k)], axis=0), axis=1)) for k in np.unique(labels)])
@@ -51,6 +52,7 @@ def gap_statistics(X, labels):
     # Compute Gap Statistics
     gap = np.mean(np.log(reference_Wk)) - np.log(Wk)
     return gap
+
 
 def run_clustering_algorithm(clustering_algo_str, X, num_clusters=2, eps=0.5, min_samples=5):
     if clustering_algo_str == 'KMeans':
@@ -76,44 +78,6 @@ def run_clustering_algorithm(clustering_algo_str, X, num_clusters=2, eps=0.5, mi
     gap_stat = gap_statistics(X, labels)
 
     return silhouette, db_index, ch_index, di_index, gap_stat
-
-
-
-def apply_model(model_str, input_df, num_dims, hp):
-    
-    # Drop the metadata columns (eg cols that are not the actual timeseries data)
-    training_df = input_df.drop(columns=['Participant', 'Gesture_ID', 'Gesture_Num'])
-    
-    if not training_df.empty:
-        if model_str.upper() == 'PCA':
-            dim_reduc_model = PCA(n_components=num_dims)
-            dim_reduc_model.fit(training_df)
-            reduced_df = pd.DataFrame(dim_reduc_model.transform(training_df))
-        elif (model_str.upper() == 'T-SNE') or (model_str.upper() == 'TSNE'):
-            dim_reduc_model = TSNE(n_components=num_dims, perplexity=hp, random_state=42)
-            reduced_df = pd.DataFrame(dim_reduc_model.fit_transform(df))
-        elif (model_str.upper() == 'INCREMENTALPCA') or (model_str.upper() == 'IPCA'):
-            dim_reduc_model = IncrementalPCA(n_components=num_dims)
-            reduced_df = pd.DataFrame(dim_reduc_model.fit_transform(training_df))
-        elif (model_str.upper() == 'KERNELPCA') or (model_str.upper() == 'KPCA'):
-            dim_reduc_model = KernelPCA(n_components=num_dims)
-            reduced_df = pd.DataFrame(dim_reduc_model.fit_transform(training_df))
-        #elif model_str.upper() == 'UMAP':
-        #    raise ValueError("Need to install the umap library first...")
-        #    dim_reduc_model = UMAP(n_components=num_dims)
-        #    reduced_df = pd.DataFrame(dim_reduc_model.fit_transform(training_df))
-        elif model_str.upper() == 'MDS':
-            dim_reduc_model = MDS(n_components=num_dims, random_state=42)
-            reduced_df = pd.DataFrame(dim_reduc_model.fit_transform(training_df))
-        elif model_str.upper() == 'ISOMAP':
-            dim_reduc_model = Isomap(n_components=num_dims)
-            reduced_df = pd.DataFrame(dim_reduc_model.fit_transform(training_df))
-        else:
-            raise ValueError(f"{model_str} not implemented. Choose an implemented model.")
-    else:
-        raise ValueError(f"training_df is empty!")
-    
-    return reduced_df, dim_reduc_model
 
 
 def interpolate_df(df, num_rows=64, columns_to_exclude=None):
@@ -147,6 +111,7 @@ def interpolate_df(df, num_rows=64, columns_to_exclude=None):
     
     return interpolated_df
 
+
 def interpolate_dataframe_Ben(df, num_rows=64):
     '''Old version from Ben's code (/Momona?), assumes no meta data'''
     # Create a new index array with num_rows evenly spaced values
@@ -167,7 +132,6 @@ def interpolate_dataframe_Ben(df, num_rows=64):
 def apply_model(model_str, input_df, num_dims, hp, columns_to_exclude=['Participant', 'Gesture_ID', 'Gesture_Num']):
     
     # Drop the metadata columns (eg cols that are not the actual timeseries data)
-    #input_df.drop(columns=['Participant', 'Gesture_ID', 'Gesture_Num', 'Gesture_Type', 'File_Type'], inplace=True)
     training_df = input_df.drop(columns=columns_to_exclude)
     
     if not training_df.empty:
