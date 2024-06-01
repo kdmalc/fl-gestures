@@ -112,6 +112,17 @@ class RNNAutoencoder(nn.Module):
         return x
 
     def encode(self, x):
+        # Ensure the input is a tensor
+        if isinstance(x, list):
+            # Debugging: print shapes of each tensor in the list
+            print("Shapes in list to stack:")
+            for i, t in enumerate(x):
+                print(f"Entry {i} shape: {t.shape}")
+            # Ensure all tensors have the same shape before stacking
+            max_shape = torch.tensor([tensor.shape for tensor in x]).max(dim=0)[0]
+            x = [torch.nn.functional.pad(t, (0, max_shape[-1] - t.shape[-1])) if t.shape != max_shape else t for t in x]
+            x = torch.stack(x)
+
         for rnn in self.encoder:
             x, _ = rnn(x)
         return x
