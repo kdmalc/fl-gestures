@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 
 def mean_subtraction_blockwise(block, end_IMU_range=72):
@@ -20,33 +19,6 @@ def mean_subtraction_blockwise(block, end_IMU_range=72):
     mean_subtracted_block = np.concatenate((imu_block_mean_subtracted, emg_block_mean_subtracted), axis=1)
     
     return mean_subtracted_block
-
-
-def preprocess_df_by_gesture(data_df, preprocessing_approach, trial_length=64, metacol_start_idx=3):
-    '''Assumes the first 3 columns are the metadata columns (Participant, Gesture_ID, Gesture_Num), which are removed for processing and then added back to the df when returning the processed df'''
-    num_trials = data_df.shape[0] // trial_length
-    preprocessed_data_lst = []
-    metadata_cols = data_df.iloc[:, :metacol_start_idx]
-    signal_cols = data_df.iloc[:, metacol_start_idx:]
-    for trial_idx in range(num_trials):
-        start_idx = trial_idx * trial_length
-        end_idx = start_idx + trial_length
-        trial_data = signal_cols.iloc[start_idx:end_idx]
-
-        if preprocessing_approach == 'MeanSubtraction':
-            trial_data_preprocessed = trial_data - trial_data.mean()
-        elif preprocessing_approach == 'MinMaxScaler':
-            scaler = MinMaxScaler()
-            trial_data_preprocessed = scaler.fit_transform(trial_data)
-        elif preprocessing_approach == 'StandardScaler':
-            scaler = StandardScaler()
-            trial_data_preprocessed = scaler.fit_transform(trial_data)
-        
-        trial_data_preprocessed_df = pd.DataFrame(trial_data_preprocessed, columns=signal_cols.columns)
-        preprocessed_data_lst.append(trial_data_preprocessed_df)
-    preprocessed_df = pd.concat(preprocessed_data_lst, ignore_index=True)
-    preprocessed_df = pd.concat([metadata_cols, preprocessed_df], axis=1)
-    return preprocessed_df
 
 
 def meansubtract_df_by_gesture(data_df, trial_length=64, metacol_start_idx=3):
