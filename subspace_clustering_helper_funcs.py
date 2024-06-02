@@ -78,55 +78,6 @@ def run_clustering_algorithm(clustering_algo_str, X, num_clusters=2, eps=0.5, mi
     gap_stat = gap_statistics(X, labels)
 
     return silhouette, db_index, ch_index, di_index, gap_stat
-
-
-def interpolate_df(df, num_rows=64, columns_to_exclude=None):
-    """
-    Interpolates the dataframe to have a specified number of rows.
-    Excludes specified columns from interpolation.
-    """
-    if columns_to_exclude is None:
-        columns_to_exclude = []
-    
-    # Separate the columns to exclude
-    excluded_columns_df = df[columns_to_exclude]
-    subset_df = df.drop(columns=columns_to_exclude)
-    
-    # Interpolate the remaining columns
-    x_old = np.linspace(0, 1, num=len(subset_df))
-    x_new = np.linspace(0, 1, num=num_rows)
-    interpolated_df = pd.DataFrame()
-
-    for column in subset_df.columns:
-        y_old = subset_df[column].values
-        y_new = np.interp(x_new, x_old, y_old)
-        interpolated_df[column] = y_new
-
-    # Add the excluded columns back
-    for col in columns_to_exclude:
-        interpolated_df[col] = excluded_columns_df[col].iloc[0]
-
-    # Reordering columns to match original DataFrame
-    interpolated_df = interpolated_df[columns_to_exclude + list(subset_df.columns)]
-    
-    return interpolated_df
-
-
-def interpolate_dataframe_Ben(df, num_rows=64):
-    '''Old version from Ben's code (/Momona?), assumes no meta data'''
-    # Create a new index array with num_rows evenly spaced values
-    new_index = np.linspace(0, len(df) - 1, num_rows)
-    
-    # Create a new DataFrame with the new index and the original columns
-    interpolated_df = pd.DataFrame(columns=df.columns, index=new_index)
-    
-    # Interpolate each column of the DataFrame using the new index
-    for column in df.columns:
-        interpolated_df[column] = np.interp(new_index, np.arange(len(df)), df[column])
-
-    interpolated_df.index = range(num_rows)
-    
-    return interpolated_df
     
 
 def apply_model(model_str, input_df, num_dims, hp, columns_to_exclude=['Participant', 'Gesture_ID', 'Gesture_Num']):
