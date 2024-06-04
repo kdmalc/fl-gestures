@@ -3,7 +3,21 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
+import time
 from sklearn.metrics import precision_score, recall_score, f1_score, classification_report
+
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+
+
+def plot_confusion_matrix(labels, preds, classes_plot_ticks_lst, dataset_name_str):
+    cm = confusion_matrix(labels, preds)
+    plt.figure(figsize=(10, 7))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=classes_plot_ticks_lst, yticklabels=classes_plot_ticks_lst)
+    plt.xlabel('Predicted labels')
+    plt.ylabel('True labels')
+    plt.title(f'Confusion Matrix for {dataset_name_str}')
+    plt.show()
 
 
 def create_dataloader(data_df, DatasetClass, batch_size=32, shuffle_bool=True, num_rows_per_gesture=64):
