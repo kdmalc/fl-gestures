@@ -33,12 +33,12 @@ def preprocess_df_by_gesture(data_df, preprocessing_approach, trial_length=64, m
         end_idx = start_idx + trial_length
         trial_data = signal_cols.iloc[start_idx:end_idx]
 
-        if preprocessing_approach == 'MeanSubtraction':
+        if preprocessing_approach.upper() == 'MEANSUBTRACTION':
             trial_data_preprocessed = trial_data - trial_data.mean()
-        elif preprocessing_approach == 'MinMaxScaler':
+        elif preprocessing_approach.upper() == 'MINMAXSCALER':
             scaler = MinMaxScaler()
             trial_data_preprocessed = scaler.fit_transform(trial_data)
-        elif preprocessing_approach == 'StandardScaler':
+        elif preprocessing_approach.upper() == 'STANDARDSCALER':
             scaler = StandardScaler()
             trial_data_preprocessed = scaler.fit_transform(trial_data)
         
