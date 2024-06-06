@@ -49,11 +49,18 @@ def preprocess_df_by_gesture(data_df, preprocessing_approach, biosignal_switch_i
             # This already is applied on a per-column basis
             trial_data_centered = trial_data - trial_data.mean()
             if len(biosignal_switch_ix_lst)==0:
-                trial_data_preprocessed = scaler.fit_transform(trial_data)
+                gesture_std = np.std(trial_data_centered.values.flatten())
+                if gesture_std != 0:
+                    trial_data_preprocessed = pd.DataFrame(trial_data_centered / gesture_std)
+                else:
+                    print("Gesture STD is equal to 0!")
+                    trial_data_preprocessed = pd.DataFrame(trial_data_centered)
             else:
                 for biosignal_idx in biosignal_switch_ix_lst:
-                    biosignal_block1 = trial_data.iloc[:, :biosignal_idx]
-                    biosignal_block2 = trial_data.iloc[:, biosignal_idx:]
+                    # IMU
+                    biosignal_block1 = trial_data_centered.iloc[:, :biosignal_idx]
+                    # EMG
+                    biosignal_block2 = trial_data_centered.iloc[:, biosignal_idx:]
 
                     gesture_std1 = np.std(biosignal_block1.values.flatten())
                     if gesture_std1 != 0:
