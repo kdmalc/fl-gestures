@@ -116,3 +116,54 @@ def apply_model(model_str, input_df, num_dims, hp, columns_to_exclude=['Particip
     
     return reduced_df, dim_reduc_model
     
+
+def apply_dim_reduc(data_df, model_str='PCA', use_full_dataset=False, num_dims=40, hp=None, modality=['EMG and IMU'], participant_inclusion=['All'], apply='ALL'):
+
+    print("Start")
+
+    gestures = ['pan', 'duplicate', 'zoom-out', 'zoom-in', 'move', 'rotate', 'select-single', 'delete', 'close', 'open']
+    data_types = modality
+    participant_types = participant_inclusion
+
+    if use_full_dataset:        
+        sel_df = data_df
+        df_t, dim_reduc_model = apply_model(model_str, sel_df, num_dims, hp)
+    else:
+        for f_type in data_types:
+            if f_type == 'EMG and IMU':
+                sel_df = data_df
+            elif f_type[0] == 'IMU':
+                # slice just the IMU columns (cols with IMU in name)
+                sel_df = data_df.iloc[:, 3:-16]
+            elif f_type[0] == 'EMG':
+                # slice just the EMG columns (cols with EMG in name)
+                sel_df = data_df.iloc[:, -16:]
+            else:
+                raise ValueError(f"f_type {f_type} not found in [EMG, IMU, EMG and IMU]")
+
+            for p_type in participant_types:
+                if p_type == "All":
+                    pIDs = sel_df['Participant'].unique()
+                elif p_type == "Impaired":
+                    # Idk what this indexing by ['Participant'] the second time is doing, presumably is broken
+                    pIDs = sel_df[sel_df['Participant'].isin(pIDs_impaired)]['Participant'].unique()
+                elif p_type == "Unimpaired":
+                    # Idk what this indexing by ['Participant'] the second time is doing, presumably is broken
+                    pIDs = sel_df[sel_df['Participant'].isin(pIDs_unimpaired)]['Participant'].unique()
+                else:
+                    raise ValueError(f"Participant type {p_type} not supported, check supported versions.")
+
+                if apply.upper() == 'ALL':
+                    df_t, dim_reduc_model = apply_model(model_str, sel_df, num_dims, hp)
+                elif apply.upper() == 'BY USER':
+                    for pid in pIDs:
+                        for file_type in file_types:
+                                user_df = sel_df[(sel_df['Participant'] == pid)]
+                                df_t, dim_reduc_model = apply_model(model_str, user_df, num_dims, hp)
+                elif apply.upper() == 'BY GESTURE':
+                    for file_type in file_types:
+                        for gesture in gestures:
+                            gesture_df = sel_df[(data_df['Gesture_ID'] == gesture)]
+                            df_t, dim_reduc_model = apply_model(model_str, gesture_df, num_dims, hp)
+    print("Success")
+    return df_t, dim_reduc_model
