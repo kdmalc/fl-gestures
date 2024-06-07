@@ -11,6 +11,62 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
 
+def plot_five_clus_metrics(num_clusters_range, km_silhouette_lst, km_davies_bouldin_lst, km_cali_har_lst, km_dunn_index_lst, km_gap_stat_lst, clustering_algo_str='KMeans'):
+    def remove_top_right_spines(ax):
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+    
+    fig, axs = plt.subplots(3, 2, figsize=(9, 11))
+    
+    # Plotting each metric in a separate subplot
+    axs[0, 0].plot(num_clusters_range, km_silhouette_lst, marker='o')
+    axs[0, 0].set_xlabel('Number of Clusters')
+    axs[0, 0].set_ylabel('Silhouette Score')
+    axs[0, 0].set_title(clustering_algo_str+' Silhouette Score vs Number of Clusters')
+    axs[0, 0].grid(True)
+    
+    axs[0, 1].plot(num_clusters_range, km_davies_bouldin_lst, marker='o')
+    axs[0, 1].set_xlabel('Number of Clusters')
+    axs[0, 1].set_ylabel('Davies Bouldin Score')
+    axs[0, 1].set_title(clustering_algo_str+' Davies Bouldin Score vs Number of Clusters')
+    axs[0, 1].grid(True)
+    
+    axs[1, 0].plot(num_clusters_range, km_cali_har_lst, marker='o')
+    axs[1, 0].set_xlabel('Number of Clusters')
+    axs[1, 0].set_ylabel('Calinski Harabasz Score')
+    axs[1, 0].set_title(clustering_algo_str+' Calinski Harabasz Score vs Number of Clusters')
+    axs[1, 0].grid(True)
+    
+    axs[1, 1].plot(num_clusters_range, km_dunn_index_lst, marker='o')
+    axs[1, 1].set_xlabel('Number of Clusters')
+    axs[1, 1].set_ylabel('Dunn Index')
+    axs[1, 1].set_title(clustering_algo_str+' Dunn Index vs Number of Clusters')
+    axs[1, 1].grid(True)
+
+    if km_gap_stat_lst is not None:
+        axs[2, 0].plot(num_clusters_range, km_gap_stat_lst, marker='o')
+        axs[2, 0].set_xlabel('Number of Clusters')
+        axs[2, 0].set_ylabel('Gap Index')
+        axs[2, 0].set_title(clustering_algo_str+' Gap Index vs Number of Clusters')
+        axs[2, 0].grid(True)
+        remove_top_right_spines(axs[2, 0])
+    else:
+        fig.delaxes(axs[2, 0])
+    
+    # Remove the empty subplot
+    fig.delaxes(axs[2, 1])
+    
+    remove_top_right_spines(axs[0, 0])
+    remove_top_right_spines(axs[0, 1])
+    remove_top_right_spines(axs[1, 0])
+    remove_top_right_spines(axs[1, 1])
+    
+    # Adjust layout
+    fig.tight_layout()
+    plt.show()
+
+
+
 class GestureDataset(Dataset):
     # NOTE: I think this formulation makes it so the dataloader won't return (X, Y) as per usual (eg like TensorDataset)
     def __init__(self, data_tensor):
