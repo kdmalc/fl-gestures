@@ -10,6 +10,16 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sns
 
 
+def create_data_loader(df, dataset_obj, num_gestures, num_rows_per_gesture, num_features, batch_size, shuffle):
+    '''
+    dataset_obj should be GestureDatasetAE (for autoencoders, eg only returns data no labels) or GestureDatasetClustering (for clustering, returns X and Y)
+    '''
+    X_3D = df.to_numpy().reshape(num_gestures, num_rows_per_gesture, num_features)
+    X_3DTensor = torch.tensor(X_3D, dtype=torch.float32)
+    dataset = dataset_obj(X_3DTensor)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    
+
 def plot_confusion_matrix(labels, preds, classes_plot_ticks_lst, dataset_name_str):
     cm = confusion_matrix(labels, preds)
     plt.figure(figsize=(10, 7))
