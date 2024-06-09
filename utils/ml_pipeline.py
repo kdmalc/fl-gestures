@@ -10,14 +10,28 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sns
 
 
-def create_data_loader(df, dataset_obj, num_gestures, num_rows_per_gesture, num_features, batch_size, shuffle):
+def create_data_loader(data_df, dataset_obj, labels=None, num_rows_per_gesture=64, batch_size=32, shuffle_bool=True, drop_last_bool=True):
     '''
-    dataset_obj should be GestureDatasetAE (for autoencoders, eg only returns data no labels) or GestureDatasetClustering (for clustering, returns X and Y)
+    - data_df should be 2D...
+    - dataset_obj should be GestureDatasetAE (for autoencoders, eg only returns data no labels) or GestureDatasetClustering (for clustering, returns X and Y)
     '''
-    X_3D = df.to_numpy().reshape(num_gestures, num_rows_per_gesture, num_features)
+
+    if data_df.ndim == 2: # This assumes its shape is (num_gestures x num_rows_per_gesture, num_features)
+        num_gestures = len(data_df) // num_rows_per_gesture
+        assert len(data_df) % num_rows_per_gesture == 0, "The total number of rows is not a multiple of the number of rows per gesture."
+        num_features = data_df.shape[1]
+        X_3D = data_df.to_numpy().reshape(num_gestures, num_rows_per_gesture, num_features)
+    elif data_df.ndim == 3: # This assumes its shape is (num_gestures, num_rows_per_gesture, num_features)
+        X_3D = data_df
+    else:
+        raise ValueError("Data df must be 2 or 3 dimensional")
     X_3DTensor = torch.tensor(X_3D, dtype=torch.float32)
-    dataset = dataset_obj(X_3DTensor)
-    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+    if labels is not None:
+        dataset = dataset_obj(X_3DTensor, labels)
+    else:
+        # Autoencoder is implied if labels_df is None
+        dataset = dataset_obj(X_3DTensor)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle_bool, drop_last=drop_last_bool)
     
 
 def plot_confusion_matrix(labels, preds, classes_plot_ticks_lst, dataset_name_str):
@@ -28,17 +42,6 @@ def plot_confusion_matrix(labels, preds, classes_plot_ticks_lst, dataset_name_st
     plt.ylabel('True labels')
     plt.title(f'Confusion Matrix for {dataset_name_str}')
     plt.show()
-
-
-def create_dataloader(data_df, DatasetClass, batch_size=32, shuffle_bool=True, num_rows_per_gesture=64):
-    num_gestures = len(data_df) // num_rows_per_gesture
-    num_features = data_df.shape[1]
-    assert len(data_df) % num_rows_per_gesture == 0, "The total number of rows is not a multiple of the number of rows per gesture."
-    data_npy = data_df.to_numpy().reshape(num_gestures, num_rows_per_gesture, num_features)
-    data_tensor = torch.tensor(data_npy, dtype=torch.float32)
-    dataset = DatasetClass(data_tensor)
-    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle_bool)
-    return data_loader
     
 
 class GestureDatasetClustering(Dataset):
