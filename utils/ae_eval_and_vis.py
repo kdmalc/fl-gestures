@@ -88,13 +88,7 @@ def eval_on_testset_and_return_original_and_reconstructed(model, test_loader, cr
     with torch.no_grad():
         for batch_num, batch in enumerate(test_loader):
             if xy_testloader and type(batch)==type([]):
-                #print("xy_testloader triggered!")
                 batch = batch[0]
-                #print(f"Batch {batch_num} shape: {batch.shape}")
-            #else:
-            #    print("xy_testloader NOT triggered!")
-            #    print(f"Batch {batch_num} type: {type(batch)}")
-            #    print(f"Batch {batch_num} shape: {batch.shape}")
             if get_latent_representations:
                 #latent = model.encoder(batch)  # This module isn't defined the way PyTorch expects, so don't use this
                 latent = model.encode(batch)  # Created my own encode() func
