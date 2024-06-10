@@ -72,7 +72,7 @@ class GestureLSTMClassifier(nn.Module):
         self.dropout = nn.Dropout(dropout_prob)
     
     def forward(self, x):
-        out, _ = self.lstm(x, (hidden_states, cell_states))
+        out, _ = self.lstm(x)
         out = self.dropout(out[:, -1, :])  # Using the output of the last time step
         out = self.fc(out)
         return out
