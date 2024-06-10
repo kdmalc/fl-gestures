@@ -156,7 +156,7 @@ def evaluate_model(model, data_loader, criterion, use_hidden, batch_size):
             if use_hidden:
                 hidden = model.init_hidden(inputs.size(0))
 
-            outputs, hidden = model(inputs, hidden) if use_hidden else model(inputs, None)
+            outputs, hidden = model(inputs, hidden) if use_hidden else model(inputs)
             loss = criterion(outputs, labels)
             val_loss += loss.item()
             _, predicted = torch.max(outputs.data, 1)
