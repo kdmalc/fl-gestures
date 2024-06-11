@@ -137,7 +137,9 @@ def train_LSTM_gesture_classifier(model, nn_train_loader, nn_test_loader, criter
         train_accuracy = 100 * correct_train / total_train
         val_loss, val_accuracy = evaluate_model(model, nn_test_loader, criterion, use_hidden, batch_size)
 
-        print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(nn_train_loader):.4f}, Accuracy: {train_accuracy:.2f}%, Val Loss: {val_loss:.4f}, Val Accuracy: {val_accuracy:.2f}%')
+        if epoch==0 or epoch+1==num_epochs:
+            print(f'Epoch [{epoch+1}/{num_epochs}], Train Accuracy: {train_accuracy:.2f}%, Val Accuracy: {val_accuracy:.2f}%')
+            #Loss: {running_loss/len(nn_train_loader):.4f}, Val Loss: {val_loss:.4f}, 
 
     print(f"Training completed in {time.time() - start_time:.2f} seconds")
     return model
