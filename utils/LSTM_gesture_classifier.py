@@ -137,7 +137,9 @@ def train_LSTM_gesture_classifier(model, nn_train_loader, nn_test_loader, criter
         train_accuracy = 100 * correct_train / total_train
         val_loss, val_accuracy = evaluate_model(model, nn_test_loader, criterion, use_hidden, batch_size)
 
-        print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(nn_train_loader):.4f}, Accuracy: {train_accuracy:.2f}%, Val Loss: {val_loss:.4f}, Val Accuracy: {val_accuracy:.2f}%')
+        if epoch==0 or epoch+1==num_epochs:
+            print(f'Epoch [{epoch+1}/{num_epochs}], Train Accuracy: {train_accuracy:.2f}%, Val Accuracy: {val_accuracy:.2f}%')
+            #Loss: {running_loss/len(nn_train_loader):.4f}, Val Loss: {val_loss:.4f}, 
 
     print(f"Training completed in {time.time() - start_time:.2f} seconds")
     return model
@@ -156,7 +158,10 @@ def evaluate_model(model, data_loader, criterion, use_hidden, batch_size):
             if use_hidden:
                 hidden = model.init_hidden(inputs.size(0))
 
-            outputs, hidden = model(inputs, hidden) if use_hidden else model(inputs)
+            if use_hidden:
+                outputs, hidden = model(inputs, hidden)
+            else:
+                outputs = model(inputs)
             loss = criterion(outputs, labels)
             val_loss += loss.item()
             _, predicted = torch.max(outputs.data, 1)
