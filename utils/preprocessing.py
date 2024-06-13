@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 
-def preprocess_df_by_gesture(data_df, preprocessing_approach, biosignal_switch_ix_lst=[72], trial_length=64):
+def preprocess_df_by_gesture(data_df, preprocessing_approach, biosignal_switch_ix_lst=[72], trial_length=64, zero_threshold=1e-7):
     '''
     Assumes there is no metadata cols (eg only pass in the 2D dataframe of sensor data
     Set biosignal_switch_ix_lst to an empty list if only working with one biosignal
@@ -13,6 +13,8 @@ def preprocess_df_by_gesture(data_df, preprocessing_approach, biosignal_switch_i
     
     num_trials = data_df.shape[0] // trial_length
     preprocessed_data_lst = []
+
+    data_df = data_df.applymap(lambda x: 0.0 if x < zero_threshold else x)
     
     for trial_idx in range(num_trials):
         start_idx = trial_idx * trial_length
@@ -49,8 +51,9 @@ def preprocess_df_by_gesture(data_df, preprocessing_approach, biosignal_switch_i
                     trial_data_preprocessed = pd.concat([biosignal_block1_preprocessed, biosignal_block2_preprocessed], axis=1)
             trial_data_preprocessed = scaler.fit_transform(trial_data)
         elif preprocessing_approach.upper() == '$B':
-            # This already is applied on a per-column basis
-            trial_data_centered = trial_data - trial_data.mean()
+            ## This already is applied on a per-column basis
+            #trial_data_centered = trial_data - trial_data.mean()
+            trial_data_centered = trial_data
             if len(biosignal_switch_ix_lst)==0:
                 gesture_std = np.std(trial_data_centered.values.flatten())
                 if gesture_std != 0:
@@ -80,6 +83,8 @@ def preprocess_df_by_gesture(data_df, preprocessing_approach, biosignal_switch_i
                         biosignal_block2_preprocessed = pd.DataFrame(biosignal_block2)
 
                     trial_data_preprocessed = pd.concat([biosignal_block1_preprocessed, biosignal_block2_preprocessed], axis=1)
+
+            trial_data_centered = (trial_data - trial_data.mean()).applymap(lambda x: 0.0 if x < zero_threshold else x)
 
         trial_data_preprocessed_df = pd.DataFrame(trial_data_preprocessed, columns=data_df.columns)
         if trial_data_preprocessed_df.isna().any().any():
