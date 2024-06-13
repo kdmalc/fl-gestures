@@ -4,7 +4,10 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 
 def preprocess_df_by_gesture(data_df, preprocessing_approach, biosignal_switch_ix_lst=[72], trial_length=64):
-    '''Assumes there is no metadata cols (eg only pass in the 2D dataframe of sensor data'''
+    '''
+    Assumes there is no metadata cols (eg only pass in the 2D dataframe of sensor data
+    Set biosignal_switch_ix_lst to an empty list if only working with one biosignal
+    '''
     if len(biosignal_switch_ix_lst)>1:
         raise ValueError("Only one biosignal index switch is supported for now")
     
