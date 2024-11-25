@@ -1,0 +1,11 @@
+Dataset,Fold,Accuracy
+Standardized,1,0.39
+Standardized,2,0.41
+Standardized,3,0.42
+Standardized,4,0.54
+Standardized,5,0.32
+User-Defined,1,0.12
+User-Defined,2,0.13333333333333333
+User-Defined,3,0.12333333333333334
+User-Defined,4,0.17666666666666667
+User-Defined,5,0.20666666666666667
