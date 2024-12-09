@@ -15,7 +15,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score
 
 
-def agglo_merge_procedure(userdef_df, model):
+def agglo_merge_procedure(userdef_df, model, mhp_knn_k=5, test_split_percent=0.3):
     """
     Parameters:
     - model (str or sklearn model object): The model to train. If string, it must be one of:
@@ -28,7 +28,7 @@ def agglo_merge_procedure(userdef_df, model):
         'SVC': SVC(kernel='rbf', random_state=42),
         'RF': RandomForestClassifier(n_estimators=100, random_state=42),
         'GradientBoosting': GradientBoostingClassifier(random_state=42),
-        'KNN': KNeighborsClassifier(n_neighbors=5),
+        'KNN': KNeighborsClassifier(n_neighbors=mhp_knn_k),
         # 'XGBoost': XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss')
     }
     # Get the model object if a string is provided
@@ -57,7 +57,7 @@ def agglo_merge_procedure(userdef_df, model):
         # userdef_df continuously changes wrt cluster ID
         ## So... do train_df and test_df continuously change? Cluster ID changes... 
         ## but that... may or may not affect stratificiation in a meaningful way (I'm not using cluster metadata...)
-        train_df, test_df = split_train_test(userdef_df, test_size=0.3, random_state=42)
+        train_df, test_df = split_train_test(userdef_df, test_size=test_split_percent, random_state=42)
         # These 2 should be the same... it's stratified...
         current_train_cluster_ids = sorted(train_df['Cluster_ID'].unique())
         current_test_cluster_ids = sorted(test_df['Cluster_ID'].unique())
@@ -203,11 +203,9 @@ def train_and_cv_cluster_model(train_df, model, cluster_ids, cluster_column='Clu
         for train_idx, val_idx in skf.split(X, y):
             X_train, X_val = X[train_idx], X[val_idx]
             y_train, y_val = y[train_idx], y[val_idx]
-
             # Create a fresh model for each fold
             fold_model = base_model.__class__(**base_model.get_params())
             fold_model.fit(X_train, y_train)
-
             # Predict on the validation set and calculate accuracy
             y_pred = fold_model.predict(X_val)
             cluster_val_accuracy += accuracy_score(y_val, y_pred)
@@ -221,6 +219,7 @@ def train_and_cv_cluster_model(train_df, model, cluster_ids, cluster_column='Clu
         # Average accuracy for this cluster
         cluster_val_accuracy /= n_splits
         # I think this really ought to append not add...
+        ## TOTAL maintains the acc of the entire process (across all clusters)
         total_val_accuracy += cluster_val_accuracy
         num_folds_processed += 1
 
