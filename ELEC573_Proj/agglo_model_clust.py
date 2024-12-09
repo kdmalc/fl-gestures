@@ -15,7 +15,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score
 
 
-def agglo_merge_procedure(userdef_df, model, mhp_knn_k=5, test_split_percent=0.3):
+def agglo_merge_procedure(userdef_df, model, mhp_knn_k=5, test_split_percent=0.3, n_splits=2):
     """
     Parameters:
     - model (str or sklearn model object): The model to train. If string, it must be one of:
@@ -47,7 +47,6 @@ def agglo_merge_procedure(userdef_df, model, mhp_knn_k=5, test_split_percent=0.3
     cross_cluster_performance = {}
     # Simulate cluster merging and model performance tracking
     iterations = 0
-
     # Main loop for cluster merging
     while len(userdef_df['Cluster_ID'].unique()) > 1:
         print(f"{len(userdef_df['Cluster_ID'].unique())} Clusters Remaining")
@@ -67,7 +66,7 @@ def agglo_merge_procedure(userdef_df, model, mhp_knn_k=5, test_split_percent=0.3
             raise ValueError("Train/test Cluster ID lists not the same length... Stratify failed")
 
         # Train models with logging for specified clusters
-        clus_model_lst = train_and_cv_cluster_model(train_df, model, current_cluster_ids)
+        clus_model_lst = train_and_cv_cluster_model(train_df, model, current_cluster_ids, n_splits=n_splits)
         # Pairwise test models with logging for specified clusters
         sym_acc_arr = test_models_on_clusters(test_df, clus_model_lst, current_cluster_ids)
 
