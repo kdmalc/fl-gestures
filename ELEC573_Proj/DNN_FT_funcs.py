@@ -24,47 +24,111 @@ class GestureDataset(Dataset):
 
 
 class CNNModel(nn.Module):
-    def __init__(self, input_dim, num_classes):
+    def __init__(self, input_dim, num_classes, 
+                 use_batch_norm=False, dropout_rate=0.5, 
+                 use_weight_decay=False):
         super(CNNModel, self).__init__()
-        self.conv_layers = nn.Sequential(
-            nn.Conv1d(1, 32, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool1d(2),
-            nn.Conv1d(32, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool1d(2)
-        )
-        self.fc_layers = nn.Sequential(
-            nn.Linear(64 * (input_dim // 4), 128),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(128, num_classes)
-        )
-    
+        
+        self.use_batch_norm = use_batch_norm
+        self.use_weight_decay = use_weight_decay
+        self.dropout_rate = dropout_rate
+        
+        # Convolutional Layers
+        self.conv1 = nn.Conv1d(1, 32, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm1d(32) if self.use_batch_norm else nn.Identity()
+        
+        self.conv2 = nn.Conv1d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm1d(64) if self.use_batch_norm else nn.Identity()
+        
+        # Fully Connected Layers
+        self.fc1 = nn.Linear(64 * (input_dim // 4), 128)
+        self.dropout = nn.Dropout(dropout_rate)
+        self.fc2 = nn.Linear(128, num_classes)
+        
+        # Activation and Pooling
+        self.relu = nn.ReLU()
+        self.maxpool = nn.MaxPool1d(2)
+
     def forward(self, x):
         # Reshape input to (batch_size, 1, sequence_length)
         x = x.unsqueeze(1)
-        x = self.conv_layers(x)
+        
+        # Conv Block 1
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+        
+        # Conv Block 2
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+        
+        # Flatten and Fully Connected Layers
         x = x.view(x.size(0), -1)
-        return self.fc_layers(x)
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.fc2(x)
+        
+        return x
+
+
+def get_optimizer(model, lr=0.001, use_weight_decay=False, weight_decay=0.01, optimizer_name="ADAM"):
+    """Configure optimizer with optional weight decay."""
+
+    if optimizer_name!="ADAM":
+        raise ValueError("Only ADAM is supported right now")
+    
+    if use_weight_decay:
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    else:
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    return optimizer
 
 
 class RNNModel(nn.Module):
-    def __init__(self, input_dim, num_classes):
+    def __init__(self, input_dim, num_classes, 
+                 rnn_type="LSTM", hidden_size=64, num_layers=2, 
+                 use_batch_norm=False, dropout_rate=0.5):
         super(RNNModel, self).__init__()
-        self.rnn = nn.LSTM(input_size=1, hidden_size=64, num_layers=2, batch_first=True)
+        
+        self.use_batch_norm = use_batch_norm
+        self.dropout_rate = dropout_rate
+        self.rnn_type = rnn_type
+
+        # RNN Layer (LSTM/GRU configurable)
+        if rnn_type == "LSTM":
+            self.rnn = nn.LSTM(input_size=1, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
+        elif rnn_type == "GRU":
+            self.rnn = nn.GRU(input_size=1, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
+        else:
+            raise ValueError("Invalid rnn_type. Choose 'LSTM' or 'GRU'.")
+        
+        # Batch Norm for RNN Output
+        self.bn = nn.BatchNorm1d(hidden_size) if self.use_batch_norm else nn.Identity()
+        
+        # Fully Connected Layers
         self.fc = nn.Sequential(
-            nn.Linear(64, 128),
+            nn.Linear(hidden_size, 128),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(dropout_rate),
             nn.Linear(128, num_classes)
         )
-    
+
     def forward(self, x):
         # Reshape input to (batch_size, sequence_length, 1)
         x = x.unsqueeze(-1)
-        _, (hidden, _) = self.rnn(x)
-        x = hidden[-1]  # Take the last layer's hidden state
+        
+        if self.rnn_type == "LSTM":
+            _, (hidden, _) = self.rnn(x)  # LSTM returns (output, (hidden_state, cell_state))
+        else:
+            _, hidden = self.rnn(x)  # GRU returns (output, hidden_state)
+        
+        # Take the last layer's hidden state
+        x = hidden[-1]  # Shape: (batch_size, hidden_size)
+        x = self.bn(x)  # Apply batch normalization if enabled
         return self.fc(x)
 
 
@@ -219,7 +283,8 @@ def main_training_pipeline(df, feature_column, target_column,
                            all_participants, test_participants, 
                            model_type='CNN', 
                            training_trials_per_gesture=8, 
-                           num_epochs=50, criterion = nn.CrossEntropyLoss(), lr=0.001):
+                           num_epochs=50, criterion=nn.CrossEntropyLoss(), lr=0.001, 
+                           use_weight_decay=True, weight_decay=0.01):
     """
     Main training pipeline with comprehensive performance tracking
     
@@ -270,7 +335,7 @@ def main_training_pipeline(df, feature_column, target_column,
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
     
     # Loss and optimizer
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = get_optimizer(model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
     
     # Training
     for epoch in range(num_epochs):
@@ -306,7 +371,8 @@ def main_training_pipeline(df, feature_column, target_column,
     }
 
 
-def fine_tune_model(base_model, fine_tune_data, num_epochs=20, lr=0.0001, criterion=nn.CrossEntropyLoss()):
+def fine_tune_model(base_model, fine_tune_data, num_epochs=20, lr=0.00001, criterion=nn.CrossEntropyLoss(), 
+                    use_weight_decay=True, weight_decay=0.05):
     """
     Fine-tune the base model on a small subset of data
     
@@ -325,7 +391,7 @@ def fine_tune_model(base_model, fine_tune_data, num_epochs=20, lr=0.0001, criter
     fine_tune_loader = DataLoader(fine_tune_dataset, batch_size=16, shuffle=True)
     
     # Loss and optimizer (with lower learning rate for fine-tuning)
-    optimizer = optim.Adam(base_model.parameters(), lr=lr)
+    optimizer = get_optimizer(base_model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
     
     # Fine-tuning
     for epoch in range(num_epochs):

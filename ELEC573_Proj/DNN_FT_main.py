@@ -1,9 +1,4 @@
-#import torch
-#import torch.nn as nn
-#import torch.optim as optim
-#from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 import numpy as np
-#import pandas as pd
 import pickle
 from sklearn.preprocessing import LabelEncoder
 
@@ -12,6 +7,8 @@ from sklearn.preprocessing import LabelEncoder
 
 from moments_engr import *
 from DNN_FT_funcs import *
+
+np.random.seed(42) 
 
 path1 = 'C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'
 
