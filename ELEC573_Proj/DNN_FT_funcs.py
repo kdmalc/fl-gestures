@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
+#import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
 import numpy as np
 import pandas as pd
@@ -133,7 +133,7 @@ class RNNModel(nn.Module):
 
 
 def prepare_data(df, feature_column, target_column, participants, test_participants, 
-                 trials_per_gesture=8):
+                 training_trials_per_gesture=8, finetuning_trials_per_gesture=3):
     """
     Prepare data for training and testing across participants.
     
@@ -155,7 +155,17 @@ def prepare_data(df, feature_column, target_column, participants, test_participa
         'labels': [],
         'participant_ids': []
     }
-    test_data = {
+    intra_subject_test_data = {
+        'features': [],
+        'labels': [],
+        'participant_ids': []
+    }
+    novel_trainFT_data = {
+        'features': [],
+        'labels': [],
+        'participant_ids': []
+    }
+    cross_subject_test_data = {
         'features': [],
         'labels': [],
         'participant_ids': []
@@ -163,36 +173,41 @@ def prepare_data(df, feature_column, target_column, participants, test_participa
     
     for participant in participants:
         participant_data = df[df['Participant'] == participant]
-        
         # Group by gesture
         gesture_groups = participant_data.groupby(target_column)
         
         # Separate data
         if participant in train_participants:
-            target_dict = train_data
-            max_trials = trials_per_gesture
+            training_dict = train_data
+            testing_dict = intra_subject_test_data
+            max_trials = training_trials_per_gesture
         else:
-            target_dict = test_data
-            max_trials = None
-        
+            training_dict = novel_trainFT_data
+            testing_dict = cross_subject_test_data
+            max_trials = finetuning_trials_per_gesture
+            
         for gesture, group in gesture_groups:
             # Randomize and select trials
             group_features = np.array([x.flatten() for x in group[feature_column]])
             group_labels = group[target_column].values
             
-            if max_trials is not None:
-                # Randomly select specified number of trials
-                indices = np.random.choice(
-                    len(group_features), 
-                    min(max_trials, len(group_features)), 
-                    replace=False
-                )
-                group_features = group_features[indices]
-                group_labels = group_labels[indices]
-            
-            target_dict['features'].extend(group_features)
-            target_dict['labels'].extend(group_labels)
-            target_dict['participant_ids'].extend([participant] * len(group_labels))
+            # Randomly select specified number of trials
+            indices = np.random.choice(
+                len(group_features), 
+                min(max_trials, len(group_features)), 
+                replace=False)
+
+            train_features = group_features[indices]
+            train_labels = group_labels[indices]
+            training_dict['features'].extend(train_features)
+            training_dict['labels'].extend(train_labels)
+            training_dict['participant_ids'].extend([participant] * len(train_labels))
+
+            test_features = group_features[~indices]
+            test_labels = group_labels[~indices]
+            testing_dict['features'].extend(test_features)
+            testing_dict['labels'].extend(test_labels)
+            testing_dict['participant_ids'].extend([participant] * len(test_labels))
     
     return {
         'train': {
@@ -200,10 +215,20 @@ def prepare_data(df, feature_column, target_column, participants, test_participa
             'labels': np.array(train_data['labels']),
             'participant_ids': train_data['participant_ids']
         },
-        'test': {
-            'features': np.array(test_data['features']),
-            'labels': np.array(test_data['labels']),
-            'participant_ids': test_data['participant_ids']
+        'intra_subject_test': {
+            'features': np.array(intra_subject_test_data['features']),
+            'labels': np.array(intra_subject_test_data['labels']),
+            'participant_ids': intra_subject_test_data['participant_ids']
+        },
+        'novel_trainFT': {
+            'features': np.array(novel_trainFT_data['features']),
+            'labels': np.array(novel_trainFT_data['labels']),
+            'participant_ids': novel_trainFT_data['participant_ids']
+        },
+        'cross_subject_test': {
+            'features': np.array(cross_subject_test_data['features']),
+            'labels': np.array(cross_subject_test_data['labels']),
+            'participant_ids': cross_subject_test_data['participant_ids']
         }
     }
 
@@ -279,10 +304,9 @@ def gesture_performance_by_participant(predictions, true_labels, participant_ids
     return performance
 
 
-def main_training_pipeline(df, feature_column, target_column, 
+def main_training_pipeline(data_splits, 
                            all_participants, test_participants, 
-                           model_type='CNN', 
-                           training_trials_per_gesture=8, 
+                           model_type='CNN', bs=32,  
                            num_epochs=50, criterion=nn.CrossEntropyLoss(), lr=0.001, 
                            use_weight_decay=True, weight_decay=0.01):
     """
@@ -303,13 +327,6 @@ def main_training_pipeline(df, feature_column, target_column,
     """
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    # Prepare data
-    data_splits = prepare_data(
-        df, feature_column, target_column, 
-        all_participants, test_participants, 
-        training_trials_per_gesture
-    )
-    
     # Unique gestures and number of classes
     unique_gestures = np.unique(data_splits['train']['labels'])
     num_classes = len(unique_gestures)
@@ -318,7 +335,7 @@ def main_training_pipeline(df, feature_column, target_column,
     # Select model
     if model_type == 'CNN':
         model = CNNModel(input_dim, num_classes).to(device)
-    else:
+    elif model_type == 'RNN':
         model = RNNModel(input_dim, num_classes).to(device)
     
     # Datasets and loaders
@@ -326,13 +343,19 @@ def main_training_pipeline(df, feature_column, target_column,
         data_splits['train']['features'], 
         data_splits['train']['labels']
     )
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
     
-    test_dataset = GestureDataset(
-        data_splits['test']['features'], 
-        data_splits['test']['labels']
-    )
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+    # INTRA SUBJECT
+    intra_test_dataset = GestureDataset(
+        data_splits['intra_subject_test']['features'], 
+        data_splits['intra_subject_test']['labels'])
+    intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False)
+
+    # CROSS SUBJECT
+    cross_test_dataset = GestureDataset(
+        data_splits['cross_subject_test']['features'], 
+        data_splits['cross_subject_test']['labels'])
+    cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False)
     
     # Loss and optimizer
     optimizer = get_optimizer(model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
@@ -343,7 +366,8 @@ def main_training_pipeline(df, feature_column, target_column,
     
     # Evaluation
     train_results = evaluate_model(model, train_loader)
-    test_results = evaluate_model(model, test_loader)
+    intra_test_results = evaluate_model(model, intra_test_loader)
+    cross_test_results = evaluate_model(model, cross_test_loader)
     
     # Performance by participant and gesture
     train_performance = gesture_performance_by_participant(
@@ -354,10 +378,18 @@ def main_training_pipeline(df, feature_column, target_column,
         unique_gestures
     )
     
-    test_performance = gesture_performance_by_participant(
-        test_results['predictions'], 
-        test_results['true_labels'], 
-        data_splits['test']['participant_ids'], 
+    intra_test_performance = gesture_performance_by_participant(
+        intra_test_results['predictions'], 
+        intra_test_results['true_labels'], 
+        data_splits['intra_subject_test']['participant_ids'], 
+        [participant for participant in all_participants if participant not in test_participants], 
+        unique_gestures
+    )
+
+    cross_test_performance = gesture_performance_by_participant(
+        cross_test_results['predictions'], 
+        cross_test_results['true_labels'], 
+        data_splits['cross_subject_test']['participant_ids'], 
         test_participants, 
         unique_gestures
     )
@@ -365,9 +397,11 @@ def main_training_pipeline(df, feature_column, target_column,
     return {
         'model': model,
         'train_performance': train_performance,
-        'test_performance': test_performance,
+        'intra_test_performance': intra_test_performance,
+        'cross_test_performance': cross_test_performance,
         'train_accuracy': train_results['accuracy'],
-        'test_accuracy': test_results['accuracy']
+        'intra_test_accuracy': intra_test_results['accuracy'],
+        'cross_test_accuracy': cross_test_results['accuracy']
     }
 
 
@@ -445,9 +479,11 @@ def plot_gesture_performance(performance_dict, title, save_filename, save_path="
     plt.title(title)
     plt.tight_layout()
     # Generate unique filename with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    fig_filename = f"{timestamp}_{save_filename}.png"
-    fig_save_path = os.path.join(save_path, fig_filename)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    fig_filename = f"{save_filename}.png"
+    fig_dir = os.path.join(save_path, f"{timestamp}")
+    os.makedirs(fig_dir, exist_ok=True)
+    fig_save_path = os.path.join(fig_dir, fig_filename)
     plt.savefig(fig_save_path)
     return performance_pivot
 
@@ -500,21 +536,30 @@ def visualize_model_performance(results, print_results=False):
     )
     
     # Visualize Testing Set Performance
-    test_performance_heatmap = plot_gesture_performance(
-        results['test_performance'], 
-        'Testing Set - Gesture Performance by Participant',
-        'testing_performance_heatmap'
+    intra_test_performance_heatmap = plot_gesture_performance(
+        results['intra_test_performance'], 
+        'Intra Testing Set - Gesture Performance by Participant',
+        'intra_testing_performance_heatmap'
+    )
+
+    # Visualize Testing Set Performance
+    cross_test_performance_heatmap = plot_gesture_performance(
+        results['cross_test_performance'], 
+        'Cross Testing Set - Gesture Performance by Participant',
+        'cross_testing_performance_heatmap'
     )
     
     if print_results:
         # Print detailed performance
         print_detailed_performance(results['train_performance'], 'Training')
-        print_detailed_performance(results['test_performance'], 'Testing')
+        print_detailed_performance(results['intra_test_performance'], 'Intra Testing')
+        print_detailed_performance(results['cross_test_performance'], 'Cross Testing')
         
         # Additional overall metrics
         print("\nOverall Model Performance:")
         print(f"Training Accuracy: {results['train_accuracy']:.2%}")
-        print(f"Testing Accuracy: {results['test_accuracy']:.2%}")
+        print(f"Intra Testing Accuracy: {results['intra_test_accuracy']:.2%}")
+        print(f"Cross Testing Accuracy: {results['cross_test_accuracy']:.2%}")
 
 
 def log_performance(results, log_dir='ELEC573_Proj\\results\\performance_logs', base_filename='model_performance'):
@@ -533,7 +578,7 @@ def log_performance(results, log_dir='ELEC573_Proj\\results\\performance_logs', 
     os.makedirs(log_dir, exist_ok=True)
     
     # Generate unique filename with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     log_filename = f"{timestamp}_{base_filename}.txt"
     log_path = os.path.join(log_dir, log_filename)
     
@@ -562,17 +607,14 @@ def log_performance(results, log_dir='ELEC573_Proj\\results\\performance_logs', 
         # Training Set Performance
         print("\n--- Training Set Performance ---")
         for participant, gesture_performance in results['train_performance'].items():
-            if participant in results['test_performance'].keys():
+            if participant in results['train_performance'].keys():
                 continue
             print(f"\nParticipant {participant}:")
             participant_accuracies = []
-            
             for gesture, accuracy in sorted(gesture_performance.items()):
                 print(f"  Gesture {gesture}: {accuracy:.2%}")
                 participant_accuracies.append(accuracy)
-            
             print(f"  Average Accuracy: {np.mean(participant_accuracies):.2%}")
-        
         # Training Set Summary
         train_accuracies = [acc for participant in results['train_performance'].values() for acc in participant.values()]
         print("\nTraining Set Summary:")
@@ -580,31 +622,52 @@ def log_performance(results, log_dir='ELEC573_Proj\\results\\performance_logs', 
         print(f"Accuracy Standard Deviation: {np.std(train_accuracies):.2%}")
         print(f"Minimum Accuracy: {np.min(train_accuracies):.2%}")
         print(f"Maximum Accuracy: {np.max(train_accuracies):.2%}")
+
+        ######################################################################
         
         # Repeat for Testing Set
-        print("\n--- Testing Set Performance ---")
-        for participant, gesture_performance in results['test_performance'].items():
+        print("\n--- INTRA Testing Set Performance ---")
+        for participant, gesture_performance in results['intra_test_performance'].items():
             print(f"\nParticipant {participant}:")
             participant_accuracies = []
-            
             for gesture, accuracy in sorted(gesture_performance.items()):
                 print(f"  Gesture {gesture}: {accuracy:.2%}")
                 participant_accuracies.append(accuracy)
-            
             print(f"  Average Accuracy: {np.mean(participant_accuracies):.2%}")
-        
         # Testing Set Summary
-        test_accuracies = [acc for participant in results['test_performance'].values() for acc in participant.values()]
-        print("\nTesting Set Summary:")
+        test_accuracies = [acc for participant in results['intra_test_performance'].values() for acc in participant.values()]
+        print("\nIntra Testing Set Summary:")
         print(f"Mean Accuracy: {np.mean(test_accuracies):.2%}")
         print(f"Accuracy Standard Deviation: {np.std(test_accuracies):.2%}")
         print(f"Minimum Accuracy: {np.min(test_accuracies):.2%}")
         print(f"Maximum Accuracy: {np.max(test_accuracies):.2%}")
+
+        ######################################################################
+
+        # Repeat for Testing Set
+        print("\n--- CROSS Testing Set Performance ---")
+        for participant, gesture_performance in results['cross_test_performance'].items():
+            print(f"\nParticipant {participant}:")
+            participant_accuracies = []
+            for gesture, accuracy in sorted(gesture_performance.items()):
+                print(f"  Gesture {gesture}: {accuracy:.2%}")
+                participant_accuracies.append(accuracy)
+            print(f"  Average Accuracy: {np.mean(participant_accuracies):.2%}")
+        # Testing Set Summary
+        test_accuracies = [acc for participant in results['cross_test_performance'].values() for acc in participant.values()]
+        print("\nCross Testing Set Summary:")
+        print(f"Mean Accuracy: {np.mean(test_accuracies):.2%}")
+        print(f"Accuracy Standard Deviation: {np.std(test_accuracies):.2%}")
+        print(f"Minimum Accuracy: {np.min(test_accuracies):.2%}")
+        print(f"Maximum Accuracy: {np.max(test_accuracies):.2%}")
+
+        ######################################################################
         
         # Overall Model Performance
         print("\nOverall Model Performance:")
         print(f"Training Accuracy: {results['train_accuracy']:.2%}")
-        print(f"Testing Accuracy: {results['test_accuracy']:.2%}")
+        print(f"Testing Accuracy: {results['intra_test_accuracy']:.2%}")
+        print(f"Testing Accuracy: {results['cross_test_accuracy']:.2%}")
     
     finally:
         # Restore stdout
