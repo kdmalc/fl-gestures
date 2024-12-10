@@ -25,13 +25,12 @@ class GestureDataset(Dataset):
 
 class CNNModel(nn.Module):
     def __init__(self, input_dim, num_classes, 
-                 use_batch_norm=False, dropout_rate=0.5, 
-                 use_weight_decay=False):
+                 use_batch_norm=False, dropout_rate=0.5):
         super(CNNModel, self).__init__()
         
         self.use_batch_norm = use_batch_norm
-        self.use_weight_decay = use_weight_decay
         self.dropout_rate = dropout_rate
+        #self.init_params = {"use_batch_norm": self.use_batch_norm, "dropout_rate": self.dropout_rate}
         
         # Convolutional Layers
         self.conv1 = nn.Conv1d(1, 32, kernel_size=3, stride=1, padding=1)
@@ -151,22 +150,22 @@ def prepare_data(df, feature_column, target_column, participants, test_participa
     train_participants = [p for p in participants if p not in test_participants]
     
     train_data = {
-        'features': [],
+        'feature': [],
         'labels': [],
         'participant_ids': []
     }
     intra_subject_test_data = {
-        'features': [],
+        'feature': [],
         'labels': [],
         'participant_ids': []
     }
     novel_trainFT_data = {
-        'features': [],
+        'feature': [],
         'labels': [],
         'participant_ids': []
     }
     cross_subject_test_data = {
-        'features': [],
+        'feature': [],
         'labels': [],
         'participant_ids': []
     }
@@ -199,34 +198,34 @@ def prepare_data(df, feature_column, target_column, participants, test_participa
 
             train_features = group_features[indices]
             train_labels = group_labels[indices]
-            training_dict['features'].extend(train_features)
+            training_dict['feature'].extend(train_features)
             training_dict['labels'].extend(train_labels)
             training_dict['participant_ids'].extend([participant] * len(train_labels))
 
             test_features = group_features[~indices]
             test_labels = group_labels[~indices]
-            testing_dict['features'].extend(test_features)
+            testing_dict['feature'].extend(test_features)
             testing_dict['labels'].extend(test_labels)
             testing_dict['participant_ids'].extend([participant] * len(test_labels))
     
     return {
         'train': {
-            'features': np.array(train_data['features']),
+            'feature': np.array(train_data['feature']),
             'labels': np.array(train_data['labels']),
             'participant_ids': train_data['participant_ids']
         },
         'intra_subject_test': {
-            'features': np.array(intra_subject_test_data['features']),
+            'feature': np.array(intra_subject_test_data['feature']),
             'labels': np.array(intra_subject_test_data['labels']),
             'participant_ids': intra_subject_test_data['participant_ids']
         },
         'novel_trainFT': {
-            'features': np.array(novel_trainFT_data['features']),
+            'feature': np.array(novel_trainFT_data['feature']),
             'labels': np.array(novel_trainFT_data['labels']),
             'participant_ids': novel_trainFT_data['participant_ids']
         },
         'cross_subject_test': {
-            'features': np.array(cross_subject_test_data['features']),
+            'feature': np.array(cross_subject_test_data['feature']),
             'labels': np.array(cross_subject_test_data['labels']),
             'participant_ids': cross_subject_test_data['participant_ids']
         }

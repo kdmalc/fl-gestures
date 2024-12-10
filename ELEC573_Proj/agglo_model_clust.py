@@ -11,6 +11,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedKFold
 
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
+from torch.utils.data import TensorDataset
+
 
 def agglo_merge_procedure(userdef_df, model, mhp_knn_k=5, test_split_percent=0.3, n_splits=2):
     """
@@ -294,7 +300,7 @@ def train_cluster_model(userdef_df, model, cluster_ids, cluster_column='Cluster_
     return model_list
 
 
-def test_models_on_clusters(test_df, trained_clus_models_lst, cluster_ids, cluster_column='Cluster_ID', feature_column='feature', target_column='Gesture_Encoded', verbose=False):
+def test_models_on_clusters(test_df, trained_clus_models_lst, cluster_ids, cluster_column='Cluster_ID', feature_column='feature', target_column='Gesture_Encoded', verbose=False, pytorch_bool=False, bs=32, criterion=nn.CrossEntropyLoss()):
     """
     Test trained models for each cluster on a pre-split test set.
 
@@ -330,11 +336,33 @@ def test_models_on_clusters(test_df, trained_clus_models_lst, cluster_ids, clust
                 acc_matrix[clus_idx, clus_idx2] = np.nan  # Or use 0 if nan is undesired
                 continue
 
-            X_test = np.array([x.flatten() for x in clus_testset[feature_column]])
             y_test = np.array(clus_testset[target_column])
-
-            # Compute accuracy
-            acc_matrix[clus_idx, clus_idx2] = accuracy_score(y_test, model.predict(X_test))
+            if pytorch_bool:
+                X_test = torch.tensor(np.array([x for x in clus_testset[feature_column]]), dtype=torch.float32)
+                y_test = torch.tensor(y_test, dtype=torch.long)
+                val_dataset = TensorDataset(X_test, y_test)
+                val_loader = DataLoader(val_dataset, batch_size=bs, shuffle=True)
+                
+                model.eval()
+                total_loss = 0
+                total_correct = 0
+                total_samples = 0
+                with torch.no_grad():
+                    for X_batch, y_batch in val_loader:
+                        # Forward pass
+                        outputs = model(X_batch)
+                        loss = criterion(outputs, y_batch)
+                        total_loss += loss.item()
+                        # Compute predictions and accuracy
+                        _, preds = torch.max(outputs, dim=1)
+                        total_correct += (preds == y_batch).sum().item()
+                        total_samples += y_batch.size(0)
+                # Average loss and accuracy
+                average_loss = total_loss / len(val_loader)  # Not using this rn
+                acc_matrix[clus_idx, clus_idx2] = total_correct / total_samples
+            else:
+                X_test = np.array([x.flatten() for x in clus_testset[feature_column]])
+                acc_matrix[clus_idx, clus_idx2] = accuracy_score(y_test, model.predict(X_test))
 
             if verbose:
                 print(f"Model {clus_idx} on Cluster {cluster2}: Accuracy={acc_matrix[clus_idx, clus_idx2]:.4f}")
