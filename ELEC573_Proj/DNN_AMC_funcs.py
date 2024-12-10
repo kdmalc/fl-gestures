@@ -8,6 +8,7 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import accuracy_score
 import matplotlib.pyplot as plt
 import seaborn as sns
+import copy
 
 np.random.seed(42) 
 
@@ -20,8 +21,6 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import StratifiedKFold
 import torch
 from sklearn.metrics import accuracy_score
-
-
 
 
 def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, 
@@ -66,7 +65,7 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids,
 
     total_val_accuracy = 0
     num_folds_processed = 0
-    clus_model_lst = []
+    clus_model_dict = {}
     for cluster in cluster_ids:
         
         #######################################################################
@@ -139,7 +138,7 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids,
                 # No great way to save the models... I really only want to use 1...
                 ## So for now I'll just save the first kfold's model...
                 ## Consistently biased but hopefully the val splits are all roughly equivalent
-                clus_model_lst.append(fold_model)
+                clus_model_dict[cluster] = copy.deepcopy(fold_model)
 
         # REWRITE THIS!!!
         # Average accuracy for this cluster
@@ -157,7 +156,7 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids,
     avg_val_accuracy = total_val_accuracy / num_folds_processed
     #print(f"\nOverall Average Validation Accuracy: {avg_val_accuracy:.4f}")
     
-    return clus_model_lst
+    return clus_model_dict
 
 def DNN_agglo_merge_procedure(data_dfs_dict, model_type, n_splits=2):
     """
@@ -172,11 +171,18 @@ def DNN_agglo_merge_procedure(data_dfs_dict, model_type, n_splits=2):
     num_classes = len(unique_gestures)
     input_dim = len(data_dfs_dict['train']['feature'].iloc[0])
     
-    # Select model
-    if model_type == 'CNN':
-        model = CNNModel(input_dim, num_classes).to('cpu')
-    elif model_type == 'RNN':
-        model = RNNModel(input_dim, num_classes).to('cpu')
+    # Get the model object if a string is provided
+    if isinstance(model_type, str):
+        # Select model
+        if model_type == 'CNN':
+            model = CNNModel(input_dim, num_classes).to('cpu')
+        elif model_type == 'RNN':
+            model = RNNModel(input_dim, num_classes).to('cpu')
+        else:
+            raise ValueError(f"Unsupported model: {model_type}. Only CNNs and RNNs are supported.")
+    else:
+        # Assuming a model object was passed in
+        model = model_type
     initial_state = model.state_dict()
         
     train_df = data_dfs_dict['train']
@@ -188,6 +194,7 @@ def DNN_agglo_merge_procedure(data_dfs_dict, model_type, n_splits=2):
     # Dictionary to store self-performance over iterations
     intra_cluster_performance = {}
     cross_cluster_performance = {}
+    nested_clus_model_dict = {}
     # Simulate cluster merging and model performance tracking
     iterations = 0
     # Main loop for cluster merging
@@ -209,7 +216,9 @@ def DNN_agglo_merge_procedure(data_dfs_dict, model_type, n_splits=2):
 
         # Train models with logging for specified clusters
         ## UPDATED TO DNN VERSION HERE!
-        clus_model_lst = train_and_cv_DNN_cluster_model(train_df, model, current_cluster_ids, n_splits=n_splits)
+        clus_model_dict = train_and_cv_DNN_cluster_model(train_df, model, current_cluster_ids, n_splits=n_splits)
+        nested_clus_model_dict[f"Iter{iterations}"] = copy.deepcopy(clus_model_dict)
+        clus_model_lst = list(clus_model_dict.values())
         # Pairwise test models with logging for specified clusters
         sym_acc_arr = test_models_on_clusters(test_df, clus_model_lst, current_cluster_ids, pytorch_bool=True)
 
@@ -268,4 +277,4 @@ def DNN_agglo_merge_procedure(data_dfs_dict, model_type, n_splits=2):
 
         iterations += 1
     
-    return merge_log, intra_cluster_performance, cross_cluster_performance
+    return merge_log, intra_cluster_performance, cross_cluster_performance, nested_clus_model_dict

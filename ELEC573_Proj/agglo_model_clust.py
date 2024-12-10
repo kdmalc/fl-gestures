@@ -300,13 +300,13 @@ def train_cluster_model(userdef_df, model, cluster_ids, cluster_column='Cluster_
     return model_list
 
 
-def test_models_on_clusters(test_df, trained_clus_models_lst, cluster_ids, cluster_column='Cluster_ID', feature_column='feature', target_column='Gesture_Encoded', verbose=False, pytorch_bool=False, bs=32, criterion=nn.CrossEntropyLoss()):
+def test_models_on_clusters(test_df, trained_clus_models_ds, cluster_ids, cluster_column='Cluster_ID', feature_column='feature', target_column='Gesture_Encoded', verbose=False, pytorch_bool=False, bs=32, criterion=nn.CrossEntropyLoss()):
     """
     Test trained models for each cluster on a pre-split test set.
 
     Parameters:
     - test_df (DataFrame): The test subset of the data.
-    - trained_clus_models_lst (list): List of trained models, one per cluster.
+    - trained_clus_models_ds (list or dict, depending on which NB is used...): List of trained models, one per cluster.
     - cluster_ids (list): List of cluster IDs corresponding to the models.
     - cluster_column (str): Column name representing the cluster IDs.
     - feature_column (str): Column name containing feature arrays.
@@ -324,7 +324,11 @@ def test_models_on_clusters(test_df, trained_clus_models_lst, cluster_ids, clust
         if verbose:
             print(f"Testing model for Cluster ID {cluster} ({clus_idx + 1}/{num_clusters})")
 
-        model = trained_clus_models_lst[clus_idx]
+        #if pytorch_bool:
+        #    model = trained_clus_models_ds[cluster]  # dict version
+        #else:
+        #    model = trained_clus_models_ds[clus_idx]  # list version
+        model = trained_clus_models_ds[clus_idx]
 
         for clus_idx2, cluster2 in enumerate(cluster_ids):
             clus_testset = test_df[test_df[cluster_column] == cluster2]
@@ -399,7 +403,8 @@ def compute_performance_ratios(cluster_performance, cross_cluster_performance):
         cross_mean_lst.append(cross_mean)
         ratio_lst.append(ratio)
         
-        print(f"Cluster {cluster_id}: Intra Mean = {intra_mean:.3f}, Cross Mean = {cross_mean:.3f}, Ratio = {ratio:.3f}")
+        #print(f"Cluster {cluster_id}: Intra Mean = {intra_mean:.3f}, Cross Mean = {cross_mean:.3f}, Ratio = {ratio:.3f}")
+        print(f"Cluster {cluster_id}: Intra Mean = {intra_mean:.3f}, Cross Mean = {cross_mean:.3f}")
 
     return intra_mean_lst, cross_mean_lst, ratio_lst
 

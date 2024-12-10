@@ -8,13 +8,14 @@ from moments_engr import *
 from DNN_FT_funcs import *
 np.random.seed(42) 
 
-path1 = 'C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'
+do_normal_logging = False
+finetune = False
 
+path1 = 'C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'
 with open(path1, 'rb') as file:
     raw_userdef_data_df = pickle.load(file)  # (204800, 19)
 
 userdef_df = raw_userdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_feature_vectors)
-#output is df with particpant, gesture_ID, gesture_num and feature (holds 80 len vector)
 userdef_df = userdef_df.reset_index(drop=True)
 
 all_participants = userdef_df['Participant'].unique()
@@ -53,30 +54,35 @@ results = main_training_pipeline(
 #        'cross_test_performance': cross_test_performance,
 #        'train_accuracy': train_results['accuracy'],
 #        'intra_test_accuracy': intra_test_results['accuracy'],
-#        'cross_test_accuracy': cross_test_results['accuracy']
+#        'cross_test_accuracy': cross_test_results['accuracy'],
+#        'train_loss_log': train_loss_log,
+#        'intra_test_loss_log': intra_test_loss_log,
+#        'cross_test_loss_log': cross_test_loss_log
 #    }
 
-# Fine-tune on first test participant's data
-first_test_participant_data = data_splits['novel_trainFT']
-# Select just the first given participant ID from this dataset, probably for both train_data and labels
+if finetune:
+    # Fine-tune on first test participant's data
+    first_test_participant_data = data_splits['novel_trainFT']
+    # Select just the first given participant ID from this dataset, probably for both train_data and labels
 
-participant_id = 'P132'
-# Filter based on participant_id
-indices = [i for i, pid in enumerate(first_test_participant_data['participant_ids']) if pid == participant_id]
-# Extract the corresponding features and labels
-features_p132 = [first_test_participant_data['features'][i] for i in indices]
-labels_p132 = [first_test_participant_data['labels'][i] for i in indices]
+    participant_id = 'P132'
+    # Filter based on participant_id
+    indices = [i for i, pid in enumerate(first_test_participant_data['participant_ids']) if pid == participant_id]
+    # Extract the corresponding features and labels
+    features_p132 = [first_test_participant_data['features'][i] for i in indices]
+    labels_p132 = [first_test_participant_data['labels'][i] for i in indices]
 
-fine_tuned_model = fine_tune_model(
-    results['model'], 
-    {'features':features_p132, 'labels':labels_p132}
-)
+    fine_tuned_model = fine_tune_model(
+        results['model'], 
+        {'features':features_p132, 'labels':labels_p132}
+    )
 
-# NEED TO EVALUATE FINETUNED MODEL, at least on said user's data...
+    # NEED TO EVALUATE FINETUNED MODEL, at least on said user's data...
 
-# Example usage in main script
-visualize_model_performance(results)
+if do_normal_logging:
+    # Example usage in main script
+    visualize_model_performance(results)
 
-# Example usage in main script
-log_file = log_performance(results)
-print(f"Detailed performance log saved to: {log_file}")
+    # Example usage in main script
+    log_file = log_performance(results)
+    print(f"Detailed performance log saved to: {log_file}")

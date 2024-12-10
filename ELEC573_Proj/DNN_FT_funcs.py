@@ -149,6 +149,7 @@ def prepare_data(df, feature_column, target_column, participants, test_participa
     """
     train_participants = [p for p in participants if p not in test_participants]
     
+    # train_data and intra_subject_test_data are train/test pairs!
     train_data = {
         'feature': [],
         'labels': [],
@@ -159,6 +160,7 @@ def prepare_data(df, feature_column, target_column, participants, test_participa
         'labels': [],
         'participant_ids': []
     }
+    # novel_trainFT_data and cross_subject_test_data are train/test pairs!
     novel_trainFT_data = {
         'feature': [],
         'labels': [],
@@ -186,6 +188,8 @@ def prepare_data(df, feature_column, target_column, participants, test_participa
             max_trials = finetuning_trials_per_gesture
             
         for gesture, group in gesture_groups:
+            # NOTE: This is by gesture, so by def all thelabels will be the same here
+
             # Randomize and select trials
             group_features = np.array([x.flatten() for x in group[feature_column]])
             group_labels = group[target_column].values
@@ -193,7 +197,8 @@ def prepare_data(df, feature_column, target_column, participants, test_participa
             # Randomly select specified number of trials
             indices = np.random.choice(
                 len(group_features), 
-                min(max_trials, len(group_features)), 
+                #min(max_trials, len(group_features)), # This should always be max_trials right...
+                max_trials,
                 replace=False)
 
             train_features = group_features[indices]
@@ -202,8 +207,12 @@ def prepare_data(df, feature_column, target_column, participants, test_participa
             training_dict['labels'].extend(train_labels)
             training_dict['participant_ids'].extend([participant] * len(train_labels))
 
-            test_features = group_features[~indices]
-            test_labels = group_labels[~indices]
+            # Get complementary indices for the test set 
+            all_indices = np.arange(len(group_features)) 
+            test_indices = np.setdiff1d(all_indices, indices)
+
+            test_features = group_features[test_indices]
+            test_labels = group_labels[test_indices]
             testing_dict['feature'].extend(test_features)
             testing_dict['labels'].extend(test_labels)
             testing_dict['participant_ids'].extend([participant] * len(test_labels))
@@ -306,18 +315,16 @@ def gesture_performance_by_participant(predictions, true_labels, participant_ids
 def main_training_pipeline(data_splits, 
                            all_participants, test_participants, 
                            model_type='CNN', bs=32,  
-                           num_epochs=50, criterion=nn.CrossEntropyLoss(), lr=0.001, 
+                           num_epochs=30, criterion=nn.CrossEntropyLoss(), lr=0.001, 
                            use_weight_decay=True, weight_decay=0.01):
     """
     Main training pipeline with comprehensive performance tracking
     
     Args:
     - df: Input DataFrame
-    - feature_column: Column with feature vectors
-    - target_column: Column with encoded gesture labels
     - all_participants: List of all participants
     - test_participants: List of participants to hold out
-    - model_type: 'CNN' or 'RNN'
+    - model_type: 'CNN' or 'RNN' (or the already created model object)
     - training_trials_per_gesture: Trials to use per gesture for training
     - num_epochs: Number of training epochs
     
@@ -360,10 +367,15 @@ def main_training_pipeline(data_splits,
     optimizer = get_optimizer(model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
     
     # Training
+    train_loss_log = []
+    intra_test_loss_log = []
+    cross_test_loss_log = []
     for epoch in range(num_epochs):
-        train_loss = train_model(model, train_loader, optimizer)
+        train_loss_log.append(train_model(model, train_loader, optimizer))
+        intra_test_loss_log.append(evaluate_model(model, intra_test_loader)['loss'])
+        cross_test_loss_log.append(evaluate_model(model, cross_test_loader)['loss'])
     
-    # Evaluation
+    # Evaluation --> One-off final results! Gets used in gesture_performance_by_participant
     train_results = evaluate_model(model, train_loader)
     intra_test_results = evaluate_model(model, intra_test_loader)
     cross_test_results = evaluate_model(model, cross_test_loader)
@@ -400,11 +412,14 @@ def main_training_pipeline(data_splits,
         'cross_test_performance': cross_test_performance,
         'train_accuracy': train_results['accuracy'],
         'intra_test_accuracy': intra_test_results['accuracy'],
-        'cross_test_accuracy': cross_test_results['accuracy']
+        'cross_test_accuracy': cross_test_results['accuracy'], 
+        'train_loss_log': train_loss_log,
+        'intra_test_loss_log': intra_test_loss_log,
+        'cross_test_loss_log': cross_test_loss_log
     }
 
 
-def fine_tune_model(base_model, fine_tune_data, num_epochs=20, lr=0.00001, criterion=nn.CrossEntropyLoss(), 
+def fine_tune_model(base_model, fine_tune_loader, num_epochs=20, lr=0.00001, criterion=nn.CrossEntropyLoss(), 
                     use_weight_decay=True, weight_decay=0.05):
     """
     Fine-tune the base model on a small subset of data
@@ -417,15 +432,10 @@ def fine_tune_model(base_model, fine_tune_data, num_epochs=20, lr=0.00001, crite
     Returns:
     - Fine-tuned model
     """
+    base_model.train()  # Ensure the model is in training mode
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
-    # Create dataset and loader for fine-tuning
-    fine_tune_dataset = GestureDataset(fine_tune_data['features'], fine_tune_data['labels'])
-    fine_tune_loader = DataLoader(fine_tune_dataset, batch_size=16, shuffle=True)
-    
     # Loss and optimizer (with lower learning rate for fine-tuning)
     optimizer = get_optimizer(base_model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
-    
     # Fine-tuning
     for epoch in range(num_epochs):
         train_model(base_model, fine_tune_loader, optimizer)

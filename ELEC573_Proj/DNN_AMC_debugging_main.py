@@ -80,5 +80,71 @@ data_dfs_dict = {'train':train_df, 'test':test_df}
 
 # Need to update Cluster_ID col at the end of each round, for both dfs
 
+'''
+class CNNModel(nn.Module):
+    def __init__(self, input_dim, num_classes, 
+                 use_batch_norm=False, dropout_rate=0.5):
+        super(CNNModel, self).__init__()
+        
+        self.use_batch_norm = use_batch_norm
+        self.dropout_rate = dropout_rate
+        #self.init_params = {"use_batch_norm": self.use_batch_norm, "dropout_rate": self.dropout_rate}
+        
+        # Convolutional Layers
+        self.conv1 = nn.Conv1d(1, 32, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm1d(32) if self.use_batch_norm else nn.Identity()
+        
+        self.conv2 = nn.Conv1d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm1d(64) if self.use_batch_norm else nn.Identity()
+        
+        # Fully Connected Layers
+        self.fc1 = nn.Linear(64 * (input_dim // 4), 128)
+        self.dropout = nn.Dropout(dropout_rate)
+        self.fc2 = nn.Linear(128, num_classes)
+        
+        # Activation and Pooling
+        self.relu = nn.ReLU()
+        self.maxpool = nn.MaxPool1d(2)
+
+    def forward(self, x):
+        # Reshape input to (batch_size, 1, sequence_length)
+        x = x.unsqueeze(1)
+        
+        # Conv Block 1
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+        
+        # Conv Block 2
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+        
+        # Flatten and Fully Connected Layers
+        x = x.view(x.size(0), -1)
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.fc2(x)
+        
+        return x
+
+model = CNNModel(input_dim, num_classes).to('cpu')
+train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
+# Loss and optimizer
+optimizer = get_optimizer(model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
+# Training
+for epoch in range(num_epochs):
+    train_loss = train_model(model, train_loader, optimizer)
+
+# Evaluation
+train_results = evaluate_model(model, train_loader)
+intra_test_results = evaluate_model(model, intra_test_loader)
+cross_test_results = evaluate_model(model, cross_test_loader)
+
+'''
+
 merge_log, intra_cluster_performance, cross_cluster_performance = DNN_agglo_merge_procedure(data_dfs_dict, "CNN", n_splits=2)
 
