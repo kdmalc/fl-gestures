@@ -10,7 +10,6 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import accuracy_score
 
 
 def agglo_merge_procedure(userdef_df, model, mhp_knn_k=5, test_split_percent=0.3, n_splits=2):
@@ -174,81 +173,6 @@ def train_and_cv_cluster_model(train_df, model, cluster_ids, cluster_column='Clu
         'GradientBoosting': GradientBoostingClassifier(random_state=42),
         'KNN': KNeighborsClassifier(n_neighbors=5),
     }
-    
-    # Get the model object if a string is provided
-    if isinstance(model, str):
-        if model not in model_map:
-            raise ValueError(f"Unsupported model: {model}. Choose from {list(model_map.keys())}.")
-        base_model = model_map[model]
-    else:
-        base_model = model
-
-    total_val_accuracy = 0
-    num_folds_processed = 0
-    clus_model_lst = []
-
-    for cluster in cluster_ids:
-        # Filter data for the current cluster
-        cluster_data = train_df[train_df[cluster_column] == cluster]
-        X = np.array([x.flatten() for x in cluster_data[feature_column]])
-        y = np.array(cluster_data[target_column])
-
-        # Stratified K-Fold for validation splits
-        skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
-        cluster_val_accuracy = 0
-        for idx, train_idx, val_idx in enumerate(skf.split(X, y)):
-            X_train, X_val = X[train_idx], X[val_idx]
-            y_train, y_val = y[train_idx], y[val_idx]
-            # Create a fresh model for each fold
-            fold_model = base_model.__class__(**base_model.get_params())
-            fold_model.fit(X_train, y_train)
-            # Predict on the validation set and calculate accuracy
-            y_pred = fold_model.predict(X_val)
-            cluster_val_accuracy += accuracy_score(y_val, y_pred)
-            
-            if idx==0:
-                # No great way to save the models... I really only want to use 1...
-                ## So for now I'll just save the first kfold's model...
-                ## Consistently biased but hopefully the val splits are all roughly equivalent
-                clus_model_lst.append(fold_model)
-
-        # Average accuracy for this cluster
-        cluster_val_accuracy /= n_splits
-        # I think this really ought to append not add...
-        ## TOTAL maintains the acc of the entire process (across all clusters)
-        total_val_accuracy += cluster_val_accuracy
-        num_folds_processed += 1
-
-    # Overall average accuracy across all clusters
-    avg_val_accuracy = total_val_accuracy / num_folds_processed
-    #print(f"\nOverall Average Validation Accuracy: {avg_val_accuracy:.4f}")
-    
-    return clus_model_lst
-
-
-def train_and_cv_DNN_cluster_model(train_df, model, cluster_ids, cluster_column='Cluster_ID', feature_column='feature', target_column='Gesture_Encoded', n_splits=3):
-    """
-    Perform k-fold cross-validation for models trained on each cluster in the dataset.
-    
-    Parameters:
-    - userdef_df (DataFrame): The input dataframe with cluster, feature, and target data.
-    - model (str or sklearn model object): The model to train. If string, it must be one of:
-      ['LogisticRegression', 'SVC', 'RF', 'GradientBoosting', 'KNN'].
-    - cluster_ids (list): List of cluster IDs to process.
-    - cluster_column (str): Column name representing the cluster IDs.
-    - feature_column (str): Column name containing feature arrays.
-    - target_column (str): Column name for target labels.
-    - n_splits (int): Number of cross-validation splits.
-    
-    Returns:
-    - avg_val_accuracy (float): The average validation accuracy across all folds and clusters.
-    """
-    
-    # Select model
-    if model_type == 'CNN':
-        model = CNNModel(input_dim, num_classes).to('cpu')
-    elif model_type == 'RNN':
-        model = RNNModel(input_dim, num_classes).to('cpu')
     
     # Get the model object if a string is provided
     if isinstance(model, str):
