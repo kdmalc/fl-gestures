@@ -27,6 +27,9 @@ class CNNModel(nn.Module):
     def __init__(self, input_dim, num_classes, 
                  use_batch_norm=False, dropout_rate=0.5):
         super(CNNModel, self).__init__()
+
+        self.input_dim = input_dim
+        self.num_classes = num_classes
         
         self.use_batch_norm = use_batch_norm
         self.dropout_rate = dropout_rate
@@ -419,7 +422,7 @@ def main_training_pipeline(data_splits,
     }
 
 
-def fine_tune_model(base_model, fine_tune_loader, num_epochs=20, lr=0.00001, criterion=nn.CrossEntropyLoss(), 
+def fine_tune_model(base_model, fine_tune_loader, test_loader=None, num_epochs=20, lr=0.00001, criterion=nn.CrossEntropyLoss(), 
                     use_weight_decay=True, weight_decay=0.05):
     """
     Fine-tune the base model on a small subset of data
@@ -437,10 +440,14 @@ def fine_tune_model(base_model, fine_tune_loader, num_epochs=20, lr=0.00001, cri
     # Loss and optimizer (with lower learning rate for fine-tuning)
     optimizer = get_optimizer(base_model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
     # Fine-tuning
+    train_loss_log = []
+    test_loss_log = []
     for epoch in range(num_epochs):
-        train_model(base_model, fine_tune_loader, optimizer)
-    
-    return base_model
+        train_loss_log.append(train_model(base_model, fine_tune_loader, optimizer))
+        if test_loader is not None:
+            test_loss_log.append(evaluate_model(base_model, test_loader, optimizer)['loss'])
+
+    return base_model, train_loss_log, test_loss_log
 
 
 def plot_gesture_performance(performance_dict, title, save_filename, save_path="ELEC573_Proj\\results\\heatmaps"):
