@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 #import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
+from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,6 +9,7 @@ import seaborn as sns
 import os
 import sys
 from datetime import datetime
+import copy
 
 
 class GestureDataset(Dataset):
@@ -422,7 +423,7 @@ def main_training_pipeline(data_splits,
     }
 
 
-def fine_tune_model(base_model, fine_tune_loader, test_loader=None, num_epochs=20, lr=0.00001, criterion=nn.CrossEntropyLoss(), 
+def fine_tune_model(finetuned_model, fine_tune_loader, test_loader=None, num_epochs=20, lr=0.00001, criterion=nn.CrossEntropyLoss(), 
                     use_weight_decay=True, weight_decay=0.05):
     """
     Fine-tune the base model on a small subset of data
@@ -435,19 +436,26 @@ def fine_tune_model(base_model, fine_tune_loader, test_loader=None, num_epochs=2
     Returns:
     - Fine-tuned model
     """
-    base_model.train()  # Ensure the model is in training mode
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    # Extract the original pretrained model weights since finetuning happens in place
+    frozen_base_model_state = copy.deepcopy(finetuned_model.state_dict())
+
+    finetuned_model.train()  # Ensure the model is in training mode
     # Loss and optimizer (with lower learning rate for fine-tuning)
-    optimizer = get_optimizer(base_model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
+    optimizer = get_optimizer(finetuned_model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
     # Fine-tuning
     train_loss_log = []
     test_loss_log = []
     for epoch in range(num_epochs):
-        train_loss_log.append(train_model(base_model, fine_tune_loader, optimizer))
+        train_loss_log.append(train_model(finetuned_model, fine_tune_loader, optimizer))
         if test_loader is not None:
-            test_loss_log.append(evaluate_model(base_model, test_loader, optimizer)['loss'])
+            test_loss_log.append(evaluate_model(finetuned_model, test_loader)['loss'])
 
-    return base_model, train_loss_log, test_loss_log
+    original_model = finetuned_model.__class__(input_dim=finetuned_model.input_dim, num_classes=finetuned_model.num_classes)  
+    original_model.load_state_dict(frozen_base_model_state)  # Load pretrained weights into the new model
+    assert(not finetuned_model == original_model)
+
+    return finetuned_model, original_model, train_loss_log, test_loss_log
 
 
 def plot_gesture_performance(performance_dict, title, save_filename, save_path="ELEC573_Proj\\results\\heatmaps"):
