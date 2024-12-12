@@ -1,0 +1,9 @@
+.83/.139/.97 (SUPER OVERFIT) : lr=0.001, bs=128, num_ep=70, adam, wd=0.0001, dr=0.3, num_conv=3, 32/64/128, k=3, s=2, m=2, bn=True
+.81/.138/.917 : lr=0.0001, bs=32, num_ep=50, adam, wd=0.0001, dr=0.3, num_conv=3, 32/64/128, k=5, s=2, m=1, bn=True
+.806/.135/.903 : lr=0.001, bs=128, num_ep=70, adam, wd=0, dr=0.3, num_conv=3, 16/32/64, k=5, s=2, m=1, bn=True
+.806/.127/.894 : lr=0.0001, bs=32, num_ep=70, adam, wd=0.0001, dr=0.3, num_conv=3, 32/64/128, k=5, s=1, m=1, bn=True
+
+GENERAL BEST
+- adam, 3 conv layers, use batch norm
+Good but not as clear:
+- lr=0.001, 0.0001, bs=128/32, conv_layer_sizes=[32, 64, 128], st=2
