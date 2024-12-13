@@ -11,6 +11,8 @@ import sys
 from datetime import datetime
 import copy
 
+from model_classes import *
+
 
 class GestureDataset(Dataset):
     def __init__(self, features, labels):
@@ -24,60 +26,6 @@ class GestureDataset(Dataset):
         return self.features[idx], self.labels[idx]
 
 
-class CNNModel(nn.Module):
-    def __init__(self, input_dim, num_classes, 
-                 use_batch_norm=False, dropout_rate=0.5):
-        super(CNNModel, self).__init__()
-
-        self.input_dim = input_dim
-        self.num_classes = num_classes
-        
-        self.use_batch_norm = use_batch_norm
-        self.dropout_rate = dropout_rate
-        #self.init_params = {"use_batch_norm": self.use_batch_norm, "dropout_rate": self.dropout_rate}
-        
-        # Convolutional Layers
-        self.conv1 = nn.Conv1d(1, 32, kernel_size=3, stride=1, padding=1)
-        self.bn1 = nn.BatchNorm1d(32) if self.use_batch_norm else nn.Identity()
-        
-        self.conv2 = nn.Conv1d(32, 64, kernel_size=3, stride=1, padding=1)
-        self.bn2 = nn.BatchNorm1d(64) if self.use_batch_norm else nn.Identity()
-        
-        # Fully Connected Layers
-        self.fc1 = nn.Linear(64 * (input_dim // 4), 128)
-        self.dropout = nn.Dropout(dropout_rate)
-        self.fc2 = nn.Linear(128, num_classes)
-        
-        # Activation and Pooling
-        self.relu = nn.ReLU()
-        self.maxpool = nn.MaxPool1d(2)
-
-    def forward(self, x):
-        # Reshape input to (batch_size, 1, sequence_length)
-        x = x.unsqueeze(1)
-        
-        # Conv Block 1
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
-        
-        # Conv Block 2
-        x = self.conv2(x)
-        x = self.bn2(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
-        
-        # Flatten and Fully Connected Layers
-        x = x.view(x.size(0), -1)
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.dropout(x)
-        x = self.fc2(x)
-        
-        return x
-
-
 def get_optimizer(model, lr=0.001, use_weight_decay=False, weight_decay=0.01, optimizer_name="ADAM"):
     """Configure optimizer with optional weight decay."""
 
@@ -89,50 +37,6 @@ def get_optimizer(model, lr=0.001, use_weight_decay=False, weight_decay=0.01, op
     else:
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     return optimizer
-
-
-class RNNModel(nn.Module):
-    def __init__(self, input_dim, num_classes, 
-                 rnn_type="LSTM", hidden_size=64, num_layers=2, 
-                 use_batch_norm=False, dropout_rate=0.5):
-        super(RNNModel, self).__init__()
-        
-        self.use_batch_norm = use_batch_norm
-        self.dropout_rate = dropout_rate
-        self.rnn_type = rnn_type
-
-        # RNN Layer (LSTM/GRU configurable)
-        if rnn_type == "LSTM":
-            self.rnn = nn.LSTM(input_size=1, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
-        elif rnn_type == "GRU":
-            self.rnn = nn.GRU(input_size=1, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
-        else:
-            raise ValueError("Invalid rnn_type. Choose 'LSTM' or 'GRU'.")
-        
-        # Batch Norm for RNN Output
-        self.bn = nn.BatchNorm1d(hidden_size) if self.use_batch_norm else nn.Identity()
-        
-        # Fully Connected Layers
-        self.fc = nn.Sequential(
-            nn.Linear(hidden_size, 128),
-            nn.ReLU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(128, num_classes)
-        )
-
-    def forward(self, x):
-        # Reshape input to (batch_size, sequence_length, 1)
-        x = x.unsqueeze(-1)
-        
-        if self.rnn_type == "LSTM":
-            _, (hidden, _) = self.rnn(x)  # LSTM returns (output, (hidden_state, cell_state))
-        else:
-            _, hidden = self.rnn(x)  # GRU returns (output, hidden_state)
-        
-        # Take the last layer's hidden state
-        x = hidden[-1]  # Shape: (batch_size, hidden_size)
-        x = self.bn(x)  # Apply batch normalization if enabled
-        return self.fc(x)
 
 
 def prepare_data(df, feature_column, target_column, participants, test_participants, 
@@ -320,7 +224,8 @@ def main_training_pipeline(data_splits,
                            all_participants, test_participants, 
                            model_type='CNN', bs=32,  
                            num_epochs=30, criterion=nn.CrossEntropyLoss(), lr=0.001, 
-                           use_weight_decay=True, weight_decay=0.01):
+                           use_weight_decay=True, weight_decay=0.01, config=None,
+                           train_intra_cross_loaders=None):
     """
     Main training pipeline with comprehensive performance tracking
     
@@ -335,37 +240,55 @@ def main_training_pipeline(data_splits,
     Returns:
     - Trained model, performance metrics
     """
+
+    if config is not None:
+        bs = config["batch_size"]
+        #criterion = config["criterion"]  # This doesnt exist rn
+        lr = config["learning_rate"]
+        weight_decay = config["weight_decay"]
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # Unique gestures and number of classes
     unique_gestures = np.unique(data_splits['train']['labels'])
     num_classes = len(unique_gestures)
-    input_dim = data_splits['train']['features'].shape[1]
+    input_dim = data_splits['train']['feature'].shape[1]
     
     # Select model
-    if model_type == 'CNN':
-        model = CNNModel(input_dim, num_classes).to(device)
-    elif model_type == 'RNN':
-        model = RNNModel(input_dim, num_classes).to(device)
-    
-    # Datasets and loaders
-    train_dataset = GestureDataset(
-        data_splits['train']['features'], 
-        data_splits['train']['labels']
-    )
-    train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
-    
-    # INTRA SUBJECT
-    intra_test_dataset = GestureDataset(
-        data_splits['intra_subject_test']['features'], 
-        data_splits['intra_subject_test']['labels'])
-    intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False)
+    if isinstance(model_type, str):
+        if model_type == 'CNN':
+            if config is None:
+                model = CNNModel(input_dim, num_classes).to(device)
+            else:
+                model = CNNModel_3layer(config, input_dim=80, num_classes=10)
+        elif model_type == 'RNN':
+            model = RNNModel(input_dim, num_classes).to(device)
+    else:
+        model = model_type
 
-    # CROSS SUBJECT
-    cross_test_dataset = GestureDataset(
-        data_splits['cross_subject_test']['features'], 
-        data_splits['cross_subject_test']['labels'])
-    cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False)
+    if train_intra_cross_loaders is None:
+        # Datasets and loaders
+        train_dataset = GestureDataset(
+            data_splits['train']['feature'], 
+            data_splits['train']['labels']
+        )
+        train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
+        
+        # INTRA SUBJECT
+        intra_test_dataset = GestureDataset(
+            data_splits['intra_subject_test']['feature'], 
+            data_splits['intra_subject_test']['labels'])
+        intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False)
+
+        # CROSS SUBJECT
+        cross_test_dataset = GestureDataset(
+            data_splits['cross_subject_test']['feature'], 
+            data_splits['cross_subject_test']['labels'])
+        cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False)
+    else:
+        train_loader = train_intra_cross_loaders[0]
+        intra_test_loader = train_intra_cross_loaders[1]
+        cross_test_loader = train_intra_cross_loaders[2]
     
     # Loss and optimizer
     optimizer = get_optimizer(model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
@@ -690,8 +613,8 @@ def log_performance(results, log_dir='ELEC573_Proj\\results\\performance_logs', 
         # Overall Model Performance
         print("\nOverall Model Performance:")
         print(f"Training Accuracy: {results['train_accuracy']:.2%}")
-        print(f"Testing Accuracy: {results['intra_test_accuracy']:.2%}")
-        print(f"Testing Accuracy: {results['cross_test_accuracy']:.2%}")
+        print(f"Intra Testing Accuracy: {results['intra_test_accuracy']:.2%}")
+        print(f"Cross Testing Accuracy: {results['cross_test_accuracy']:.2%}")
     
     finally:
         # Restore stdout

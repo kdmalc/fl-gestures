@@ -7,9 +7,31 @@ from sklearn.preprocessing import LabelEncoder
 from moments_engr import *
 from DNN_FT_funcs import *
 np.random.seed(42) 
+import os
+cwd = os.getcwd()
+print("Current Working Directory: ", cwd)
 
-do_normal_logging = False
+
 finetune = False
+do_normal_logging = True
+
+config = {
+    "learning_rate": 0.0001,
+    "batch_size": 32,
+    "num_epochs": 50,
+    "optimizer": "adam",
+    "weight_decay": 1e-4,
+    "dropout_rate": 0.3,
+    "num_conv_layers": 3,
+    "conv_layer_sizes": [32, 64, 128], 
+    "kernel_size": 5,
+    "stride": 2,
+    "padding": 1,
+    "maxpool": 1,
+    "use_batchnorm": True
+}
+
+##################################################
 
 path1 = 'C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'
 with open(path1, 'rb') as file:
@@ -44,96 +66,11 @@ results = main_training_pipeline(
     all_participants=all_participants, 
     test_participants=test_participants,
     model_type='CNN',  # Or 'RNN'
-    num_epochs=50
-)
-# RESULTS CONTAINS:
-#{
-#        'model': model,
-#        'train_performance': train_performance,
-#        'intra_test_performance': intra_test_performance,
-#        'cross_test_performance': cross_test_performance,
-#        'train_accuracy': train_results['accuracy'],
-#        'intra_test_accuracy': intra_test_results['accuracy'],
-#        'cross_test_accuracy': cross_test_results['accuracy'],
-#        'train_loss_log': train_loss_log,
-#        'intra_test_loss_log': intra_test_loss_log,
-#        'cross_test_loss_log': cross_test_loss_log
-#    }
+    num_epochs=50, config=config)
 
-'''
-
-class CNNModel(nn.Module):
-    def __init__(self, input_dim, num_classes, 
-                 use_batch_norm=False, dropout_rate=0.5):
-        super(CNNModel, self).__init__()
-        
-        self.use_batch_norm = use_batch_norm
-        self.dropout_rate = dropout_rate
-        #self.init_params = {"use_batch_norm": self.use_batch_norm, "dropout_rate": self.dropout_rate}
-        
-        # Convolutional Layers
-        self.conv1 = nn.Conv1d(1, 32, kernel_size=3, stride=1, padding=1)
-        self.bn1 = nn.BatchNorm1d(32) if self.use_batch_norm else nn.Identity()
-        
-        self.conv2 = nn.Conv1d(32, 64, kernel_size=3, stride=1, padding=1)
-        self.bn2 = nn.BatchNorm1d(64) if self.use_batch_norm else nn.Identity()
-        
-        # Fully Connected Layers
-        self.fc1 = nn.Linear(64 * (input_dim // 4), 128)
-        self.dropout = nn.Dropout(dropout_rate)
-        self.fc2 = nn.Linear(128, num_classes)
-        
-        # Activation and Pooling
-        self.relu = nn.ReLU()
-        self.maxpool = nn.MaxPool1d(2)
-
-    def forward(self, x):
-        # Reshape input to (batch_size, 1, sequence_length)
-        x = x.unsqueeze(1)
-        
-        # Conv Block 1
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
-        
-        # Conv Block 2
-        x = self.conv2(x)
-        x = self.bn2(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
-        
-        # Flatten and Fully Connected Layers
-        x = x.view(x.size(0), -1)
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.dropout(x)
-        x = self.fc2(x)
-        
-        return x
-
-model = CNNModel(input_dim, num_classes).to('cpu')
-train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
-# Loss and optimizer
-optimizer = get_optimizer(model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
-# Training
-for epoch in range(num_epochs):
-    train_loss = train_model(model, train_loader, optimizer)
-
-# Evaluation
-train_results = evaluate_model(model, train_loader)
-intra_test_results = evaluate_model(model, intra_test_loader)
-cross_test_results = evaluate_model(model, cross_test_loader)
-
-'''
-
-
-
-
-
-
-
-
+full_path = os.path.join(cwd, 'ELEC573_Proj', 'models', 'generic_CNN_model.pth')
+print("Full Path:", full_path)
+torch.save(results["model"].state_dict(), full_path)
 
 if finetune:
     # Fine-tune on first test participant's data

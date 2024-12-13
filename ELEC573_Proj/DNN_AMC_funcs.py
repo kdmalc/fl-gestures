@@ -1,13 +1,9 @@
 import pandas as pd
 import pickle
 import numpy as np
-from sklearn.model_selection import KFold
-from sklearn.preprocessing import LabelEncoder
 from sklearn.cross_decomposition import CCA
 from sklearn.decomposition import PCA
 from sklearn.metrics import accuracy_score
-import matplotlib.pyplot as plt
-import seaborn as sns
 import copy
 
 np.random.seed(42) 
@@ -15,7 +11,6 @@ np.random.seed(42)
 from moments_engr import *
 from agglo_model_clust import *
 from DNN_FT_funcs import *
-
 
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import StratifiedKFold
