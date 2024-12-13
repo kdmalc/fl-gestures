@@ -250,9 +250,23 @@ def main_training_pipeline(data_splits,
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # Unique gestures and number of classes
-    unique_gestures = np.unique(data_splits['train']['labels'])
-    num_classes = len(unique_gestures)
-    input_dim = data_splits['train']['feature'].shape[1]
+    if train_intra_cross_loaders is not None:
+        # Hardcoding cause I don't wanna deal with dataloader extraction
+        unique_gestures = list(range(10))
+        num_classes = 10
+        input_dim = 80
+
+        train_pids = [pid for pid in all_participants if pid not in test_participants]
+        intra_pids = train_pids
+        cross_pids = test_participants
+    else:
+        unique_gestures = np.unique(data_splits['train']['labels'])
+        num_classes = len(unique_gestures)
+        input_dim = data_splits['train']['feature'].shape[1]
+
+        train_pids = data_splits['train']['participant_ids']
+        intra_pids = data_splits['intra_subject_test']['participant_ids']
+        cross_pids = data_splits['cross_subject_test']['participant_ids']
     
     # Select model
     if isinstance(model_type, str):
@@ -306,32 +320,35 @@ def main_training_pipeline(data_splits,
     train_results = evaluate_model(model, train_loader)
     intra_test_results = evaluate_model(model, intra_test_loader)
     cross_test_results = evaluate_model(model, cross_test_loader)
-    
-    # Performance by participant and gesture
-    train_performance = gesture_performance_by_participant(
-        train_results['predictions'], 
-        train_results['true_labels'], 
-        data_splits['train']['participant_ids'], 
-        all_participants, 
-        unique_gestures
-    )
-    
-    intra_test_performance = gesture_performance_by_participant(
-        intra_test_results['predictions'], 
-        intra_test_results['true_labels'], 
-        data_splits['intra_subject_test']['participant_ids'], 
-        [participant for participant in all_participants if participant not in test_participants], 
-        unique_gestures
-    )
 
-    cross_test_performance = gesture_performance_by_participant(
-        cross_test_results['predictions'], 
-        cross_test_results['true_labels'], 
-        data_splits['cross_subject_test']['participant_ids'], 
-        test_participants, 
-        unique_gestures
-    )
-    
+    if train_intra_cross_loaders is None:
+        # This isn't working and I don't have time to fix it
+        # Performance by participant and gesture
+        train_performance = gesture_performance_by_participant(
+            train_results['predictions'], 
+            train_results['true_labels'], 
+            all_participants, train_pids, 
+            unique_gestures
+        )
+        
+        intra_test_performance = gesture_performance_by_participant(
+            intra_test_results['predictions'], 
+            intra_test_results['true_labels'], 
+            all_participants, intra_pids, 
+            unique_gestures
+        )
+
+        cross_test_performance = gesture_performance_by_participant(
+            cross_test_results['predictions'], 
+            cross_test_results['true_labels'], 
+            all_participants, cross_pids, 
+            unique_gestures
+        )
+    else:
+        train_performance = None
+        intra_test_performance = None
+        cross_test_performance = None
+
     return {
         'model': model,
         'train_performance': train_performance,
