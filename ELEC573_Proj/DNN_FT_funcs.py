@@ -538,7 +538,7 @@ def visualize_model_performance(results, print_results=False):
         print(f"Cross Testing Accuracy: {results['cross_test_accuracy']:.2%}")
 
 
-def log_performance(results, log_dir='ELEC573_Proj\\results\\performance_logs', base_filename='model_performance'):
+def log_performance(results, log_dir='ELEC573_Proj\\results\\performance_logs', base_filename='model_performance', config=None):
     """
     Comprehensive logging of model performance
     
@@ -576,6 +576,14 @@ def log_performance(results, log_dir='ELEC573_Proj\\results\\performance_logs', 
     sys.stdout = Logger(log_path)
     
     try:
+        if config is not None:
+            for key, value in config.items():
+                # Handle list values separately for better formatting
+                if isinstance(value, list):
+                    print(f"{key}: {', '.join(map(str, value))}\n")
+                else:
+                    print(f"{key}: {value}\n")
+
         # Perform visualization and logging
         print("Model Performance Analysis")
         print("=" * 30)

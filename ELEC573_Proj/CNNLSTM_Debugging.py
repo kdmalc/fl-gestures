@@ -49,6 +49,9 @@ dynamicCNN_config = {
     "dropout_rate": 0.5
 }
 
+MY_CONFIG = dynamicCNN_config
+MODEL_STR = 'CNN'  # [CNN, RNN, HybridCNNLSTM, CRNN, EMGHandNet]
+
 ##################################################
 
 path1 = 'C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'
@@ -83,7 +86,7 @@ results = main_training_pipeline(
     data_splits, 
     all_participants=all_participants, 
     test_participants=test_participants,
-    model_type='CNN',  # [CNN, RNN, HybridCNNLSTM, CRNN, EMGHandNet]
+    model_type=MODEL_STR,
     num_epochs=50, config=dynamicCNN_config)
 
 full_path = os.path.join(cwd, 'ELEC573_Proj', 'models', 'generic_CNN_model.pth')
@@ -112,5 +115,5 @@ if finetune:
 if do_normal_logging:
     visualize_model_performance(results)
 
-    log_file = log_performance(results)
+    log_file = log_performance(results, base_filename=MODEL_STR, config=MY_CONFIG)
     print(f"Detailed performance log saved to: {log_file}")
