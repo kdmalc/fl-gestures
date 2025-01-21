@@ -1,5 +1,4 @@
 import pandas as pd
-import pickle
 import numpy as np
 from sklearn.cross_decomposition import CCA
 from sklearn.decomposition import PCA
