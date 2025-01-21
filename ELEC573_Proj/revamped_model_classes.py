@@ -353,3 +353,73 @@ class CRNN(nn.Module):
 # Example usage
 #model = CRNN(input_channels=8, window_size=100, num_classes=6)  # Example: 8 input channels, window size=100, 6 output classes
 #print(model)
+
+
+class HybridCNNLSTM(nn.Module):
+    def __init__(self):
+        super(HybridCNNLSTM, self).__init__()
+
+        # CNN Branch for Spatial Feature Extraction
+        self.cnn_branch = nn.Sequential(
+            nn.BatchNorm2d(1),  # Input shape: (batch_size, 1, 300, 16)
+            nn.Conv2d(1, 64, kernel_size=(5, 5), stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=(2, 2)),
+            nn.Conv2d(64, 64, kernel_size=(3, 3), stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=(2, 2)),
+            nn.Conv2d(64, 64, kernel_size=(1, 1)),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=(1, 1)),
+            nn.ReLU()
+        )
+
+        # Fully connected layers for CNN features
+        self.cnn_fc = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(64 * 74 * 4, 512),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(256, 128),
+        )
+
+        # LSTM Branch for Temporal Feature Extraction
+        self.lstm = nn.LSTM(input_size=16, hidden_size=256, num_layers=3, batch_first=True, dropout=0.5)
+        self.lstm_fc = nn.Linear(256, 128)
+
+        # Fusion and Classification
+        self.fusion_fc = nn.Sequential(
+            nn.Linear(128 + 128, 128),  # Fusion of CNNFeat and LSTMFeat
+            nn.ReLU(),
+            nn.Dropout(p=0.5),
+            nn.Linear(128, 64)
+        )
+
+    def forward(self, x):
+        # Input shape: (batch_size, 300, 16)
+        batch_size, sequence_len, features = x.size()
+
+        # CNN Branch
+        cnn_input = x.unsqueeze(1)  # Shape: (batch_size, 1, 300, 16)
+        cnn_features = self.cnn_branch(cnn_input)  # Shape: (batch_size, 64, 74, 4)
+        cnn_features = self.cnn_fc(cnn_features)  # Shape: (batch_size, 128)
+
+        # LSTM Branch
+        lstm_input = x  # Shape: (batch_size, 300, 16)
+        lstm_out, _ = self.lstm(lstm_input)  # Shape: (batch_size, 300, 256)
+        lstm_features = self.lstm_fc(lstm_out[:, -1, :])  # Take the last time step, shape: (batch_size, 128)
+
+        # Feature Fusion
+        hybrid_features = torch.cat((cnn_features, lstm_features), dim=1)  # Shape: (batch_size, 256)
+        output = self.fusion_fc(hybrid_features)  # Shape: (batch_size, 64)
+
+        return output
+
+# Example usage
+#model = HybridCNNLSTM()
+#example_input = torch.randn(8, 300, 16)  # Batch size: 8, 300 frames, 16 features per frame
+#output = model(example_input)
+#print("Output shape:", output.shape)  # Expected shape: (8, 64)
