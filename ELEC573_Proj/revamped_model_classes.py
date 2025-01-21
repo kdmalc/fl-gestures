@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 # Utility functions for modular design
@@ -192,10 +193,6 @@ class CNNLSTMModel(nn.Module):
 #print(output.shape)  # Should output (32, 10) for 10 gesture classes
 
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
 class EMGHandNet(nn.Module):
     def __init__(self, input_channels, num_classes, F1=64, F2=128, NL=128):
         """
@@ -207,6 +204,9 @@ class EMGHandNet(nn.Module):
         - NL (int): Number of LSTM units in each Bi-LSTM layer.
         """
         super(EMGHandNet, self).__init__()
+        self.F1 = F1
+        self.F2 = F2
+        self.NL = NL
         
         # CNN layers
         self.conv1 = nn.Conv1d(input_channels, 32, kernel_size=3, stride=1, padding=1)
@@ -250,7 +250,7 @@ class EMGHandNet(nn.Module):
         x, _ = self.bi_lstm2(x)  # Output size: (batch_size, SL, 2 * NL)
         
         # Flatten and process with dense layers
-        x = x.view(-1, 2 * NL)  # Flatten: (batch_size * SL, 2 * NL)
+        x = x.view(-1, 2 * self.NL)  # Flatten: (batch_size * SL, 2 * NL)
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         
@@ -264,10 +264,6 @@ class EMGHandNet(nn.Module):
 #model = EMGHandNet(input_channels=8, num_classes=6)  # Example: 8 input channels, 6 output classes
 #print(model)
 
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 
 class CRNN(nn.Module):
     def __init__(self, input_channels, window_size, num_classes, lstm_size_multiplier=3):

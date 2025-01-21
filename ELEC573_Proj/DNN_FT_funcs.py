@@ -11,7 +11,8 @@ import sys
 from datetime import datetime
 import copy
 
-from model_classes import *
+#from model_classes import *
+from revamped_model_classes import *
 
 
 class GestureDataset(Dataset):
@@ -26,7 +27,7 @@ class GestureDataset(Dataset):
         return self.features[idx], self.labels[idx]
 
 
-def get_optimizer(model, lr=0.001, use_weight_decay=False, weight_decay=0.01, optimizer_name="ADAM"):
+def set_optimizer(model, lr=0.001, use_weight_decay=False, weight_decay=0.01, optimizer_name="ADAM"):
     """Configure optimizer with optional weight decay."""
 
     if optimizer_name!="ADAM":
@@ -192,8 +193,8 @@ def evaluate_model(model, dataloader, criterion=nn.CrossEntropyLoss(), device=No
     }
 
 
-def gesture_performance_by_participant(predictions, true_labels, participant_ids, 
-                                        unique_participants, unique_gestures):
+def gesture_performance_by_participant(predictions, true_labels, unique_participants, 
+                                       all_shuffled_participant_ids, unique_gestures):
     """
     Calculate performance metrics for each participant and gesture
     
@@ -203,7 +204,7 @@ def gesture_performance_by_participant(predictions, true_labels, participant_ids
     performance = {}
     
     for participant in unique_participants:
-        participant_mask = np.array(participant_ids) == participant
+        participant_mask = np.array(all_shuffled_participant_ids) == participant
         participant_preds = np.array(predictions)[participant_mask]
         participant_true = np.array(true_labels)[participant_mask]
         
@@ -220,11 +221,9 @@ def gesture_performance_by_participant(predictions, true_labels, participant_ids
     return performance
 
 
-def main_training_pipeline(data_splits, 
-                           all_participants, test_participants, 
-                           model_type='CNN', bs=32,  
-                           num_epochs=30, criterion=nn.CrossEntropyLoss(), lr=0.001, 
-                           use_weight_decay=True, weight_decay=0.01, config=None,
+def main_training_pipeline(data_splits, all_participants, test_participants, 
+                           model_type='CNN', num_epochs=30,
+                           use_weight_decay=True, config=None,
                            train_intra_cross_loaders=None):
     """
     Main training pipeline with comprehensive performance tracking
@@ -246,6 +245,10 @@ def main_training_pipeline(data_splits,
         #criterion = config["criterion"]  # This doesnt exist rn
         lr = config["learning_rate"]
         weight_decay = config["weight_decay"]
+    else:
+        bs = 32
+        lr = 0.001
+        weight_decay = 0.01
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
@@ -274,9 +277,18 @@ def main_training_pipeline(data_splits,
             if config is None:
                 model = CNNModel(input_dim, num_classes).to(device)
             else:
-                model = CNNModel_3layer(config, input_dim=80, num_classes=10)
+                #model = CNNModel_3layer(config, input_dim=80, num_classes=10)
+                model = DynamicCNNModel(config, input_dim=80, num_classes=10)
         elif model_type == 'RNN':
             model = RNNModel(input_dim, num_classes).to(device)
+        elif model_type == 'HybridCNNLSTM':
+            model = HybridCNNLSTM()
+        elif model_type == 'CRNN':
+            model = CRNN(input_channels=8, window_size=100, num_classes=6)  # Example: 8 input channels, window size=100, 6 output classes
+        elif model_type == 'EMGHandNet':
+            model = EMGHandNet(input_channels=8, num_classes=6)  # Example: 8 input channels, 6 output classes
+        else:
+            raise ValueError(f"{model_type} not recognized.")
     else:
         model = model_type
 
@@ -305,7 +317,7 @@ def main_training_pipeline(data_splits,
         cross_test_loader = train_intra_cross_loaders[2]
     
     # Loss and optimizer
-    optimizer = get_optimizer(model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
+    optimizer = set_optimizer(model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
     
     # Training
     train_loss_log = []
@@ -382,7 +394,7 @@ def fine_tune_model(finetuned_model, fine_tune_loader, test_loader=None, num_epo
 
     finetuned_model.train()  # Ensure the model is in training mode
     # Loss and optimizer (with lower learning rate for fine-tuning)
-    optimizer = get_optimizer(finetuned_model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
+    optimizer = set_optimizer(finetuned_model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
     # Fine-tuning
     train_loss_log = []
     test_loss_log = []
