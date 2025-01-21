@@ -156,7 +156,7 @@ def DNN_agglo_merge_procedure(data_dfs_dict, model_type, n_splits=2):
     """
     Parameters:
     - model (str or sklearn model object): The model to train. If string, it must be one of:
-      ['LogisticRegression', 'SVC', 'RF', 'GradientBoosting', 'KNN', 'XGBoost'].
+      ['CNN', 'RNN', 'CNN-LSTM'].
     """
     
     #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -172,6 +172,8 @@ def DNN_agglo_merge_procedure(data_dfs_dict, model_type, n_splits=2):
             model = CNNModel(input_dim, num_classes).to('cpu')
         elif model_type == 'RNN':
             model = RNNModel(input_dim, num_classes).to('cpu')
+        elif model_type == 'CNN-LSTM':
+            model = CNNLSTMModel(input_dim, num_classes).to('cpu')
         else:
             raise ValueError(f"Unsupported model: {model_type}. Only CNNs and RNNs are supported.")
     else:

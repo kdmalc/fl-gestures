@@ -110,7 +110,7 @@ class DynamicCNNModel(nn.Module):
         return self.fc(x)
 
 
-class CNNLSTM(nn.Module):
+class CNNLSTMModel(nn.Module):
     def __init__(
         self,
         input_channels=1,
@@ -123,7 +123,7 @@ class CNNLSTM(nn.Module):
         time_steps=64,
         feature_size=16
     ):
-        super(CNNLSTM, self).__init__()
+        super(CNNLSTMModel, self).__init__()
         self.cnn_filters = cnn_filters
         self.kernel_size = kernel_size
         self.pool_size = pool_size
@@ -190,3 +190,166 @@ class CNNLSTM(nn.Module):
 #dummy_input = torch.randn(32, 1, 64, 16)  # 32 samples, single channel, 64x16 input
 #output = model(dummy_input)
 #print(output.shape)  # Should output (32, 10) for 10 gesture classes
+
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class EMGHandNet(nn.Module):
+    def __init__(self, input_channels, num_classes, F1=64, F2=128, NL=128):
+        """
+        Args:
+        - input_channels (int): Number of input channels (NC).
+        - num_classes (int): Number of output classes for the classification task.
+        - F1 (int): Number of filters in the final CNN output.
+        - F2 (int): Flattened feature vector size.
+        - NL (int): Number of LSTM units in each Bi-LSTM layer.
+        """
+        super(EMGHandNet, self).__init__()
+        
+        # CNN layers
+        self.conv1 = nn.Conv1d(input_channels, 32, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv1d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.conv3 = nn.Conv1d(64, F1, kernel_size=3, stride=1, padding=1)
+        self.conv4 = nn.Conv1d(F1, F1, kernel_size=3, stride=1, padding=1)
+        
+        # Bi-LSTM layers
+        self.bi_lstm1 = nn.LSTM(F1, NL, bidirectional=True, batch_first=True)
+        self.bi_lstm2 = nn.LSTM(2 * NL, NL, bidirectional=True, batch_first=True)
+        
+        # Dense layers
+        self.fc1 = nn.Linear(2 * NL, F2)
+        self.fc2 = nn.Linear(F2, num_classes)
+        
+    def forward(self, x):
+        """
+        Forward pass for the EMGHandNet.
+        
+        Args:
+        - x (torch.Tensor): Input tensor of shape (batch_size, SL, TS, NC).
+        
+        Returns:
+        - torch.Tensor: Output probabilities for each class.
+        """
+        batch_size, SL, TS, NC = x.size()  # SL: Sequence length, TS: Time steps, NC: Channels
+        x = x.view(-1, TS, NC).permute(0, 2, 1)  # Reshape to (SL * batch_size, NC, TS)
+        
+        # CNN layers
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        
+        # Flatten along the temporal dimension
+        x = x.mean(dim=-1)  # Output size: (SL * batch_size, F1)
+        x = x.view(batch_size, SL, -1)  # Reshape back to (batch_size, SL, F1)
+        
+        # Bi-LSTM layers
+        x, _ = self.bi_lstm1(x)
+        x, _ = self.bi_lstm2(x)  # Output size: (batch_size, SL, 2 * NL)
+        
+        # Flatten and process with dense layers
+        x = x.view(-1, 2 * NL)  # Flatten: (batch_size * SL, 2 * NL)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        
+        # Reshape output to (batch_size, SL, num_classes), then average over SL
+        x = x.view(batch_size, SL, -1)
+        x = x.mean(dim=1)  # Average over sequence length SL
+        
+        return F.softmax(x, dim=-1)
+
+# Example usage
+#model = EMGHandNet(input_channels=8, num_classes=6)  # Example: 8 input channels, 6 output classes
+#print(model)
+
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class CRNN(nn.Module):
+    def __init__(self, input_channels, window_size, num_classes, lstm_size_multiplier=3):
+        """
+        Args:
+        - input_channels (int): Number of input channels (C).
+        - window_size (int): Width of the sliding window (w).
+        - num_classes (int): Number of output classes for classification.
+        - lstm_size_multiplier (int): Multiplier to determine the size of LSTM hidden units based on input channels.
+        """
+        super(CRNN, self).__init__()
+        
+        # CNN layers
+        self.conv1 = nn.Conv1d(input_channels, input_channels * 2, kernel_size=2, stride=1, padding=1)
+        self.conv2 = nn.Conv1d(input_channels * 2, input_channels * 4, kernel_size=2, stride=1, padding=1)
+        self.conv3 = nn.Conv1d(input_channels * 4, input_channels * 8, kernel_size=2, stride=1, padding=1)
+        
+        # LSTM layers
+        lstm_size = input_channels * lstm_size_multiplier
+        self.lstm1 = nn.LSTM(input_channels * 8, lstm_size, batch_first=True)
+        self.lstm2 = nn.LSTM(lstm_size, lstm_size, batch_first=True)
+        self.lstm3 = nn.LSTM(lstm_size, lstm_size, batch_first=True)
+        
+        # Dropout layers for LSTM
+        self.dropout1 = nn.Dropout(p=0.8)
+        self.dropout2 = nn.Dropout(p=0.8)
+        self.dropout3 = nn.Dropout(p=0.5)
+        
+        # Fully connected layers
+        self.fc1 = nn.Linear(lstm_size, 128)
+        self.fc2 = nn.Linear(128, num_classes)
+        
+        # Gradient clipping
+        self.clip_value = 5.0
+    
+    def forward(self, x):
+        """
+        Forward pass for the C-RNN model.
+        
+        Args:
+        - x (torch.Tensor): Input tensor of shape (batch_size, window_size, input_channels).
+        
+        Returns:
+        - torch.Tensor: Output probabilities for each class.
+        """
+        batch_size, w, C = x.size()
+        x = x.permute(0, 2, 1)  # Reshape to (batch_size, input_channels, window_size)
+        
+        # CNN layers
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))  # Output size: (batch_size, C*8, w)
+        
+        # Reshape for LSTM layers
+        x = x.permute(0, 2, 1)  # Reshape to (batch_size, w, C*8)
+        
+        # LSTM layers
+        x, _ = self.lstm1(x)
+        x = self.dropout1(x)
+        x, _ = self.lstm2(x)
+        x = self.dropout2(x)
+        x, _ = self.lstm3(x)
+        x = self.dropout3(x)
+        
+        # Take the last output of the LSTM sequence
+        x = x[:, -1, :]  # Output size: (batch_size, lstm_size)
+        
+        # Fully connected layers
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        
+        # Apply softmax for classification
+        return F.softmax(x, dim=-1)
+    
+    def clip_gradients(self):
+        """
+        Clip gradients to prevent exploding gradients.
+        """
+        for param in self.parameters():
+            if param.grad is not None:
+                param.grad.data.clamp_(-self.clip_value, self.clip_value)
+
+# Example usage
+#model = CRNN(input_channels=8, window_size=100, num_classes=6)  # Example: 8 input channels, window size=100, 6 output classes
+#print(model)
