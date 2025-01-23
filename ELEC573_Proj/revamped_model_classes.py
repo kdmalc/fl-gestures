@@ -42,7 +42,9 @@ CRNN_config = {
     "learning_rate": 0.0001,
     "num_epochs": 50,
     "optimizer": "adam",
-    "weight_decay": 1e-4
+    "weight_decay": 1e-4, 
+    "sequence_length": 2,
+    "time_steps": 32
     }
 
 HybridCNNLSTM_config = {
@@ -50,7 +52,9 @@ HybridCNNLSTM_config = {
     "learning_rate": 0.0001,
     "num_epochs": 50,
     "optimizer": "adam",
-    "weight_decay": 1e-4
+    "weight_decay": 1e-4, 
+    "sequence_length": 2,
+    "time_steps": 32
     }
 
 EMGHandNet_config = {
@@ -58,7 +62,9 @@ EMGHandNet_config = {
     "learning_rate": 0.0001,
     "num_epochs": 50,
     "optimizer": "adam",
-    "weight_decay": 1e-4
+    "weight_decay": 1e-4, 
+    "sequence_length": 2,
+    "time_steps": 32
     }
 
 # Utility functions for modular design

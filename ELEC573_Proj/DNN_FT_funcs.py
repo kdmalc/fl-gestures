@@ -25,6 +25,53 @@ class GestureDataset(Dataset):
     
     def __getitem__(self, idx):
         return self.features[idx], self.labels[idx]
+    
+
+class GestureDataset_rawtimeseries(Dataset):
+    def __init__(self, features, labels, sl=1, ts=64, stride=None):
+        """
+        Dataset for gesture data with optional sliding window.
+        Args:
+        - features (numpy.ndarray): Shape (num_samples, total_time_steps, num_channels).
+        - labels (numpy.ndarray): Corresponding labels for features.
+        - sl (int): Sequence length (number of windows).
+        - ts (int): Time steps per window.
+        - stride (int): Stride for sliding window. Defaults to ts (no overlap).
+        """
+        self.features = features
+        self.labels = labels
+        self.sl = sl
+        self.ts = ts
+        self.stride = stride if stride else ts
+
+        # Apply sliding window transformation
+        self.windows, self.window_labels = self._create_sliding_windows()
+
+    def _create_sliding_windows(self):
+        all_windows = []
+        all_labels = []
+
+        for i in range(len(self.features)):
+            feature = self.features[i]
+            label = self.labels[i]
+
+            # Generate sliding windows for the current feature
+            num_windows = (feature.shape[0] - self.sl * self.ts) // self.stride + 1
+            for w in range(num_windows):
+                start_idx = w * self.stride
+                end_idx = start_idx + self.sl * self.ts
+                if end_idx <= feature.shape[0]:
+                    window = feature[start_idx:end_idx].reshape(self.sl, self.ts, -1)
+                    all_windows.append(window)
+                    all_labels.append(label)  # Replicate the label for the sequence
+
+        return np.array(all_windows), np.array(all_labels)
+
+    def __len__(self):
+        return len(self.windows)
+
+    def __getitem__(self, idx):
+        return torch.tensor(self.windows[idx], dtype=torch.float32), self.window_labels[idx]
 
 
 def set_optimizer(model, lr=0.001, use_weight_decay=False, weight_decay=0.01, optimizer_name="ADAM"):
@@ -245,13 +292,17 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
 
     if config is not None:
         bs = config["batch_size"]
-        #criterion = config["criterion"]  # This doesnt exist rn
+        #criterion = config["criterion"]  # This doesnt do anything rn
         lr = config["learning_rate"]
         weight_decay = config["weight_decay"]
+        sequence_length = config["sequence_length"]
+        time_steps = config["time_steps"]
     else:
         bs = 32
         lr = 0.001
         weight_decay = 0.01
+        sequence_length = None
+        time_steps = None
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
@@ -285,7 +336,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
         elif model_type == 'RNN':
             model = RNNModel(input_dim, num_classes).to(device)
         elif model_type == 'HybridCNNLSTM':
-            model = HybridCNNLSTM()
+            model = HybridCNNLSTM()  # TODO: This needs to take input sizes smh
         elif model_type == 'CRNN':
             model = CRNN(input_channels=80, window_size=1, num_classes=10)
         elif model_type == 'EMGHandNet':
@@ -297,22 +348,46 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
 
     if train_intra_cross_loaders is None:
         # Datasets and loaders
-        train_dataset = GestureDataset(
-            data_splits['train']['feature'], 
-            data_splits['train']['labels']
-        )
+        if sequence_length is None:
+            train_dataset = GestureDataset(
+                data_splits['train']['feature'], 
+                data_splits['train']['labels'], 
+                sl=sequence_length, 
+                ts=time_steps
+            )
+        else:
+            train_dataset = GestureDataset(
+                data_splits['train']['feature'], 
+                data_splits['train']['labels']
+            )
         train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
         
         # INTRA SUBJECT
-        intra_test_dataset = GestureDataset(
-            data_splits['intra_subject_test']['feature'], 
-            data_splits['intra_subject_test']['labels'])
+        if sequence_length is None:
+            intra_test_dataset = GestureDataset(
+                data_splits['intra_subject_test']['feature'], 
+                data_splits['intra_subject_test']['labels'], 
+                sl=sequence_length, 
+                ts=time_steps
+            )
+        else:
+            intra_test_dataset = GestureDataset(
+                data_splits['intra_subject_test']['feature'], 
+                data_splits['intra_subject_test']['labels'])
         intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False)
 
         # CROSS SUBJECT
-        cross_test_dataset = GestureDataset(
-            data_splits['cross_subject_test']['feature'], 
-            data_splits['cross_subject_test']['labels'])
+        if sequence_length is None:
+            cross_test_dataset = GestureDataset(
+                data_splits['cross_subject_test']['feature'], 
+                data_splits['cross_subject_test']['labels'], 
+                sl=sequence_length, 
+                ts=time_steps
+            )
+        else:
+            cross_test_dataset = GestureDataset(
+                data_splits['cross_subject_test']['feature'], 
+                data_splits['cross_subject_test']['labels'])
         cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False)
     else:
         train_loader = train_intra_cross_loaders[0]

@@ -12,7 +12,7 @@ cwd = os.getcwd()
 print("Current Working Directory: ", cwd)
 
 
-MY_CONFIG = EMGHandNet
+MY_CONFIG = EMGHandNet_config
 MODEL_STR = 'EMGHandNet'  # [CNN, RNN, HybridCNNLSTM, CRNN, EMGHandNet]
 if MODEL_STR in ["CNN", "DynamicCNN"]:  # Is CNN just DynamicCNN now? Pretty sure yes
     do_feature_engr = True
@@ -40,7 +40,7 @@ def load_expdef_gestures(apply_hc_feateng=True, filepath_pkl='C:\\Users\\kdmen\\
             .reset_index(drop=True)
         )
         # Combine metadata columns with the new data column
-        expdef_df = pd.concat([raw_expdef_data_df['Participant', 'Gesture_ID', 'Gesture_Num'].drop_duplicates().reset_index(drop=True), condensed_df['data']], axis=1)
+        expdef_df = pd.concat([raw_expdef_data_df[['Participant', 'Gesture_ID', 'Gesture_Num']].drop_duplicates().reset_index(drop=True), condensed_df['feature']], axis=1)
     
     #convert Gesture_ID to numerical with new Gesture_Encoded column
     label_encoder = LabelEncoder()
@@ -72,7 +72,7 @@ results = main_training_pipeline(
     all_participants=all_participants, 
     test_participants=test_participants,
     model_type=MODEL_STR,
-    num_epochs=50, config=dynamicCNN_config)
+    num_epochs=50, config=MY_CONFIG)
 
 full_path = os.path.join(cwd, 'ELEC573_Proj', 'models', 'generic_CNN_model.pth')
 print("Full Path:", full_path)
