@@ -43,6 +43,10 @@ class GestureDataset_rawtimeseries(Dataset):
         self.sl = sl
         self.ts = ts
         self.stride = stride if stride else ts
+        # TODO: A way not to hardcode that is robust against adding IMU channels?
+        if features.shape[1]!=1024:
+            raise ValueError("Hardcoding no longer valid")
+        self.num_channels = 16  # Hardcoded based on flattened shape (64 * 16). 16 emg channels.
 
         # Apply sliding window transformation
         self.windows, self.window_labels = self._create_sliding_windows()
@@ -52,7 +56,8 @@ class GestureDataset_rawtimeseries(Dataset):
         all_labels = []
 
         for i in range(len(self.features)):
-            feature = self.features[i]
+            # Reshape each flattened feature vector into (64, 16)
+            feature = self.features[i].reshape(-1, self.num_channels)  # Shape: (64, 16)
             label = self.labels[i]
 
             # Generate sliding windows for the current feature
@@ -61,7 +66,8 @@ class GestureDataset_rawtimeseries(Dataset):
                 start_idx = w * self.stride
                 end_idx = start_idx + self.sl * self.ts
                 if end_idx <= feature.shape[0]:
-                    window = feature[start_idx:end_idx].reshape(self.sl, self.ts, -1)
+                    # Extract window and reshape into (SL, TS, NC)
+                    window = feature[start_idx:end_idx].reshape(self.sl, self.ts, self.num_channels)
                     all_windows.append(window)
                     all_labels.append(label)  # Replicate the label for the sequence
 
@@ -336,11 +342,13 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
         elif model_type == 'RNN':
             model = RNNModel(input_dim, num_classes).to(device)
         elif model_type == 'HybridCNNLSTM':
-            model = HybridCNNLSTM()  # TODO: This needs to take input sizes smh
+            model = HybridCNNLSTM()  # TODO: This needs to be modified to take input sizes smh
         elif model_type == 'CRNN':
             model = CRNN(input_channels=80, window_size=1, num_classes=10)
         elif model_type == 'EMGHandNet':
             model = EMGHandNet(input_channels=80, num_classes=10)
+        elif model_type == 'MomonaNet':
+            model = MomonaNet()  # Arch is hardcoded in but it'e fine
         else:
             raise ValueError(f"{model_type} not recognized.")
     else:
@@ -351,14 +359,14 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
         if sequence_length is None:
             train_dataset = GestureDataset(
                 data_splits['train']['feature'], 
+                data_splits['train']['labels']
+            )
+        else:
+            train_dataset = GestureDataset_rawtimeseries(
+                data_splits['train']['feature'], 
                 data_splits['train']['labels'], 
                 sl=sequence_length, 
                 ts=time_steps
-            )
-        else:
-            train_dataset = GestureDataset(
-                data_splits['train']['feature'], 
-                data_splits['train']['labels']
             )
         train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
         
@@ -366,28 +374,28 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
         if sequence_length is None:
             intra_test_dataset = GestureDataset(
                 data_splits['intra_subject_test']['feature'], 
+                data_splits['intra_subject_test']['labels'])
+        else:
+            intra_test_dataset = GestureDataset_rawtimeseries(
+                data_splits['intra_subject_test']['feature'], 
                 data_splits['intra_subject_test']['labels'], 
                 sl=sequence_length, 
                 ts=time_steps
             )
-        else:
-            intra_test_dataset = GestureDataset(
-                data_splits['intra_subject_test']['feature'], 
-                data_splits['intra_subject_test']['labels'])
         intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False)
 
         # CROSS SUBJECT
         if sequence_length is None:
             cross_test_dataset = GestureDataset(
                 data_splits['cross_subject_test']['feature'], 
+                data_splits['cross_subject_test']['labels'])
+        else:
+            cross_test_dataset = GestureDataset_rawtimeseries(
+                data_splits['cross_subject_test']['feature'], 
                 data_splits['cross_subject_test']['labels'], 
                 sl=sequence_length, 
                 ts=time_steps
             )
-        else:
-            cross_test_dataset = GestureDataset(
-                data_splits['cross_subject_test']['feature'], 
-                data_splits['cross_subject_test']['labels'])
         cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False)
     else:
         train_loader = train_intra_cross_loaders[0]

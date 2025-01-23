@@ -67,6 +67,18 @@ EMGHandNet_config = {
     "time_steps": 32
     }
 
+MomonaNet_config = {
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "num_epochs": 50,
+    "optimizer": "adam",
+    "weight_decay": 1e-4,
+    #"use_batchnorm": True,
+    #"dropout_rate": 0.5
+    "sequence_length": None, 
+    "time_steps": None
+}
+
 # Utility functions for modular design
 def get_conv_block(in_channels, out_channels, kernel_size, stride, padding, maxpool, use_batch_norm, activation=nn.ReLU()):
     """Create a convolutional block with optional batch normalization and max pooling."""
@@ -255,6 +267,42 @@ class CNNLSTMModel(nn.Module):
 #dummy_input = torch.randn(32, 1, 64, 16)  # 32 samples, single channel, 64x16 input
 #output = model(dummy_input)
 #print(output.shape)  # Should output (32, 10) for 10 gesture classes
+
+
+class MomonaNet(nn.Module):
+    def __init__(self):
+        hidden_size = 12
+        tlen = 62
+        super().__init__()
+
+        # THIS IS CNN LAYERS TO EXTRACT FEATURES
+        # Replacing 88 everywhere with 16 (88 is 72IMU + 16EMG)
+        self.conv1 = nn.Conv1d(in_channels=16, out_channels=16, kernel_size=2, stride=1)
+        self.pool = nn.MaxPool1d(kernel_size=2, stride=1)
+
+        # THIS IS THE DENSE LAYER BETWEEN CNN AND LSTM
+        self.dense = nn.Linear(16,16)
+
+        self.relu = nn.ReLU()
+
+        self.lstm = nn.LSTM(input_size=16, hidden_size=hidden_size, num_layers=2, batch_first=True, dropout=0.8)
+        self.flatten = nn.Flatten()
+
+        # this is FFNN for the classification
+        self.linear_relu_stack = nn.Sequential( 
+            nn.Linear(int(hidden_size*tlen), hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, 10),
+        )
+
+    def forward(self, x):
+        x = self.pool(self.conv1(x)) # CNN layer + pooling
+        x = torch.swapaxes(x,1,2)
+        x = self.relu(self.dense(x)) # fully-connected? dense layer
+        x, _ = self.lstm(x) # 2 LSTM layers
+        x = self.flatten(x) 
+        logits = self.linear_relu_stack(x) # FFNN/dense layer for classification
+        return logits
 
 
 class EMGHandNet(nn.Module):
