@@ -3,6 +3,64 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+OLD_config = {
+    "learning_rate": 0.0001,
+    "batch_size": 32,
+    "num_epochs": 50,
+    "optimizer": "adam",
+    "weight_decay": 1e-4,
+    "dropout_rate": 0.3,
+    "num_conv_layers": 3,
+    "conv_layer_sizes": [32, 64, 128], 
+    "kernel_size": 5,
+    "stride": 2,
+    "padding": 1,
+    "maxpool": 1,
+    "use_batchnorm": True
+}
+
+# Example configuration for 3 convolutional layers
+dynamicCNN_config = {
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "num_epochs": 50,
+    "optimizer": "adam",
+    "weight_decay": 1e-4,
+    "num_conv_layers": 3,
+    #
+    "conv_layer_sizes": [16, 32, 64],  # Number of filters for each layer
+    "kernel_size": 3,
+    "stride": 1,
+    "padding": 1,
+    "maxpool": True,
+    "use_batchnorm": True,
+    "dropout_rate": 0.5
+}
+
+CRNN_config = {
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "num_epochs": 50,
+    "optimizer": "adam",
+    "weight_decay": 1e-4
+    }
+
+HybridCNNLSTM_config = {
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "num_epochs": 50,
+    "optimizer": "adam",
+    "weight_decay": 1e-4
+    }
+
+EMGHandNet_config = {
+    "batch_size": 32,
+    "learning_rate": 0.0001,
+    "num_epochs": 50,
+    "optimizer": "adam",
+    "weight_decay": 1e-4
+    }
+
 # Utility functions for modular design
 def get_conv_block(in_channels, out_channels, kernel_size, stride, padding, maxpool, use_batch_norm, activation=nn.ReLU()):
     """Create a convolutional block with optional batch normalization and max pooling."""
@@ -309,6 +367,14 @@ class CRNN(nn.Module):
         Returns:
         - torch.Tensor: Output probabilities for each class.
         """
+
+        # MODEL INPUT IS JUST (bs, 80) RN!
+        ## We have no window size!
+        ## The EMG feature engineering removed the time dimension, I forget oops
+        ## So each trial is indeed just 1 row
+        ## This is probably not optimal... not taking advantage of the sequence...
+        if len(x.size())==2:
+            x = x.unsqueeze(1)
         batch_size, w, C = x.size()
         x = x.permute(0, 2, 1)  # Reshape to (batch_size, input_channels, window_size)
         
@@ -395,7 +461,14 @@ class HybridCNNLSTM(nn.Module):
         )
 
     def forward(self, x):
-        # Input shape: (batch_size, 300, 16)
+        # MODEL INPUT IS JUST (bs, 80) RN!
+        ## We have no window size!
+        ## The EMG feature engineering removed the time dimension, I forget oops
+        ## So each trial is indeed just 1 row
+        ## This is probably not optimal... not taking advantage of the sequence...
+        if len(x.size())==2:
+            x = x.unsqueeze(1)
+        # Example had a seq len of 300 (was that also what the paper had?)
         batch_size, sequence_len, features = x.size()
 
         # CNN Branch

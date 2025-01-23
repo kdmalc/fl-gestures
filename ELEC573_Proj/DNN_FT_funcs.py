@@ -64,17 +64,20 @@ def prepare_data(df, feature_column, target_column, participants, test_participa
         'labels': [],
         'participant_ids': []
     }
+    # Gesture trials from the training subject withheld for intra-subject testing
     intra_subject_test_data = {
         'feature': [],
         'labels': [],
         'participant_ids': []
     }
-    # novel_trainFT_data and cross_subject_test_data are train/test pairs!
+    # Dataset of novel users for finetuning 
+    ## novel_trainFT_data and cross_subject_test_data are train/test pairs!
     novel_trainFT_data = {
         'feature': [],
         'labels': [],
         'participant_ids': []
     }
+    # I think this could equivalently be called "novel test data"
     cross_subject_test_data = {
         'feature': [],
         'labels': [],
@@ -284,9 +287,9 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
         elif model_type == 'HybridCNNLSTM':
             model = HybridCNNLSTM()
         elif model_type == 'CRNN':
-            model = CRNN(input_channels=8, window_size=100, num_classes=6)  # Example: 8 input channels, window size=100, 6 output classes
+            model = CRNN(input_channels=80, window_size=1, num_classes=10)
         elif model_type == 'EMGHandNet':
-            model = EMGHandNet(input_channels=8, num_classes=6)  # Example: 8 input channels, 6 output classes
+            model = EMGHandNet(input_channels=80, num_classes=10)
         else:
             raise ValueError(f"{model_type} not recognized.")
     else:

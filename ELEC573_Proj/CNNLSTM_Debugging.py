@@ -12,71 +12,56 @@ cwd = os.getcwd()
 print("Current Working Directory: ", cwd)
 
 
+MY_CONFIG = EMGHandNet
+MODEL_STR = 'EMGHandNet'  # [CNN, RNN, HybridCNNLSTM, CRNN, EMGHandNet]
+if MODEL_STR in ["CNN", "DynamicCNN"]:  # Is CNN just DynamicCNN now? Pretty sure yes
+    do_feature_engr = True
+else:
+    do_feature_engr = False
 finetune = False
 do_normal_logging = True
 
-OLD_config = {
-    "learning_rate": 0.0001,
-    "batch_size": 32,
-    "num_epochs": 50,
-    "optimizer": "adam",
-    "weight_decay": 1e-4,
-    "dropout_rate": 0.3,
-    "num_conv_layers": 3,
-    "conv_layer_sizes": [32, 64, 128], 
-    "kernel_size": 5,
-    "stride": 2,
-    "padding": 1,
-    "maxpool": 1,
-    "use_batchnorm": True
-}
-
-# Example configuration for 3 convolutional layers
-dynamicCNN_config = {
-    "batch_size": 32,
-    "learning_rate": 0.0001,
-    "num_epochs": 50,
-    "optimizer": "adam",
-    "weight_decay": 1e-4,
-    "num_conv_layers": 3,
-    #
-    "conv_layer_sizes": [16, 32, 64],  # Number of filters for each layer
-    "kernel_size": 3,
-    "stride": 1,
-    "padding": 1,
-    "maxpool": True,
-    "use_batchnorm": True,
-    "dropout_rate": 0.5
-}
-
-MY_CONFIG = dynamicCNN_config
-MODEL_STR = 'CNN'  # [CNN, RNN, HybridCNNLSTM, CRNN, EMGHandNet]
-
 ##################################################
 
-path1 = 'C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'
-with open(path1, 'rb') as file:
-    raw_userdef_data_df = pickle.load(file)  # (204800, 19)
+def load_expdef_gestures(apply_hc_feateng=True, filepath_pkl='C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'):
+    with open(filepath_pkl, 'rb') as file:
+        raw_expdef_data_df = pickle.load(file)  # (204800, 19)
 
-userdef_df = raw_userdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_feature_vectors)
-userdef_df = userdef_df.reset_index(drop=True)
+    if apply_hc_feateng:
+        expdef_df = raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_feature_vectors)
+        expdef_df = expdef_df.reset_index(drop=True)
+    else:
+        # Group by metadata columns and combine data into a matrix
+        condensed_df = (
+            raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num'], as_index=False)
+            .apply(lambda group: pd.Series({
+                'feature': group[raw_expdef_data_df.columns[3:]].to_numpy()
+            }))
+            .reset_index(drop=True)
+        )
+        # Combine metadata columns with the new data column
+        expdef_df = pd.concat([raw_expdef_data_df['Participant', 'Gesture_ID', 'Gesture_Num'].drop_duplicates().reset_index(drop=True), condensed_df['data']], axis=1)
+    
+    #convert Gesture_ID to numerical with new Gesture_Encoded column
+    label_encoder = LabelEncoder()
+    expdef_df['Gesture_Encoded'] = label_encoder.fit_transform(expdef_df['Gesture_ID'])
+    label_encoder2 = LabelEncoder()
+    expdef_df['Cluster_ID'] = label_encoder2.fit_transform(expdef_df['Participant'])
 
-all_participants = userdef_df['Participant'].unique()
+    return expdef_df
+
+expdef_df = load_expdef_gestures(apply_hc_feateng=do_feature_engr)
+
+all_participants = expdef_df['Participant'].unique()
 # Shuffle the participants
 np.random.shuffle(all_participants)
 # Split into two groups
 #train_participants = all_participants[:24]  # First 24 participants
 test_participants = all_participants[24:]  # Remaining 8 participants
 
-#convert Gesture_ID to numerical with new Gesture_Encoded column
-label_encoder = LabelEncoder()
-userdef_df['Gesture_Encoded'] = label_encoder.fit_transform(userdef_df['Gesture_ID'])
-label_encoder2 = LabelEncoder()
-userdef_df['Cluster_ID'] = label_encoder2.fit_transform(userdef_df['Participant'])
-
 # Prepare data
 data_splits = prepare_data(
-    userdef_df, 'feature', 'Gesture_Encoded', 
+    expdef_df, 'feature', 'Gesture_Encoded', 
     all_participants, test_participants, 
     training_trials_per_gesture=8, finetuning_trials_per_gesture=3,
 )
