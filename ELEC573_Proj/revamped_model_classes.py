@@ -429,6 +429,10 @@ class CRNN(nn.Module):
         ## This is probably not optimal... not taking advantage of the sequence...
         if len(x.size())==2:
             x = x.unsqueeze(1)
+        elif len(x.size())==4:
+            # TODO
+            # Combine the inner two dims into window size i think
+            raise ValueError
         batch_size, w, C = x.size()
         x = x.permute(0, 2, 1)  # Reshape to (batch_size, input_channels, window_size)
         
@@ -515,6 +519,7 @@ class HybridCNNLSTM(nn.Module):
         )
 
     def forward(self, x):
+        # TODO update here too
         # MODEL INPUT IS JUST (bs, 80) RN!
         ## We have no window size!
         ## The EMG feature engineering removed the time dimension, I forget oops

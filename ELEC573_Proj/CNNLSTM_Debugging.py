@@ -12,8 +12,8 @@ cwd = os.getcwd()
 print("Current Working Directory: ", cwd)
 
 
-MY_CONFIG = MomonaNet_config
-MODEL_STR = 'MomonaNet'  # [CNN, RNN, HybridCNNLSTM, CRNN, EMGHandNet, MomonaNet]
+MY_CONFIG = HybridCNNLSTM_config
+MODEL_STR = 'HybridCNNLSTM'  # [CNN, RNN, HybridCNNLSTM, CRNN, EMGHandNet, MomonaNet]
 if MODEL_STR in ["CNN", "DynamicCNN"]:  # Is CNN just DynamicCNN now? Pretty sure yes
     do_feature_engr = True
 else:

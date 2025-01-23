@@ -16,7 +16,10 @@ from revamped_model_classes import *
 
 
 class GestureDataset(Dataset):
-    def __init__(self, features, labels):
+    # 2D
+    def __init__(self, features, labels, sl=1, ts=64, stride=None):
+        # NOTE: SL, TS, Stride all NOT used, just a polymorphism relic...
+
         self.features = torch.tensor(features, dtype=torch.float32)
         self.labels = torch.tensor(labels, dtype=torch.long)
     
@@ -27,7 +30,61 @@ class GestureDataset(Dataset):
         return self.features[idx], self.labels[idx]
     
 
-class GestureDataset_rawtimeseries(Dataset):
+class GestureDataset_3D(Dataset):
+    def __init__(self, features, labels, sl=1, ts=64, stride=None):
+        """
+        Dataset for gesture data with optional sliding window.
+        Args:
+        - features (numpy.ndarray): Shape (num_samples, total_time_steps, num_channels).
+        - labels (numpy.ndarray): Corresponding labels for features.
+        - sl (int) * ts (int) should be the desired window size
+        - stride (int): Stride for sliding window. Defaults to ts (no overlap).
+        """
+        self.features = features
+        self.labels = labels
+        self.window_size = sl*ts
+        self.stride = stride if stride else ts
+        self.num_channels = 16  # Hardcoded based on known data structure.
+
+        # Apply sliding window transformation
+        self.windows, self.window_labels = self._create_sliding_windows()
+
+    def _create_sliding_windows(self):
+        """
+        Create sliding windows over the feature data.
+        Returns:
+        - all_windows: Numpy array of windows, shape (num_windows, window_size, num_channels).
+        - all_labels: Numpy array of corresponding labels for the windows.
+        """
+        all_windows = []
+        all_labels = []
+
+        for i in range(len(self.features)):
+            # Reshape each flattened feature vector into (total_time_steps, num_channels)
+            feature = self.features[i].reshape(-1, self.num_channels)  # Shape: (total_time_steps, num_channels)
+            label = self.labels[i]
+
+            # Generate sliding windows for the current feature
+            num_windows = (feature.shape[0] - self.window_size) // self.stride + 1
+            for w in range(num_windows):
+                start_idx = w * self.stride
+                end_idx = start_idx + self.window_size
+                if end_idx <= feature.shape[0]:
+                    # Extract window and reshape into (window_size, num_channels)
+                    window = feature[start_idx:end_idx].reshape(-1, self.num_channels)
+                    all_windows.append(window)
+                    all_labels.append(label)  # Replicate the label for the sequence
+
+        return np.array(all_windows), np.array(all_labels)
+
+    def __len__(self):
+        return len(self.windows)
+
+    def __getitem__(self, idx):
+        return self.windows[idx], self.window_labels[idx]
+    
+
+class GestureDataset_4D(Dataset):
     def __init__(self, features, labels, sl=1, ts=64, stride=None):
         """
         Dataset for gesture data with optional sliding window.
@@ -339,16 +396,22 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
             else:
                 #model = CNNModel_3layer(config, input_dim=80, num_classes=10)
                 model = DynamicCNNModel(config, input_dim=80, num_classes=10)
+            loader_dim = 2
         elif model_type == 'RNN':
             model = RNNModel(input_dim, num_classes).to(device)
+            loader_dim = 3  # Not sure... I haven't been using the base RNN
         elif model_type == 'HybridCNNLSTM':
             model = HybridCNNLSTM()  # TODO: This needs to be modified to take input sizes smh
+            loader_dim = 3
         elif model_type == 'CRNN':
             model = CRNN(input_channels=80, window_size=1, num_classes=10)
+            loader_dim = 3
         elif model_type == 'EMGHandNet':
             model = EMGHandNet(input_channels=80, num_classes=10)
+            loader_dim = 4
         elif model_type == 'MomonaNet':
             model = MomonaNet()  # Arch is hardcoded in but it'e fine
+            loader_dim = 2
         else:
             raise ValueError(f"{model_type} not recognized.")
     else:
@@ -356,46 +419,39 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
 
     if train_intra_cross_loaders is None:
         # Datasets and loaders
-        if sequence_length is None:
-            train_dataset = GestureDataset(
-                data_splits['train']['feature'], 
-                data_splits['train']['labels']
-            )
+        if loader_dim == 2:
+            my_gesture_dataset = GestureDataset
+        elif loader_dim == 3:
+            my_gesture_dataset = GestureDataset_3D
+        elif loader_dim == 4:
+            my_gesture_dataset = GestureDataset_4D
         else:
-            train_dataset = GestureDataset_rawtimeseries(
-                data_splits['train']['feature'], 
-                data_splits['train']['labels'], 
-                sl=sequence_length, 
-                ts=time_steps
-            )
+            raise ValueError
+        
+        train_dataset = my_gesture_dataset(
+            data_splits['train']['feature'], 
+            data_splits['train']['labels'], 
+            sl=sequence_length, 
+            ts=time_steps
+        )
         train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
         
         # INTRA SUBJECT
-        if sequence_length is None:
-            intra_test_dataset = GestureDataset(
-                data_splits['intra_subject_test']['feature'], 
-                data_splits['intra_subject_test']['labels'])
-        else:
-            intra_test_dataset = GestureDataset_rawtimeseries(
-                data_splits['intra_subject_test']['feature'], 
-                data_splits['intra_subject_test']['labels'], 
-                sl=sequence_length, 
-                ts=time_steps
-            )
+        intra_test_dataset = my_gesture_dataset(
+            data_splits['intra_subject_test']['feature'], 
+            data_splits['intra_subject_test']['labels'], 
+            sl=sequence_length, 
+            ts=time_steps
+        )
         intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False)
 
         # CROSS SUBJECT
-        if sequence_length is None:
-            cross_test_dataset = GestureDataset(
-                data_splits['cross_subject_test']['feature'], 
-                data_splits['cross_subject_test']['labels'])
-        else:
-            cross_test_dataset = GestureDataset_rawtimeseries(
-                data_splits['cross_subject_test']['feature'], 
-                data_splits['cross_subject_test']['labels'], 
-                sl=sequence_length, 
-                ts=time_steps
-            )
+        cross_test_dataset = my_gesture_dataset(
+            data_splits['cross_subject_test']['feature'], 
+            data_splits['cross_subject_test']['labels'], 
+            sl=sequence_length, 
+            ts=time_steps
+        )
         cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False)
     else:
         train_loader = train_intra_cross_loaders[0]
