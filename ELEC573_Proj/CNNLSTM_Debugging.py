@@ -12,8 +12,8 @@ cwd = os.getcwd()
 print("Current Working Directory: ", cwd)
 
 
-MY_CONFIG = HybridCNNLSTM_config
-MODEL_STR = 'HybridCNNLSTM'  # [CNN, RNN, HybridCNNLSTM, CRNN, EMGHandNet, MomonaNet]
+MY_CONFIG = MomonaNet_config
+MODEL_STR = 'MomonaNet'  # [CNN, RNN, HybridCNNLSTM, CRNN, EMGHandNet, MomonaNet]
 if MODEL_STR in ["CNN", "DynamicCNN"]:  # Is CNN just DynamicCNN now? Pretty sure yes
     do_feature_engr = True
 else:
@@ -53,7 +53,7 @@ def load_expdef_gestures(apply_hc_feateng=True, filepath_pkl='C:\\Users\\kdmen\\
 expdef_df = load_expdef_gestures(apply_hc_feateng=do_feature_engr)
 
 all_participants = expdef_df['Participant'].unique()
-# Shuffle the participants
+# Shuffle the participants for train/test user split --> UNIQUE
 np.random.shuffle(all_participants)
 # Split into two groups
 #train_participants = all_participants[:24]  # First 24 participants
@@ -72,7 +72,7 @@ results = main_training_pipeline(
     all_participants=all_participants, 
     test_participants=test_participants,
     model_type=MODEL_STR,
-    num_epochs=50, config=MY_CONFIG)
+    config=MY_CONFIG)
 
 full_path = os.path.join(cwd, 'ELEC573_Proj', 'models', 'generic_CNN_model.pth')
 print("Full Path:", full_path)

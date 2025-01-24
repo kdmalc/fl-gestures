@@ -1,83 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from configs import *
 
-
-OLD_config = {
-    "learning_rate": 0.0001,
-    "batch_size": 32,
-    "num_epochs": 50,
-    "optimizer": "adam",
-    "weight_decay": 1e-4,
-    "dropout_rate": 0.3,
-    "num_conv_layers": 3,
-    "conv_layer_sizes": [32, 64, 128], 
-    "kernel_size": 5,
-    "stride": 2,
-    "padding": 1,
-    "maxpool": 1,
-    "use_batchnorm": True
-}
-
-# Example configuration for 3 convolutional layers
-dynamicCNN_config = {
-    "batch_size": 32,
-    "learning_rate": 0.0001,
-    "num_epochs": 50,
-    "optimizer": "adam",
-    "weight_decay": 1e-4,
-    "num_conv_layers": 3,
-    #
-    "conv_layer_sizes": [16, 32, 64],  # Number of filters for each layer
-    "kernel_size": 3,
-    "stride": 1,
-    "padding": 1,
-    "maxpool": True,
-    "use_batchnorm": True,
-    "dropout_rate": 0.5
-}
-
-CRNN_config = {
-    "batch_size": 32,
-    "learning_rate": 0.0001,
-    "num_epochs": 50,
-    "optimizer": "adam",
-    "weight_decay": 1e-4, 
-    "sequence_length": 2,
-    "time_steps": 32
-    }
-
-HybridCNNLSTM_config = {
-    "batch_size": 32,
-    "learning_rate": 0.0001,
-    "num_epochs": 50,
-    "optimizer": "adam",
-    "weight_decay": 1e-4, 
-    "sequence_length": 2,
-    "time_steps": 32
-    }
-
-EMGHandNet_config = {
-    "batch_size": 32,
-    "learning_rate": 0.0001,
-    "num_epochs": 50,
-    "optimizer": "adam",
-    "weight_decay": 1e-4, 
-    "sequence_length": 2,
-    "time_steps": 32
-    }
-
-MomonaNet_config = {
-    "batch_size": 32,
-    "learning_rate": 0.0001,
-    "num_epochs": 50,
-    "optimizer": "adam",
-    "weight_decay": 1e-4,
-    #"use_batchnorm": True,
-    #"dropout_rate": 0.5
-    "sequence_length": None, 
-    "time_steps": None
-}
 
 # Utility functions for modular design
 def get_conv_block(in_channels, out_channels, kernel_size, stride, padding, maxpool, use_batch_norm, activation=nn.ReLU()):
@@ -187,108 +112,28 @@ class DynamicCNNModel(nn.Module):
         return self.fc(x)
 
 
-class CNNLSTMModel(nn.Module):
-    def __init__(
-        self,
-        input_channels=1,
-        num_classes=10,
-        cnn_filters=[16, 32],
-        kernel_size=(3, 3),
-        pool_size=(2, 2),
-        lstm_hidden_size=128,
-        lstm_num_layers=2,
-        time_steps=64,
-        feature_size=16
-    ):
-        super(CNNLSTMModel, self).__init__()
-        self.cnn_filters = cnn_filters
-        self.kernel_size = kernel_size
-        self.pool_size = pool_size
-        # CNN layers
-        cnn_layers = []
-        in_channels = input_channels
-        for out_channels in cnn_filters:
-            cnn_layers.append(
-                nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=(kernel_size[0] // 2, kernel_size[1] // 2))
-            )
-            cnn_layers.append(nn.ReLU())
-            cnn_layers.append(nn.MaxPool2d(kernel_size=pool_size, stride=pool_size))
-            in_channels = out_channels
-        self.cnn = nn.Sequential(*cnn_layers)
-        # Calculate output shape from CNN layers
-        cnn_output_time_steps = time_steps // (pool_size[0] ** len(cnn_filters))
-        cnn_output_features = feature_size // (pool_size[1] ** len(cnn_filters))
-        self.lstm_input_size = cnn_filters[-1] * cnn_output_features
-        # LSTM layers
-        self.lstm = nn.LSTM(
-            input_size=self.lstm_input_size,
-            hidden_size=lstm_hidden_size,
-            num_layers=lstm_num_layers,
-            batch_first=True
-        )
-        # Fully connected layer
-        self.fc = nn.Linear(lstm_hidden_size, num_classes)
-
-    def forward(self, x):
-        """
-        Forward pass for CNN-LSTM model
-        Args:
-            x: Input tensor of shape (batch_size, input_channels, time_steps, feature_size)
-        """
-        # Pass through CNN layers
-        x = self.cnn(x)
-        # Reshape for LSTM layers
-        batch_size, _, time_steps, features = x.size()
-        x = x.permute(0, 2, 1, 3)  # (batch_size, time_steps, channels, features)
-        x = x.reshape(batch_size, time_steps, -1)  # (batch_size, time_steps, channels * features)
-        # Pass through LSTM layers
-        x, _ = self.lstm(x)  # (batch_size, time_steps, lstm_hidden_size)
-        x = x[:, -1, :]      # Take the output from the last time step (batch_size, lstm_hidden_size)
-        # Pass through fully connected layer
-        x = self.fc(x)       # (batch_size, num_classes)
-
-        return x
-
-## Example usage
-#model = CNNLSTM(
-#    input_channels=1,
-#    num_classes=10,
-#    cnn_filters=[16, 32],
-#    kernel_size=(3, 3),
-#    pool_size=(2, 2),
-#    lstm_hidden_size=128,
-#    lstm_num_layers=2,
-#    time_steps=64,
-#    feature_size=16
-#)
-#print(model)
-#
-## Simulate a batch of data with shape (batch_size, input_channels, time_steps, feature_size)
-#dummy_input = torch.randn(32, 1, 64, 16)  # 32 samples, single channel, 64x16 input
-#output = model(dummy_input)
-#print(output.shape)  # Should output (32, 10) for 10 gesture classes
-
-
 class MomonaNet(nn.Module):
-    def __init__(self):
+    def __init__(self, config):
         hidden_size = 12
-        tlen = 62
+        tlen = 62  # TODO: Pass this in as a param? Or dynamically calc it?
         super().__init__()
 
-        # THIS IS CNN LAYERS TO EXTRACT FEATURES
+        self.bs = config['batch_size']
+        self.nc = config['num_channels']
+        self.sl = config['sequence_length']
+
         # Replacing 88 everywhere with 16 (88 is 72IMU + 16EMG)
+        #CNN
         self.conv1 = nn.Conv1d(in_channels=16, out_channels=16, kernel_size=2, stride=1)
         self.pool = nn.MaxPool1d(kernel_size=2, stride=1)
-
-        # THIS IS THE DENSE LAYER BETWEEN CNN AND LSTM
+        # Dense layer connecting them
         self.dense = nn.Linear(16,16)
-
         self.relu = nn.ReLU()
-
+        # LSTM
         self.lstm = nn.LSTM(input_size=16, hidden_size=hidden_size, num_layers=2, batch_first=True, dropout=0.8)
         self.flatten = nn.Flatten()
 
-        # this is FFNN for the classification
+        # Fully connected layers for classification
         self.linear_relu_stack = nn.Sequential( 
             nn.Linear(int(hidden_size*tlen), hidden_size),
             nn.ReLU(),
@@ -296,9 +141,10 @@ class MomonaNet(nn.Module):
         )
 
     def forward(self, x):
+        x = x.view(self.bs, self.nc, self.sl)
         x = self.pool(self.conv1(x)) # CNN layer + pooling
-        x = torch.swapaxes(x,1,2)
-        x = self.relu(self.dense(x)) # fully-connected? dense layer
+        x = torch.swapaxes(x, 1, 2)
+        x = self.relu(self.dense(x))
         x, _ = self.lstm(x) # 2 LSTM layers
         x = self.flatten(x) 
         logits = self.linear_relu_stack(x) # FFNN/dense layer for classification
@@ -335,15 +181,6 @@ class EMGHandNet(nn.Module):
         self.fc2 = nn.Linear(F2, num_classes)
         
     def forward(self, x):
-        """
-        Forward pass for the EMGHandNet.
-        
-        Args:
-        - x (torch.Tensor): Input tensor of shape (batch_size, SL, TS, NC).
-        
-        Returns:
-        - torch.Tensor: Output probabilities for each class.
-        """
         batch_size, SL, TS, NC = x.size()  # SL: Sequence length, TS: Time steps, NC: Channels
         x = x.view(-1, TS, NC).permute(0, 2, 1)  # Reshape to (SL * batch_size, NC, TS)
         
@@ -370,19 +207,15 @@ class EMGHandNet(nn.Module):
         x = x.view(batch_size, SL, -1)
         x = x.mean(dim=1)  # Average over sequence length SL
         
-        return F.softmax(x, dim=-1)
-
-# Example usage
-#model = EMGHandNet(input_channels=8, num_classes=6)  # Example: 8 input channels, 6 output classes
-#print(model)
+        # TODO: Swap from softmax to ReLU if we are using CrossEntropyLoss?
+        return F.softmax(x, dim=-1) 
 
 
 class CRNN(nn.Module):
-    def __init__(self, input_channels, window_size, num_classes, lstm_size_multiplier=3):
+    def __init__(self, input_channels, num_classes, lstm_size_multiplier=3):
         """
         Args:
         - input_channels (int): Number of input channels (C).
-        - window_size (int): Width of the sliding window (w).
         - num_classes (int): Number of output classes for classification.
         - lstm_size_multiplier (int): Multiplier to determine the size of LSTM hidden units based on input channels.
         """
@@ -412,27 +245,6 @@ class CRNN(nn.Module):
         self.clip_value = 5.0
     
     def forward(self, x):
-        """
-        Forward pass for the C-RNN model.
-        
-        Args:
-        - x (torch.Tensor): Input tensor of shape (batch_size, window_size, input_channels).
-        
-        Returns:
-        - torch.Tensor: Output probabilities for each class.
-        """
-
-        # MODEL INPUT IS JUST (bs, 80) RN!
-        ## We have no window size!
-        ## The EMG feature engineering removed the time dimension, I forget oops
-        ## So each trial is indeed just 1 row
-        ## This is probably not optimal... not taking advantage of the sequence...
-        if len(x.size())==2:
-            x = x.unsqueeze(1)
-        elif len(x.size())==4:
-            # TODO
-            # Combine the inner two dims into window size i think
-            raise ValueError
         batch_size, w, C = x.size()
         x = x.permute(0, 2, 1)  # Reshape to (batch_size, input_channels, window_size)
         
@@ -460,6 +272,7 @@ class CRNN(nn.Module):
         x = self.fc2(x)
         
         # Apply softmax for classification
+        ## TODO: Switch from softmax to ReLU?
         return F.softmax(x, dim=-1)
     
     def clip_gradients(self):
@@ -470,18 +283,16 @@ class CRNN(nn.Module):
             if param.grad is not None:
                 param.grad.data.clamp_(-self.clip_value, self.clip_value)
 
-# Example usage
-#model = CRNN(input_channels=8, window_size=100, num_classes=6)  # Example: 8 input channels, window size=100, 6 output classes
-#print(model)
-
 
 class HybridCNNLSTM(nn.Module):
-    def __init__(self):
+    def __init__(self, seq_len=64, num_channels=16):
         super(HybridCNNLSTM, self).__init__()
+        self.seq_len = seq_len
+        self.num_channels = num_channels
 
-        # CNN Branch for Spatial Feature Extraction
+        # CNN Branch
         self.cnn_branch = nn.Sequential(
-            nn.BatchNorm2d(1),  # Input shape: (batch_size, 1, 300, 16)
+            nn.BatchNorm2d(1),  # Input shape: (batch_size, 1, seq_len, num_channels)
             nn.Conv2d(1, 64, kernel_size=(5, 5), stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=(2, 2)),
@@ -494,10 +305,15 @@ class HybridCNNLSTM(nn.Module):
             nn.ReLU()
         )
 
-        # Fully connected layers for CNN features
+        # Dynamically compute flattened CNN features
+        dummy_input = torch.zeros(1, 1, self.seq_len, self.num_channels)
+        dummy_output = self.cnn_branch(dummy_input)
+        flattened_size = dummy_output.numel()
+
+        # CNN Fully Connected Layers
         self.cnn_fc = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(64 * 74 * 4, 512),
+            nn.Linear(flattened_size, 512),
             nn.ReLU(),
             nn.Dropout(p=0.5),
             nn.Linear(512, 256),
@@ -506,8 +322,8 @@ class HybridCNNLSTM(nn.Module):
             nn.Linear(256, 128),
         )
 
-        # LSTM Branch for Temporal Feature Extraction
-        self.lstm = nn.LSTM(input_size=16, hidden_size=256, num_layers=3, batch_first=True, dropout=0.5)
+        # LSTM Branch
+        self.lstm = nn.LSTM(input_size=self.num_channels, hidden_size=256, num_layers=3, batch_first=True, dropout=0.5)
         self.lstm_fc = nn.Linear(256, 128)
 
         # Fusion and Classification
@@ -519,20 +335,15 @@ class HybridCNNLSTM(nn.Module):
         )
 
     def forward(self, x):
-        # TODO update here too
-        # MODEL INPUT IS JUST (bs, 80) RN!
-        ## We have no window size!
-        ## The EMG feature engineering removed the time dimension, I forget oops
-        ## So each trial is indeed just 1 row
-        ## This is probably not optimal... not taking advantage of the sequence...
-        if len(x.size())==2:
-            x = x.unsqueeze(1)
         # Example had a seq len of 300 (was that also what the paper had?)
+        x = x.to(torch.bfloat16)  # Ensure input tensor is in BFloat16
+        #features = features.to(torch.bfloat16)
+        #labels = labels.to(torch.bfloat16)
         batch_size, sequence_len, features = x.size()
 
         # CNN Branch
-        cnn_input = x.unsqueeze(1)  # Shape: (batch_size, 1, 300, 16)
-        cnn_features = self.cnn_branch(cnn_input)  # Shape: (batch_size, 64, 74, 4)
+        cnn_input = x.unsqueeze(1).to(torch.bfloat16)  # Shape: (batch_size, 1, 64, 16)
+        cnn_features = self.cnn_branch(cnn_input)  # Shape: (batch_size, ?, ?, 4)
         cnn_features = self.cnn_fc(cnn_features)  # Shape: (batch_size, 128)
 
         # LSTM Branch
@@ -545,9 +356,3 @@ class HybridCNNLSTM(nn.Module):
         output = self.fusion_fc(hybrid_features)  # Shape: (batch_size, 64)
 
         return output
-
-# Example usage
-#model = HybridCNNLSTM()
-#example_input = torch.randn(8, 300, 16)  # Batch size: 8, 300 frames, 16 features per frame
-#output = model(example_input)
-#print("Output shape:", output.shape)  # Expected shape: (8, 64)

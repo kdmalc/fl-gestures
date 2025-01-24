@@ -40,8 +40,8 @@ class GestureDataset_3D(Dataset):
         - sl (int) * ts (int) should be the desired window size
         - stride (int): Stride for sliding window. Defaults to ts (no overlap).
         """
-        self.features = features
-        self.labels = labels
+        self.features = torch.tensor(features, dtype=torch.float32)
+        self.labels = torch.tensor(labels, dtype=torch.long)
         self.window_size = sl*ts
         self.stride = stride if stride else ts
         self.num_channels = 16  # Hardcoded based on known data structure.
@@ -75,7 +75,7 @@ class GestureDataset_3D(Dataset):
                     all_windows.append(window)
                     all_labels.append(label)  # Replicate the label for the sequence
 
-        return np.array(all_windows), np.array(all_labels)
+        return np.array(all_windows, dtype=np.float32), np.array(all_labels, dtype=np.int64)
 
     def __len__(self):
         return len(self.windows)
@@ -95,8 +95,8 @@ class GestureDataset_4D(Dataset):
         - ts (int): Time steps per window.
         - stride (int): Stride for sliding window. Defaults to ts (no overlap).
         """
-        self.features = features
-        self.labels = labels
+        self.features = torch.tensor(features, dtype=torch.float32)
+        self.labels = torch.tensor(labels, dtype=torch.long)
         self.sl = sl
         self.ts = ts
         self.stride = stride if stride else ts
@@ -128,7 +128,7 @@ class GestureDataset_4D(Dataset):
                     all_windows.append(window)
                     all_labels.append(label)  # Replicate the label for the sequence
 
-        return np.array(all_windows), np.array(all_labels)
+        return np.array(all_windows, dtype=np.float32), np.array(all_labels, dtype=np.int64)
 
     def __len__(self):
         return len(self.windows)
@@ -306,7 +306,7 @@ def evaluate_model(model, dataloader, criterion=nn.CrossEntropyLoss(), device=No
     }
 
 
-def gesture_performance_by_participant(predictions, true_labels, unique_participants, 
+def gesture_performance_by_participant(predictions, true_labels, all_unique_participants, 
                                        all_shuffled_participant_ids, unique_gestures):
     """
     Calculate performance metrics for each participant and gesture
@@ -316,7 +316,7 @@ def gesture_performance_by_participant(predictions, true_labels, unique_particip
     """
     performance = {}
     
-    for participant in unique_participants:
+    for participant in all_unique_participants:
         participant_mask = np.array(all_shuffled_participant_ids) == participant
         participant_preds = np.array(predictions)[participant_mask]
         participant_true = np.array(true_labels)[participant_mask]
@@ -334,21 +334,19 @@ def gesture_performance_by_participant(predictions, true_labels, unique_particip
     return performance
 
 
-def main_training_pipeline(data_splits, all_participants, test_participants, 
-                           model_type='CNN', num_epochs=30,
-                           use_weight_decay=True, config=None,
-                           train_intra_cross_loaders=None):
+def main_training_pipeline(data_splits, all_participants, test_participants, model_type, config, 
+                           use_weight_decay=True, train_intra_cross_loaders=None):
     """
     Main training pipeline with comprehensive performance tracking
     
     Args:
-    - df: Input DataFrame
-    - all_participants: List of all participants
+    - data_splits: ...
+    - all_participants: List of all (unique) participants
     - test_participants: List of participants to hold out
-    - model_type: 'CNN' or 'RNN' (or the already created model object)
-    - training_trials_per_gesture: Trials to use per gesture for training
-    - num_epochs: Number of training epochs
-    
+    - model_type: string of model name
+    - config: dictionary of configuration values for model architecture and hyperparams
+    - train_intra_cross_loaders: ... not sure what this is, it seems to be left to the default None
+    # use_weight_decay should be called from config... if I set weight_decay to 0 is that the same as having it off?
     Returns:
     - Trained model, performance metrics
     """
@@ -360,31 +358,35 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
         weight_decay = config["weight_decay"]
         sequence_length = config["sequence_length"]
         time_steps = config["time_steps"]
-    else:
-        bs = 32
-        lr = 0.001
-        weight_decay = 0.01
-        sequence_length = None
-        time_steps = None
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # Unique gestures and number of classes
+    ## TODO: Why is train_pids an unshuffled list of 1920 entries? Shouldn't it at least be shuffled?
+    ## I am not sure if train_pids is aligned with the dataloaders (since the training dataloader shuffles)
+    ## The testing dataloaders don't shuffle tho
+    ## intra_test_results are in order [0,0,1,1,2,2, etc]
+    ## So I'm pretty sure train_pids is wrong then, it should be shuffled...
+    unique_gestures = np.unique(data_splits['train']['labels'])
+    num_classes = len(unique_gestures)
+    input_dim = data_splits['train']['feature'].shape[1]
     if train_intra_cross_loaders is not None:
         # Hardcoding cause I don't wanna deal with dataloader extraction
-        unique_gestures = list(range(10))
-        num_classes = 10
-        input_dim = 80
+        #num_classes = 10
+        #unique_gestures = list(range(num_classes))
+        #input_dim = 80
 
         train_pids = [pid for pid in all_participants if pid not in test_participants]
         intra_pids = train_pids
         cross_pids = test_participants
     else:
-        unique_gestures = np.unique(data_splits['train']['labels'])
-        num_classes = len(unique_gestures)
-        input_dim = data_splits['train']['feature'].shape[1]
+        # MomonaNet
 
-        train_pids = data_splits['train']['participant_ids']
+        #unique_gestures = np.unique(data_splits['train']['labels'])
+        #num_classes = len(unique_gestures)
+        #input_dim = data_splits['train']['feature'].shape[1]
+
+        train_pids = data_splits['train']['participant_ids']  # THIS IS IN ORDER! NOT SHUFFLED!!
         intra_pids = data_splits['intra_subject_test']['participant_ids']
         cross_pids = data_splits['cross_subject_test']['participant_ids']
     
@@ -410,8 +412,14 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
             model = EMGHandNet(input_channels=80, num_classes=10)
             loader_dim = 4
         elif model_type == 'MomonaNet':
-            model = MomonaNet()  # Arch is hardcoded in but it'e fine
+            model = MomonaNet(config)  # Arch is hardcoded in but it'e fine
             loader_dim = 2
+            # Overwriting... basically hardcoding these in...
+            ## There's a better way to do this (since you could use the default vals)
+            #sequence_length = 1
+            #time_steps = 64
+            # Nvm just hardcode the reshape...
+            ## It really ought to be 3 tho... but I have to reshape no matter what I think
         else:
             raise ValueError(f"{model_type} not recognized.")
     else:
@@ -434,7 +442,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
             sl=sequence_length, 
             ts=time_steps
         )
-        train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
+        train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, drop_last=True)
         
         # INTRA SUBJECT
         intra_test_dataset = my_gesture_dataset(
@@ -443,7 +451,8 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
             sl=sequence_length, 
             ts=time_steps
         )
-        intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False)
+        # Shuffle doesn't matter for testing
+        intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False, drop_last=True)
 
         # CROSS SUBJECT
         cross_test_dataset = my_gesture_dataset(
@@ -452,7 +461,8 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
             sl=sequence_length, 
             ts=time_steps
         )
-        cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False)
+        # Shuffle doesn't matter for testing
+        cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False, drop_last=True)
     else:
         train_loader = train_intra_cross_loaders[0]
         intra_test_loader = train_intra_cross_loaders[1]
@@ -465,7 +475,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants,
     train_loss_log = []
     intra_test_loss_log = []
     cross_test_loss_log = []
-    for epoch in range(num_epochs):
+    for epoch in range(config["num_epochs"]):
         train_loss_log.append(train_model(model, train_loader, optimizer))
         intra_test_loss_log.append(evaluate_model(model, intra_test_loader)['loss'])
         cross_test_loss_log.append(evaluate_model(model, cross_test_loader)['loss'])
