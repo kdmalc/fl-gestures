@@ -142,6 +142,105 @@ class DynamicCNNModel(nn.Module):
         return self.fc(x)
 
 
+class GenMomonaNet(nn.Module):
+    def __init__(self, config):
+        """
+        Generalized MomonaNet model.
+
+        Args:
+            config (dict): Configuration dictionary containing the following keys:
+                - batch_size (int): Batch size.
+                - num_channels (int): Number of input channels.
+                - sequence_length (int): Length of the input sequence.
+                - conv_layers (list of tuples): List of tuples specifying convolutional layers.
+                    Each tuple should contain (out_channels, kernel_size, stride).
+                - pooling_layers (list of bool): List specifying whether to apply max pooling after each conv layer.
+                - use_dense_cnn_lstm (bool): Whether to use a dense layer between CNN and LSTM.
+                - lstm_hidden_size (int): Hidden size for LSTM layers.
+                - lstm_num_layers (int): Number of LSTM layers.
+                - lstm_dropout (float): Dropout probability for LSTM layers.
+                - fc_layers (list of int): List of integers specifying the sizes of fully connected layers.
+                - num_classes (int): Number of output classes.
+        """
+        super().__init__()
+
+        self.bs = config['batch_size']
+        self.nc = config['num_channels']
+        self.sl = config['sequence_length']
+
+        # Convolutional layers
+        self.conv_layers = nn.ModuleList()
+        in_channels = self.nc
+        for out_channels, kernel_size, stride in config['conv_layers']:
+            self.conv_layers.append(
+                nn.Conv1d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride)
+            )
+            in_channels = out_channels  # Update in_channels for the next layer
+
+        # Max pooling
+        self.pooling_layers = config.get('pooling_layers', [True] * len(config['conv_layers']))  # Default to all True
+        self.pool = nn.MaxPool1d(kernel_size=2, stride=1)
+
+        # Dense layer between CNN and LSTM
+        self.use_dense_cnn_lstm = config.get('use_dense_cnn_lstm', False)  # Default to False
+        if self.use_dense_cnn_lstm:
+            self.dense_cnn_lstm = nn.Linear(in_channels, in_channels)  # Transform CNN output to LSTM input
+
+        # LSTM layers
+        self.lstm = nn.LSTM(
+            input_size=in_channels,  # Input size is the output channels of the last conv layer
+            hidden_size=config['lstm_hidden_size'],
+            num_layers=config['lstm_num_layers'],
+            batch_first=True,
+            dropout=config['lstm_dropout']
+        )
+
+        # Calculate the sequence length after convolutions and pooling
+        tlen = self.sl
+        for i, (_, kernel_size, stride) in enumerate(config['conv_layers']):
+            tlen = (tlen - kernel_size) // stride + 1
+            if self.pooling_layers[i]:
+                tlen = (tlen - 2) // 1 + 1  # Account for max pooling
+
+        # Fully connected layers
+        self.fc_layers = nn.ModuleList()
+        in_features = config['lstm_hidden_size'] * tlen
+        for out_features in config['fc_layers']:
+            self.fc_layers.append(nn.Linear(in_features, out_features))
+            in_features = out_features  # Update in_features for the next layer
+
+        # Output layer
+        self.output_layer = nn.Linear(in_features, config['num_classes'])
+
+        # Activation function
+        self.relu = nn.ReLU()
+        self.flatten = nn.Flatten()
+
+    def forward(self, x):
+        # Reshape input to (batch_size, num_channels, sequence_length)
+        x = x.view(self.bs, self.nc, self.sl)
+        # Apply convolutional layers
+        for i, conv in enumerate(self.conv_layers):
+            x = self.relu(conv(x))
+            if self.pooling_layers[i]:  # Apply max pooling only if specified
+                x = self.pool(x)
+        # Swap axes for LSTM input (batch_size, sequence_length, num_channels)
+        x = torch.swapaxes(x, 1, 2)
+        # Apply dense layer between CNN and LSTM (if enabled)
+        if self.use_dense_cnn_lstm:
+            x = self.dense_cnn_lstm(x)
+        # Apply LSTM layers
+        x, _ = self.lstm(x)
+        # Flatten the output for fully connected layers
+        x = self.flatten(x)
+        # Apply fully connected layers
+        for fc in self.fc_layers:
+            x = self.relu(fc(x))
+        # Output layer
+        logits = self.output_layer(x)
+        return logits
+
+
 class MomonaNet(nn.Module):
     def __init__(self, config):
         hidden_size = 12
@@ -156,7 +255,7 @@ class MomonaNet(nn.Module):
         #CNN
         self.conv1 = nn.Conv1d(in_channels=16, out_channels=16, kernel_size=2, stride=1)
         self.pool = nn.MaxPool1d(kernel_size=2, stride=1)
-        # Dense layer connecting them
+        # Dense layer connecting CNN to LSTM
         self.dense = nn.Linear(16,16)
         self.relu = nn.ReLU()
         # LSTM
