@@ -442,9 +442,9 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
             sl=sequence_length, 
             ts=time_steps
         )
-        train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, drop_last=True)
+        train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)  #, drop_last=True
         
-        # INTRA SUBJECT
+        # INTRA SUBJECT (480)
         intra_test_dataset = my_gesture_dataset(
             data_splits['intra_subject_test']['feature'], 
             data_splits['intra_subject_test']['labels'], 
@@ -452,9 +452,9 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
             ts=time_steps
         )
         # Shuffle doesn't matter for testing
-        intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False, drop_last=True)
+        intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False)  #, drop_last=True
 
-        # CROSS SUBJECT
+        # CROSS SUBJECT (560)
         cross_test_dataset = my_gesture_dataset(
             data_splits['cross_subject_test']['feature'], 
             data_splits['cross_subject_test']['labels'], 
@@ -462,7 +462,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
             ts=time_steps
         )
         # Shuffle doesn't matter for testing
-        cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False, drop_last=True)
+        cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False)  #, drop_last=True
     else:
         train_loader = train_intra_cross_loaders[0]
         intra_test_loader = train_intra_cross_loaders[1]
@@ -475,10 +475,31 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     train_loss_log = []
     intra_test_loss_log = []
     cross_test_loss_log = []
-    for epoch in range(config["num_epochs"]):
+
+    max_epochs = config["num_epochs"]
+    epoch = 0
+    done = False
+    earlystopping = EarlyStopping()
+    while not done and epoch<max_epochs:
+        epoch += 1
+        #model.train()
         train_loss_log.append(train_model(model, train_loader, optimizer))
+        # Validation
+        ## I think the below are both used in evaluate_model so I don't need to call them here...
+        #model.eval()
+        #with torch.no_grad():
         intra_test_loss_log.append(evaluate_model(model, intra_test_loader)['loss'])
         cross_test_loss_log.append(evaluate_model(model, cross_test_loader)['loss'])
+
+        # Which testing datset to use for early stopping? Does it matter? Do they diverge?
+        ## Ought to plot the train+testing losses to see...
+        ## Assuming that cross_test_loss_log is a more difficult task
+        ## But then again it might overfit to the intra subject... so I'll use intra actually
+        if earlystopping(model, intra_test_loss_log[-1]):
+            done = True
+    # TODO: This really ought to be logged to a/the txt file
+    print(f"Epoch {epoch}/{max_epochs}, Intra Testing Loss: "
+      f"{intra_test_loss_log[-1]}, {earlystopping.status}")
     
     # Evaluation --> One-off final results! Gets used in gesture_performance_by_participant
     train_results = evaluate_model(model, train_loader)

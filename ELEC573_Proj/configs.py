@@ -1,4 +1,4 @@
-SHARED_BS = 35
+SHARED_BS = 40
 NUM_CHANNELS = 16
 # Acceptable divisible batchsizes: (1, 560), (2, 280), (4, 140), (5, 112), (7, 80), (10, 56), (14, 40), (16, 35), (20, 28)
 
