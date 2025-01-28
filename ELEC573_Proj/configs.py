@@ -75,14 +75,15 @@ MomonaNet_config = {
     "weight_decay": 1e-4,
     #"use_batchnorm": True,
     #"dropout_rate": 0.5
-    "sequence_length": 64, 
-    "time_steps": None  # This doesn't get used at all, unlike the others!
+    "sequence_length": 64,
+    "time_steps": None  # This doesn't get used at all, unlike the others! Must be present so reused code doesn't break
 }
 
 GenMomonaNet_config = {
     "batch_size": SHARED_BS,  #(int): Batch size.
     "num_channels": NUM_CHANNELS,  #(int): Number of input channels.
     "sequence_length": 64,  #(int): Length of the input sequence.
+    "time_steps": None,  # This doesn't get used at all, unlike the others! Must be present so reused code doesn't break
     "conv_layers": [(32, 5, 1), (64, 3, 1), (128, 2, 1)],  #(list of tuples): List of tuples specifying convolutional layers. Each tuple should contain (out_channels, kernel_size, stride).
     "pooling_layers": [True, False, False],  # Max pooling only after the first conv layer
     "use_dense_cnn_lstm": True,  # Use dense layer between CNN and LSTM

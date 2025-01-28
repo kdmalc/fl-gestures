@@ -365,45 +365,49 @@ def gesture_performance_by_participant(predictions, true_labels, all_unique_part
     return performance
 
 
-def model_selection(model_type, config, device="cpu", input_dim=16, num_classes=10):
+def select_model(model_type, config, device="cpu", input_dim=16, num_classes=10):
     if isinstance(model_type, str):
-        if model_type == 'CNN':
+        if model_type == 'CNN':  # 2D
             if config is None:
                 model = CNNModel(input_dim, num_classes).to(device)
             else:
                 #model = CNNModel_3layer(config, input_dim=80, num_classes=10)
                 model = DynamicCNNModel(config, input_dim=80, num_classes=10)
-            loader_dim = 2
-        elif model_type == 'RNN':
+        elif model_type == 'RNN':  # 3D
             model = RNNModel(input_dim, num_classes).to(device)
-            loader_dim = 3  # Not sure... I haven't been using the base RNN
-        elif model_type == 'HybridCNNLSTM':
+        elif model_type == 'HybridCNNLSTM':  # 3D
             model = HybridCNNLSTM()  # TODO: This needs to be modified to take input sizes smh
-            loader_dim = 3
-        elif model_type == 'CRNN':
+        elif model_type == 'CRNN':  # 3D
             model = CRNN(input_channels=80, window_size=1, num_classes=10)
-            loader_dim = 3
-        elif model_type == 'EMGHandNet':
+        elif model_type == 'EMGHandNet':  # 4D
             model = EMGHandNet(input_channels=80, num_classes=10)
-            loader_dim = 4
-        elif model_type == 'MomonaNet':
+        elif model_type == 'MomonaNet':  # 2D
             model = MomonaNet(config)  # Arch is hardcoded in but it'e fine
-            loader_dim = 2
             # Overwriting... basically hardcoding these in...
             ## There's a better way to do this (since you could use the default vals)
             #sequence_length = 1
             #time_steps = 64
             # Nvm just hardcode the reshape...
             ## It really ought to be 3 tho... but I have to reshape no matter what I think
-        elif model_type == "GenMomonaNet":
+        elif model_type == "GenMomonaNet":  # 2D
             model = GenMomonaNet(config) # Config should specify everything about arch?
-            loader_dim = 2  # Double check this is true for GenMomonaNet
         else:
             raise ValueError(f"{model_type} not recognized.")
     else:
         model = model_type
 
-    return model, loader_dim
+    return model
+
+
+def select_dataset_class(model_str):
+    if model_str in ["CNN",  "MomonaNet", "GenMomonaNet"]:
+        return GestureDataset  # This is 2D
+    elif model_str in ["RNN", "HybridCNNLSTM", "CRNN"]:
+        return GestureDataset_3D
+    elif model_str in ["EMGHandNet"]:
+        return GestureDataset_4D
+    else:
+        raise ValueError
 
 
 def main_training_pipeline(data_splits, all_participants, test_participants, model_type, config, 
@@ -453,7 +457,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         cross_pids = test_participants
     else:
         # MomonaNet
-        # TODO: Is GenMomonaNet here too? Idk
+        # TODO: Is GenMomonaNet handled here too? Idk
 
         #unique_gestures = np.unique(data_splits['train']['labels'])
         #num_classes = len(unique_gestures)
@@ -464,25 +468,16 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         cross_pids = data_splits['cross_subject_test']['participant_ids']
     
     # Select model
-    model, loader_dim = model_selection(model_type, config, device=device, input_dim=input_dim, num_classes=num_classes)
+    model = select_model(model_type, config, device=device, input_dim=input_dim, num_classes=num_classes)
 
     if train_intra_cross_loaders is None:
-        # Datasets and loaders
-        if loader_dim == 2:
-            my_gesture_dataset = GestureDataset
-        elif loader_dim == 3:
-            my_gesture_dataset = GestureDataset_3D
-        elif loader_dim == 4:
-            my_gesture_dataset = GestureDataset_4D
-        else:
-            raise ValueError
+        my_gesture_dataset = select_dataset_class(model_type)
         
         train_dataset = my_gesture_dataset(
             data_splits['train']['feature'], 
             data_splits['train']['labels'], 
             sl=sequence_length, 
-            ts=time_steps
-        )
+            ts=time_steps)
         train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)  #, drop_last=True
         
         # INTRA SUBJECT (480)
@@ -490,8 +485,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
             data_splits['intra_subject_test']['feature'], 
             data_splits['intra_subject_test']['labels'], 
             sl=sequence_length, 
-            ts=time_steps
-        )
+            ts=time_steps)
         # Shuffle doesn't matter for testing
         intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False)  #, drop_last=True
 
@@ -502,8 +496,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
             data_splits['cross_subject_test']['feature'], 
             data_splits['cross_subject_test']['labels'], 
             sl=sequence_length, 
-            ts=time_steps
-        )
+            ts=time_steps)
         # Shuffle doesn't matter for testing
         cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False)  #, drop_last=True
     else:
@@ -523,26 +516,33 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     epoch = 0
     done = False
     earlystopping = EarlyStopping()
-    while not done and epoch<max_epochs:
+    # Open a text file for logging
+    log_file = open("training_log.txt", "w")
+    while not done and epoch < max_epochs:
         epoch += 1
-        #model.train()
-        train_loss_log.append(train_model(model, train_loader, optimizer))
-        # Validation
-        ## I think the below are both used in evaluate_model so I don't need to call them here...
-        #model.eval()
-        #with torch.no_grad():
-        intra_test_loss_log.append(evaluate_model(model, intra_test_loader)['loss'])
-        cross_test_loss_log.append(evaluate_model(model, cross_test_loader)['loss'])
+        train_loss = train_model(model, train_loader, optimizer)
+        train_loss_log.append(train_loss)
 
-        # Which testing datset to use for early stopping? Does it matter? Do they diverge?
-        ## Ought to plot the train+testing losses to see...
-        ## Assuming that cross_test_loss_log is a more difficult task
-        ## But then again it might overfit to the intra subject... so I'll use intra actually
-        if earlystopping(model, intra_test_loss_log[-1]):
+        # Validation
+        intra_test_loss = evaluate_model(model, intra_test_loader)['loss']
+        intra_test_loss_log.append(intra_test_loss)
+        cross_test_loss = evaluate_model(model, cross_test_loader)['loss']
+        cross_test_loss_log.append(cross_test_loss)
+
+        # Early stopping check
+        if earlystopping(model, intra_test_loss):
             done = True
-    # TODO: This really ought to be logged to a/the txt file
-    print(f"Epoch {epoch}/{max_epochs}, Intra Testing Loss: "
-      f"{intra_test_loss_log[-1]}, {earlystopping.status}")
+        # Log metrics to the console and the text file
+        log_message = (
+            f"Epoch {epoch}/{max_epochs}, "
+            f"Train Loss: {train_loss:.4f}, "
+            f"Intra Testing Loss: {intra_test_loss:.4f}, "
+            f"Cross Testing Loss: {cross_test_loss:.4f}, "
+            f"{earlystopping.status}\n")
+        print(log_message, end="")  # Print to console
+        log_file.write(log_message)  # Write to file
+    # Close the log file
+    log_file.close()
     
     # Evaluation --> One-off final results! Gets used in gesture_performance_by_participant
     train_results = evaluate_model(model, train_loader)
@@ -591,8 +591,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     }
 
 
-def fine_tune_model(finetuned_model, fine_tune_loader, test_loader=None, num_epochs=20, lr=0.00001,
-                    use_weight_decay=True, weight_decay=0.05):
+def fine_tune_model(finetuned_model, fine_tune_loader, config, test_loader=None, pid=None, use_earlystopping=True):
     """
     Fine-tune the base model on a small subset of data
     
@@ -604,20 +603,50 @@ def fine_tune_model(finetuned_model, fine_tune_loader, test_loader=None, num_epo
     Returns:
     - Fine-tuned model
     """
+    if pid is None:
+        pid = ""
+    else:
+        pid = pid + "_"
 
     # Extract the original pretrained model weights since finetuning happens in place
     frozen_base_model_state = copy.deepcopy(finetuned_model.state_dict())
-
     finetuned_model.train()  # Ensure the model is in training mode
     # Loss and optimizer (with lower learning rate for fine-tuning)
-    optimizer = set_optimizer(finetuned_model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
+    optimizer = set_optimizer(finetuned_model, lr=config["ft_learning_rate"], use_weight_decay=config["ft_weight_decay"] > 0, weight_decay=config["ft_weight_decay"])
     # Fine-tuning
     train_loss_log = []
     test_loss_log = []
-    for epoch in range(num_epochs):
-        train_loss_log.append(train_model(finetuned_model, fine_tune_loader, optimizer))
-        if test_loader is not None:
-            test_loss_log.append(evaluate_model(finetuned_model, test_loader)['loss'])
+    max_epochs = config["num_ft_epochs"]
+    epoch = 0
+    done = False
+    if use_earlystopping:
+        earlystopping = EarlyStopping()
+    # Open a text file for logging
+    log_file = open("{pid}ft_log.txt", "w")
+    while not done and epoch < max_epochs:
+        epoch += 1
+
+        train_loss = train_model(finetuned_model, fine_tune_loader, optimizer)
+        train_loss_log.append(train_loss)
+        novel_intra_test_loss = evaluate_model(finetuned_model, test_loader)['loss']
+        test_loss_log.append(novel_intra_test_loss)
+
+        # Early stopping check
+        if use_earlystopping:
+            if earlystopping(finetuned_model, novel_intra_test_loss):
+                done = True
+
+    # Log metrics to the console and the text file, AFTER the while loop has finished
+    log_message = (
+        f"Participant ID {pid}, "
+        f"Epoch {epoch}/{max_epochs}, "
+        f"FT Train Loss: {train_loss:.4f}, "
+        f"Novel Intra Subject Testing Loss: {novel_intra_test_loss:.4f}, "
+        f"Did early stopping trigger? {done}\n")
+    print(log_message, end="")  # Print to console
+    log_file.write(log_message)  # Write to file
+    # Close the log file
+    log_file.close()
 
     original_model = finetuned_model.__class__(input_dim=finetuned_model.input_dim, num_classes=finetuned_model.num_classes)  
     original_model.load_state_dict(frozen_base_model_state)  # Load pretrained weights into the new model

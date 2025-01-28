@@ -7,7 +7,8 @@ from agglo_model_clust import *
 from cluster_acc_viz_funcs import *
 from DNN_FT_funcs import *
 from DNN_AMC_funcs import *
-from model_classes import *
+#from model_classes import *
+from revamped_model_classes import *
 
 
 def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, config, pretrained_generic_CNN_model,
