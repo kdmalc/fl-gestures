@@ -10,9 +10,40 @@ import os
 import sys
 from datetime import datetime
 import copy
+import pickle
+from sklearn.preprocessing import LabelEncoder
 
+from moments_engr import *
 #from model_classes import *
 from revamped_model_classes import *
+
+
+def load_expdef_gestures(apply_hc_feateng=True, filepath_pkl='C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'):
+    with open(filepath_pkl, 'rb') as file:
+        raw_expdef_data_df = pickle.load(file)  # (204800, 19)
+
+    if apply_hc_feateng:
+        expdef_df = raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_feature_vectors)
+        expdef_df = expdef_df.reset_index(drop=True)
+    else:
+        # Group by metadata columns and combine data into a matrix
+        condensed_df = (
+            raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num'], as_index=False)
+            .apply(lambda group: pd.Series({
+                'feature': group[raw_expdef_data_df.columns[3:]].to_numpy()
+            }))
+            .reset_index(drop=True)
+        )
+        # Combine metadata columns with the new data column
+        expdef_df = pd.concat([raw_expdef_data_df[['Participant', 'Gesture_ID', 'Gesture_Num']].drop_duplicates().reset_index(drop=True), condensed_df['feature']], axis=1)
+    
+    #convert Gesture_ID to numerical with new Gesture_Encoded column
+    label_encoder = LabelEncoder()
+    expdef_df['Gesture_Encoded'] = label_encoder.fit_transform(expdef_df['Gesture_ID'])
+    label_encoder2 = LabelEncoder()
+    expdef_df['Cluster_ID'] = label_encoder2.fit_transform(expdef_df['Participant'])
+
+    return expdef_df
 
 
 class GestureDataset(Dataset):
@@ -334,13 +365,54 @@ def gesture_performance_by_participant(predictions, true_labels, all_unique_part
     return performance
 
 
+def model_selection(model_type, config, device="cpu", input_dim=16, num_classes=10):
+    if isinstance(model_type, str):
+        if model_type == 'CNN':
+            if config is None:
+                model = CNNModel(input_dim, num_classes).to(device)
+            else:
+                #model = CNNModel_3layer(config, input_dim=80, num_classes=10)
+                model = DynamicCNNModel(config, input_dim=80, num_classes=10)
+            loader_dim = 2
+        elif model_type == 'RNN':
+            model = RNNModel(input_dim, num_classes).to(device)
+            loader_dim = 3  # Not sure... I haven't been using the base RNN
+        elif model_type == 'HybridCNNLSTM':
+            model = HybridCNNLSTM()  # TODO: This needs to be modified to take input sizes smh
+            loader_dim = 3
+        elif model_type == 'CRNN':
+            model = CRNN(input_channels=80, window_size=1, num_classes=10)
+            loader_dim = 3
+        elif model_type == 'EMGHandNet':
+            model = EMGHandNet(input_channels=80, num_classes=10)
+            loader_dim = 4
+        elif model_type == 'MomonaNet':
+            model = MomonaNet(config)  # Arch is hardcoded in but it'e fine
+            loader_dim = 2
+            # Overwriting... basically hardcoding these in...
+            ## There's a better way to do this (since you could use the default vals)
+            #sequence_length = 1
+            #time_steps = 64
+            # Nvm just hardcode the reshape...
+            ## It really ought to be 3 tho... but I have to reshape no matter what I think
+        elif model_type == "GenMomonaNet":
+            model = GenMomonaNet(config) # Config should specify everything about arch?
+            loader_dim = 2  # Double check this is true for GenMomonaNet
+        else:
+            raise ValueError(f"{model_type} not recognized.")
+    else:
+        model = model_type
+
+    return model, loader_dim
+
+
 def main_training_pipeline(data_splits, all_participants, test_participants, model_type, config, 
                            use_weight_decay=True, train_intra_cross_loaders=None):
     """
     Main training pipeline with comprehensive performance tracking
     
     Args:
-    - data_splits: ...
+    - data_splits: dictionary (NOT DATALOADERS) with keys according to scenario and train/test
     - all_participants: List of all (unique) participants
     - test_participants: List of participants to hold out
     - model_type: string of model name
@@ -381,6 +453,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         cross_pids = test_participants
     else:
         # MomonaNet
+        # TODO: Is GenMomonaNet here too? Idk
 
         #unique_gestures = np.unique(data_splits['train']['labels'])
         #num_classes = len(unique_gestures)
@@ -391,39 +464,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         cross_pids = data_splits['cross_subject_test']['participant_ids']
     
     # Select model
-    if isinstance(model_type, str):
-        if model_type == 'CNN':
-            if config is None:
-                model = CNNModel(input_dim, num_classes).to(device)
-            else:
-                #model = CNNModel_3layer(config, input_dim=80, num_classes=10)
-                model = DynamicCNNModel(config, input_dim=80, num_classes=10)
-            loader_dim = 2
-        elif model_type == 'RNN':
-            model = RNNModel(input_dim, num_classes).to(device)
-            loader_dim = 3  # Not sure... I haven't been using the base RNN
-        elif model_type == 'HybridCNNLSTM':
-            model = HybridCNNLSTM()  # TODO: This needs to be modified to take input sizes smh
-            loader_dim = 3
-        elif model_type == 'CRNN':
-            model = CRNN(input_channels=80, window_size=1, num_classes=10)
-            loader_dim = 3
-        elif model_type == 'EMGHandNet':
-            model = EMGHandNet(input_channels=80, num_classes=10)
-            loader_dim = 4
-        elif model_type == 'MomonaNet':
-            model = MomonaNet(config)  # Arch is hardcoded in but it'e fine
-            loader_dim = 2
-            # Overwriting... basically hardcoding these in...
-            ## There's a better way to do this (since you could use the default vals)
-            #sequence_length = 1
-            #time_steps = 64
-            # Nvm just hardcode the reshape...
-            ## It really ought to be 3 tho... but I have to reshape no matter what I think
-        else:
-            raise ValueError(f"{model_type} not recognized.")
-    else:
-        model = model_type
+    model, loader_dim = model_selection(model_type, config, device=device, input_dim=input_dim, num_classes=num_classes)
 
     if train_intra_cross_loaders is None:
         # Datasets and loaders
@@ -455,6 +496,8 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False)  #, drop_last=True
 
         # CROSS SUBJECT (560)
+        ## Wait shouldn't I have 2 cross datasets? Are these the withheld users??
+        ## I should have finetuning and withheld right? Presumably cross_test is withheld?
         cross_test_dataset = my_gesture_dataset(
             data_splits['cross_subject_test']['feature'], 
             data_splits['cross_subject_test']['labels'], 
@@ -548,7 +591,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     }
 
 
-def fine_tune_model(finetuned_model, fine_tune_loader, test_loader=None, num_epochs=20, lr=0.00001, criterion=nn.CrossEntropyLoss(), 
+def fine_tune_model(finetuned_model, fine_tune_loader, test_loader=None, num_epochs=20, lr=0.00001,
                     use_weight_decay=True, weight_decay=0.05):
     """
     Fine-tune the base model on a small subset of data

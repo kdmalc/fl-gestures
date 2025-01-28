@@ -146,6 +146,7 @@ class GenMomonaNet(nn.Module):
     def __init__(self, config):
         """
         Generalized MomonaNet model.
+        https://github.com/my-13/biosignals-gesture-analysis/blob/main/2024_UIST_CodeOcean/algorithms1.py
 
         Args:
             config (dict): Configuration dictionary containing the following keys:
@@ -242,6 +243,7 @@ class GenMomonaNet(nn.Module):
 
 
 class MomonaNet(nn.Module):
+    #https://github.com/my-13/biosignals-gesture-analysis/blob/main/2024_UIST_CodeOcean/algorithms1.py
     def __init__(self, config):
         hidden_size = 12
         tlen = 62  # TODO: Pass this in as a param? Or dynamically calc it?

@@ -66,7 +66,7 @@ results = main_training_pipeline(
     all_participants=all_participants, 
     test_participants=test_participants,
     model_type='CNN',  # Or 'RNN'
-    num_epochs=50, config=config)
+    config=config)
 
 full_path = os.path.join(cwd, 'ELEC573_Proj', 'models', 'generic_CNN_model.pth')
 print("Full Path:", full_path)

@@ -23,33 +23,6 @@ do_normal_logging = True
 
 ##################################################
 
-def load_expdef_gestures(apply_hc_feateng=True, filepath_pkl='C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'):
-    with open(filepath_pkl, 'rb') as file:
-        raw_expdef_data_df = pickle.load(file)  # (204800, 19)
-
-    if apply_hc_feateng:
-        expdef_df = raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_feature_vectors)
-        expdef_df = expdef_df.reset_index(drop=True)
-    else:
-        # Group by metadata columns and combine data into a matrix
-        condensed_df = (
-            raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num'], as_index=False)
-            .apply(lambda group: pd.Series({
-                'feature': group[raw_expdef_data_df.columns[3:]].to_numpy()
-            }))
-            .reset_index(drop=True)
-        )
-        # Combine metadata columns with the new data column
-        expdef_df = pd.concat([raw_expdef_data_df[['Participant', 'Gesture_ID', 'Gesture_Num']].drop_duplicates().reset_index(drop=True), condensed_df['feature']], axis=1)
-    
-    #convert Gesture_ID to numerical with new Gesture_Encoded column
-    label_encoder = LabelEncoder()
-    expdef_df['Gesture_Encoded'] = label_encoder.fit_transform(expdef_df['Gesture_ID'])
-    label_encoder2 = LabelEncoder()
-    expdef_df['Cluster_ID'] = label_encoder2.fit_transform(expdef_df['Participant'])
-
-    return expdef_df
-
 expdef_df = load_expdef_gestures(apply_hc_feateng=do_feature_engr)
 
 all_participants = expdef_df['Participant'].unique()
