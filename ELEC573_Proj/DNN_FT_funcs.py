@@ -645,11 +645,12 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
 
     # Log metrics to the console and the text file, AFTER the while loop has finished
     log_message = (
-        f"Participant ID {pid}, "
+        f"Participant ID {pid[:-1]}, "  # [] in order to drop the "_" 
         f"Epoch {epoch}/{max_epochs}, "
+        # TODO: Why are these losses and not accuracies...
         f"FT Train Loss: {train_loss:.4f}, "
         f"Novel Intra Subject Testing Loss: {novel_intra_test_loss:.4f}, "
-        f"Did early stopping trigger? {done}\n")
+        f"Early stop? {done}\n")
     print(log_message, end="")  # Print to console
     log_file.write(log_message)  # Write to file
     # Close the log file

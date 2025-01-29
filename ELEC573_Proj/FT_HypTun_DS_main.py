@@ -1,8 +1,9 @@
 import torch
 from torch.utils.data import DataLoader
-import copy
-import pandas as pd
-import pickle
+#import copy
+#import pandas as pd
+#import pickle
+import random
 import json
 import numpy as np
 from collections import defaultdict
@@ -19,6 +20,7 @@ from revamped_model_classes import *
 NUM_CONFIGS = 20
 MODEL_STR = "GenMomonaNet"
 expdef_df = load_expdef_gestures(apply_hc_feateng=False)
+timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
 
 # Define the search space
@@ -65,7 +67,11 @@ GenMomonaNet_hyperparameter_space = {
     "num_ft_epochs": [500], #[10, 30, 50],
     "ft_weight_decay": [0.0, 1e-4], 
     "ft_batch_size": [1, 5, 10 ], 
-    "use_earlystopping": [True]  # Always use this to save time, in ft and earlier training
+    "use_earlystopping": [True],  # Always use this to save time, in ft and earlier training
+    "results_save_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\{timestamp}"],  # TODO: Implement this
+    "timestamp": [timestamp],  # TODO: Implement this
+    "verbose": [True]  # TODO: Implement this
+    #"models_save_dir": ["C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models"]  # I might not use this since it is already working fine
 }
 
 def save_results(results, save_dir, timestamp):
@@ -141,9 +147,10 @@ def evaluate_configuration(datasplit, pretrained_model, config, model_str, times
 
     return user_accuracies
 
-def save_model(model, model_str, save_dir, model_scenario_str, verbose=True):
+def save_model(model, model_str, save_dir, model_scenario_str, verbose=True, timestamp=None):
     """Save the model with a timestamp."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    if timestamp is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     full_path = os.path.join(save_dir, f'{timestamp}_{model_scenario_str}_{model_str}_model.pth')
     if verbose:
         print("Full Path:", full_path)
@@ -159,7 +166,12 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
     ## Does this like shuffle or is this deterministic?
     print("Combining configs")
     configs = list(ParameterGrid({**hyperparameter_space, **architecture_space}))
+    # Shuffle the configurations
+    random.shuffle(configs)
     configs = configs[:num_configs_to_test]  # Limit the number of configurations to test
+    # Random search variant
+    #from sklearn.model_selection import ParameterSampler
+    #configs = list(ParameterSampler({**hyperparameter_space, **architecture_space}, n_iter=num_configs_to_test))
 
     # This creates the (multiple) train/test splits
     print("Creating datasplits")
