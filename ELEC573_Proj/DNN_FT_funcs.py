@@ -389,8 +389,8 @@ def select_model(model_type, config, device="cpu", input_dim=16, num_classes=10)
             #time_steps = 64
             # Nvm just hardcode the reshape...
             ## It really ought to be 3 tho... but I have to reshape no matter what I think
-        elif model_type == "GenMomonaNet":  # 2D
-            model = GenMomonaNet(config) # Config should specify everything about arch?
+        elif model_type == "DynamicMomonaNet":  # 2D
+            model = DynamicMomonaNet(config) # Config should specify everything about arch?
         else:
             raise ValueError(f"{model_type} not recognized.")
     else:
@@ -400,7 +400,7 @@ def select_model(model_type, config, device="cpu", input_dim=16, num_classes=10)
 
 
 def select_dataset_class(model_str):
-    if model_str in ["CNN",  "MomonaNet", "GenMomonaNet"]:
+    if model_str in ["CNN",  "MomonaNet", "DynamicMomonaNet"]:
         return GestureDataset  # This is 2D
     elif model_str in ["RNN", "HybridCNNLSTM", "CRNN"]:
         return GestureDataset_3D
@@ -457,7 +457,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         cross_pids = test_participants
     else:
         # MomonaNet
-        # TODO: Is GenMomonaNet handled here too? Idk
+        # TODO: Is DynamicMomonaNet handled here too? Idk
 
         #unique_gestures = np.unique(data_splits['train']['labels'])
         #num_classes = len(unique_gestures)

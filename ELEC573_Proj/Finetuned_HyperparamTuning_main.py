@@ -17,16 +17,16 @@ from revamped_model_classes import *
 
 
 NUM_CONFIGS = 20
-MODEL_STR = "GenMomonaNet"
+MODEL_STR = "DynamicMomonaNet"
 expdef_df = load_expdef_gestures(apply_hc_feateng=False)
 
 
 # Define the search space
-GenMomonaNet_architecture_space = {
+DynamicMomonaNet_architecture_space = {
     "num_channels": [NUM_CHANNELS],  #(int): Number of input channels.
     "sequence_length": [64],  #(int): Length of the input sequence.
     # ^ 32 wasn't working, it doesn't support time_steps to do multiple sequence batches for each slice
-    "time_steps": [None],  # Required so that reused code doesn't break. Not used in GenMomonanet
+    "time_steps": [None],  # Required so that reused code doesn't break. Not used in DynamicMomonaNet
     "conv_layers": [ #(list of tuples): List of tuples specifying convolutional layers. Each tuple should contain (out_channels, kernel_size, stride).
         # Configuration 1: Moderate Complexity
         [(32, 5, 1), (64, 3, 1), (128, 2, 1)],
@@ -47,7 +47,7 @@ GenMomonaNet_architecture_space = {
     #"use_batchnorm": [True, False]  # This is not added yet
 }
 
-GenMomonaNet_hyperparameter_space = {
+DynamicMomonaNet_hyperparameter_space = {
     "batch_size": [SHARED_BS],  #(int): Batch size.
     "lstm_dropout": [0.8],  #(float): Dropout probability for LSTM layers.
     "learning_rate": [0.0001, 0.001, 0.01, 0.1],
@@ -171,5 +171,5 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
 
 # Example usage
 #ft_user_train_test_tuples
-results = hyperparam_tuning_for_ft(MODEL_STR, expdef_df, GenMomonaNet_hyperparameter_space, GenMomonaNet_architecture_space, num_configs_to_test=NUM_CONFIGS)
+results = hyperparam_tuning_for_ft(MODEL_STR, expdef_df, DynamicMomonaNet_hyperparameter_space, DynamicMomonaNet_architecture_space, num_configs_to_test=NUM_CONFIGS)
 print("Top configurations:", results[:5])

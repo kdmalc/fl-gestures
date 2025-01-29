@@ -142,7 +142,7 @@ class DynamicCNNModel(nn.Module):
         return self.fc(x)
 
 
-class GenMomonaNet(nn.Module):
+class DynamicMomonaNet(nn.Module):
     def __init__(self, config):
         """
         Generalized MomonaNet model.
