@@ -517,9 +517,11 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     done = False
     earlystopping = EarlyStopping()
     # Open a text file for logging
+    # Toggle this? Is this by participant? Or just once per config?
+    #if 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     # TODO: Add earlystopping toggle? On by default is chill here tho
-    log_file = open(f"{timestamp}_{model_type}_training_log.txt", "w")
+    log_file = open(f"{config['results_save_dir']}\\{timestamp}_{model_type}_pretrained_training_log.txt", "w")
     while not done and epoch < max_epochs:
         epoch += 1
         train_loss = train_model(model, train_loader, optimizer)
@@ -541,7 +543,8 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
             f"Intra Testing Loss: {intra_test_loss:.4f}, "
             f"Cross Testing Loss: {cross_test_loss:.4f}, "
             f"{earlystopping.status}\n")
-        print(log_message, end="")  # Print to console
+        if config["verbose"]:
+            print(log_message, end="")  # Print to console
         log_file.write(log_message)  # Write to file
     # Close the log file
     log_file.close()
@@ -629,7 +632,8 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     if use_earlystopping:
         earlystopping = EarlyStopping()
     # Open a text file for logging
-    log_file = open(f"{timestamp}_{pid}ft_log.txt", "w")
+    if config["log_each_pid_results"]:
+        log_file = open(f"{timestamp}_{pid}ft_log.txt", "w")
     while not done and epoch < max_epochs:
         epoch += 1
 
@@ -651,10 +655,12 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         f"FT Train Loss: {train_loss:.4f}, "
         f"Novel Intra Subject Testing Loss: {novel_intra_test_loss:.4f}, "
         f"Early stop? {done}\n")
-    print(log_message, end="")  # Print to console
-    log_file.write(log_message)  # Write to file
-    # Close the log file
-    log_file.close()
+    if config["verbose"]:
+            print(log_message, end="")  # Print to console
+    if config["log_each_pid_results"]:
+        log_file.write(log_message)  # Write to file
+        # Close the log file
+        log_file.close()
 
     #original_model = finetuned_model.__class__(input_dim=finetuned_model.input_dim, num_classes=finetuned_model.num_classes)  
     #original_model.load_state_dict(frozen_base_model_state)  # Load pretrained weights into the new model
@@ -791,7 +797,10 @@ def visualize_model_performance(results, print_results=False):
         print(f"Cross Testing Accuracy: {results['cross_test_accuracy']:.2%}")
 
 
-def log_performance(results, log_dir='ELEC573_Proj\\results\\performance_logs', base_filename='model_performance', config=None):
+def log_performance(results, config, base_filename='model_performance'):
+    # THIS IS NOT GETTING USED IN MY CURRENT CODE???
+    print("LOG_PERFORMANCE CALLED! FIGURE OUT WHERE!")
+
     """
     Comprehensive logging of model performance
     
@@ -804,12 +813,12 @@ def log_performance(results, log_dir='ELEC573_Proj\\results\\performance_logs', 
     - Path to the created log file
     """
     # Create log directory if it doesn't exist
-    os.makedirs(log_dir, exist_ok=True)
+    os.makedirs(config["perf_log_dir"], exist_ok=True)
     
     # Generate unique filename with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     log_filename = f"{timestamp}_{base_filename}.txt"
-    log_path = os.path.join(log_dir, log_filename)
+    log_path = os.path.join(config["perf_log_dir"], log_filename)
     
     # Capture console output and log to file
     class Logger:

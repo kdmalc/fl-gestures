@@ -68,10 +68,16 @@ GenMomonaNet_hyperparameter_space = {
     "ft_weight_decay": [0.0, 1e-4], 
     "ft_batch_size": [1, 5, 10 ], 
     "use_earlystopping": [True],  # Always use this to save time, in ft and earlier training
-    "results_save_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\{timestamp}"],  # TODO: Implement this
-    "timestamp": [timestamp],  # TODO: Implement this
-    "verbose": [True]  # TODO: Implement this
-    #"models_save_dir": ["C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models"]  # I might not use this since it is already working fine
+}
+
+metadata_config = {
+    "results_save_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\{timestamp}"],
+    "models_save_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\{timestamp}"], 
+    "perf_log_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs"], 
+    "timestamp": [timestamp],
+    "verbose": [True],
+    "log_each_pid_results": [False], 
+    "save_ft_models": [False]  # Don't need to be saved during hyperparam tuning
 }
 
 def save_results(results, save_dir, timestamp):
@@ -93,7 +99,7 @@ def save_results(results, save_dir, timestamp):
     with open(results_path, 'w') as f:
         json.dump(sorted_results, f, indent=4)
 
-    print(f"Results saved to: {results_path}")
+    #print(f"Results saved to: {results_path}")
 
 def group_data_by_participant(features, labels, pids):
     """Helper function to group features and labels by participant ID."""
@@ -103,7 +109,7 @@ def group_data_by_participant(features, labels, pids):
         user_data[pid][1].append(label)
     return user_data
 
-def evaluate_configuration(datasplit, pretrained_model, config, model_str, timestamp):
+def evaluate_configuration_on_ft(datasplit, pretrained_model, config, model_str, timestamp):
     """Evaluate a configuration on a given data split."""
     user_accuracies = []
 
@@ -144,10 +150,14 @@ def evaluate_configuration(datasplit, pretrained_model, config, model_str, times
         )
         metrics = evaluate_model(finetuned_model, cross_test_loader)
         user_accuracies.append(metrics["accuracy"])
+        if config["save_ft_models"]:
+            save_model(finetuned_model, model_str, config["models_save_dir"], f"{pid}_pretrainedFT", verbose=config["verbose"])
+
 
     return user_accuracies
 
 def save_model(model, model_str, save_dir, model_scenario_str, verbose=True, timestamp=None):
+    # TODO: save_model verbose should pull from config...
     """Save the model with a timestamp."""
     if timestamp is None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M")
@@ -157,21 +167,28 @@ def save_model(model, model_str, save_dir, model_scenario_str, verbose=True, tim
     torch.save(model.state_dict(), full_path)
 
 # main function
-def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, architecture_space, 
-                             num_configs_to_test=20, 
-                             save_path="C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning",
-                             num_datasplits_to_test=2, num_train_trials=8, num_ft_trials=3):
+def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, architecture_space, metadata_config,
+                             num_configs_to_test=20, num_datasplits_to_test=2, num_train_trials=8, num_ft_trials=3):
     
+    print("Creating directories")
+    # Results
+    os.makedirs(metadata_config["results_save_dir"][0])
+    print(f'Directory {metadata_config["results_save_dir"][0]} created successfully!')
+    # Models
+    os.makedirs(metadata_config["models_save_dir"][0])
+    print(f'Directory {metadata_config["models_save_dir"][0]} created successfully!')
+
     # Generate all possible configurations
     ## Does this like shuffle or is this deterministic?
     print("Combining configs")
-    configs = list(ParameterGrid({**hyperparameter_space, **architecture_space}))
+    configs = list(ParameterGrid({**hyperparameter_space, **architecture_space, **metadata_config}))
     # Shuffle the configurations
     random.shuffle(configs)
     configs = configs[:num_configs_to_test]  # Limit the number of configurations to test
     # Random search variant
+    ## This would probably be more efficient, assuming it just samples and doesn't create the whole space like my current version does
     #from sklearn.model_selection import ParameterSampler
-    #configs = list(ParameterSampler({**hyperparameter_space, **architecture_space}, n_iter=num_configs_to_test))
+    #configs = list(ParameterSampler({**hyperparameter_space, **architecture_space, **metadata_config}, n_iter=num_configs_to_test))
 
     # This creates the (multiple) train/test splits
     print("Creating datasplits")
@@ -197,6 +214,7 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
             # Here, each config+datasplit pair gets its own timestamp... not sure what is optimal
             ## Dont want anything to overwrite mainly
             ## TODO: Augment saving to create and save to folders (folders are timestamps?)
+            ## I did that for results, but maybe should make the folder include the model name and scenario...
             timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
             # Train the model
@@ -207,10 +225,10 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
             pretrained_model = training_results["model"]
 
             # Save the pretrained model
-            save_model(pretrained_model, model_str, save_path, "pretrained", verbose=True)
+            save_model(pretrained_model, model_str, metadata_config["models_save_dir"][0], "pretrained", verbose=metadata_config["verbose"][0])
 
             # Evaluate the configuration on the current data split
-            user_accuracies = evaluate_configuration(datasplit, pretrained_model, config, model_str, timestamp)
+            user_accuracies = evaluate_configuration_on_ft(datasplit, pretrained_model, config, model_str, timestamp)
             avg_accuracy = sum(user_accuracies) / len(user_accuracies)
             split_results.append({"avg_accuracy": avg_accuracy, "user_accuracies": user_accuracies})
 
@@ -224,13 +242,13 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
             "split_results": split_results
         })
 
-    # Save the results
-    save_results(results, save_path, timestamp)
+    # Save the 
+    ## This is the aggregated and sorted JSON file. This always needs to be saved
+    save_results(results, metadata_config["results_save_dir"][0], metadata_config["timestamp"][0])
 
     return results
 
 # Run the main function
 #results = main()
-results = hyperparam_tuning_for_ft(MODEL_STR, expdef_df, GenMomonaNet_hyperparameter_space, GenMomonaNet_architecture_space, 
-                             num_configs_to_test=2,
-                             num_datasplits_to_test=2, num_train_trials=8, num_ft_trials=3)
+results = hyperparam_tuning_for_ft(MODEL_STR, expdef_df, GenMomonaNet_hyperparameter_space, GenMomonaNet_architecture_space, metadata_config, 
+                             num_configs_to_test=2, num_datasplits_to_test=2, num_train_trials=8, num_ft_trials=3)

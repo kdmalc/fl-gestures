@@ -1,0 +1,211 @@
+[
+    {
+        "note": "Best configuration: {'batch_size': 32, 'conv_layers': [(32, 5, 1), (64, 3, 1), (128, 2, 1)], 'dropout_rate': 0.5, 'fc_layers': [128, 64], 'ft_batch_size': 5, 'ft_learning_rate': 0.001, 'ft_weight_decay': 0.0, 'learning_rate': 0.001, 'log_each_pid_results': False, 'lstm_dropout': 0.5, 'lstm_hidden_size': 8, 'lstm_num_layers': 2, 'models_save_dir': 'C:\\\\Users\\\\kdmen\\\\Repos\\\\fl-gestures\\\\ELEC573_Proj\\\\models', 'num_channels': 16, 'num_classes': 10, 'num_epochs': 500, 'num_ft_epochs': 500, 'optimizer': 'sgd', 'perf_log_dir': 'C:\\\\Users\\\\kdmen\\\\Repos\\\\fl-gestures\\\\ELEC573_Proj\\\\results\\\\performance_logs', 'pooling_layers': [False, False, False, False], 'results_save_dir': 'C:\\\\Users\\\\kdmen\\\\Repos\\\\fl-gestures\\\\ELEC573_Proj\\\\results\\\\hyperparam_tuning\\\\20250129_1503', 'sequence_length': 64, 'time_steps': None, 'timestamp': '20250129_1503', 'use_dense_cnn_lstm': True, 'use_earlystopping': True, 'verbose': True, 'weight_decay': 0.0} with overall average accuracy: 0.3205"
+    },
+    {
+        "config": {
+            "batch_size": 32,
+            "conv_layers": [
+                [
+                    32,
+                    5,
+                    1
+                ],
+                [
+                    64,
+                    3,
+                    1
+                ],
+                [
+                    128,
+                    2,
+                    1
+                ]
+            ],
+            "dropout_rate": 0.5,
+            "fc_layers": [
+                128,
+                64
+            ],
+            "ft_batch_size": 5,
+            "ft_learning_rate": 0.001,
+            "ft_weight_decay": 0.0,
+            "learning_rate": 0.001,
+            "log_each_pid_results": false,
+            "lstm_dropout": 0.5,
+            "lstm_hidden_size": 8,
+            "lstm_num_layers": 2,
+            "models_save_dir": "C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models",
+            "num_channels": 16,
+            "num_classes": 10,
+            "num_epochs": 500,
+            "num_ft_epochs": 500,
+            "optimizer": "sgd",
+            "perf_log_dir": "C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs",
+            "pooling_layers": [
+                false,
+                false,
+                false,
+                false
+            ],
+            "results_save_dir": "C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250129_1503",
+            "sequence_length": 64,
+            "time_steps": null,
+            "timestamp": "20250129_1503",
+            "use_dense_cnn_lstm": true,
+            "use_earlystopping": true,
+            "verbose": true,
+            "weight_decay": 0.0
+        },
+        "overall_avg_accuracy": 0.32053571428571426,
+        "overall_user_accuracies": [
+            0.2,
+            0.22857142857142856,
+            0.35714285714285715,
+            0.14285714285714285,
+            0.24285714285714285,
+            0.2571428571428571,
+            0.2857142857142857,
+            0.45714285714285713,
+            0.6,
+            0.5285714285714286,
+            0.3142857142857143,
+            0.3142857142857143,
+            0.3,
+            0.5571428571428572,
+            0.17142857142857143,
+            0.17142857142857143
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.27142857142857146,
+                "user_accuracies": [
+                    0.2,
+                    0.22857142857142856,
+                    0.35714285714285715,
+                    0.14285714285714285,
+                    0.24285714285714285,
+                    0.2571428571428571,
+                    0.2857142857142857,
+                    0.45714285714285713
+                ]
+            },
+            {
+                "avg_accuracy": 0.36964285714285705,
+                "user_accuracies": [
+                    0.6,
+                    0.5285714285714286,
+                    0.3142857142857143,
+                    0.3142857142857143,
+                    0.3,
+                    0.5571428571428572,
+                    0.17142857142857143,
+                    0.17142857142857143
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "batch_size": 128,
+            "conv_layers": [
+                [
+                    32,
+                    5,
+                    1
+                ],
+                [
+                    64,
+                    3,
+                    1
+                ],
+                [
+                    128,
+                    2,
+                    1
+                ]
+            ],
+            "dropout_rate": 0.0,
+            "fc_layers": [
+                64,
+                32
+            ],
+            "ft_batch_size": 1,
+            "ft_learning_rate": 0.01,
+            "ft_weight_decay": 0.0001,
+            "learning_rate": 0.1,
+            "log_each_pid_results": false,
+            "lstm_dropout": 0.8,
+            "lstm_hidden_size": 24,
+            "lstm_num_layers": 2,
+            "models_save_dir": "C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models",
+            "num_channels": 16,
+            "num_classes": 10,
+            "num_epochs": 500,
+            "num_ft_epochs": 500,
+            "optimizer": "sgd",
+            "perf_log_dir": "C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs",
+            "pooling_layers": [
+                true,
+                true,
+                false,
+                false
+            ],
+            "results_save_dir": "C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250129_1503",
+            "sequence_length": 64,
+            "time_steps": null,
+            "timestamp": "20250129_1503",
+            "use_dense_cnn_lstm": false,
+            "use_earlystopping": true,
+            "verbose": true,
+            "weight_decay": 0.0001
+        },
+        "overall_avg_accuracy": 0.10267857142857142,
+        "overall_user_accuracies": [
+            0.1,
+            0.1,
+            0.1,
+            0.11428571428571428,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.12857142857142856,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.10178571428571428,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.11428571428571428,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.10357142857142856,
+                "user_accuracies": [
+                    0.1,
+                    0.12857142857142856,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            }
+        ]
+    }
+]
