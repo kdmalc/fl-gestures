@@ -126,6 +126,7 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
                 cross_features_agg, cross_labels_agg = cross_user_data[pid]
                 # Need loader_dim or model_str to know which dataset to use...
                 my_gesture_dataset = select_dataset_class(model_str)
+                # WE HAVE 30 TOTAL GESTURES IN THE FINETUNING DATASET (3 samples from 10 classe)
                 ft_train_dataset = my_gesture_dataset(
                     ft_features_agg, ft_labels_agg, 
                     sl=config['sequence_length'], ts=config['time_steps'])
@@ -137,10 +138,12 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
                 fine_tune_loader = DataLoader(ft_train_dataset, batch_size=config['batch_size'], shuffle=True)
                 cross_test_loader = DataLoader(cross_test_dataset, batch_size=config['batch_size'], shuffle=False)
 
+                print("STOP POINT!")
+
                 # Fine-tune the model on the current user's data
                 finetuned_model, _, _, _ = fine_tune_model(
-                    pretrained_model, fine_tune_loader, cross_test_loader, config, 
-                    pid=pid, use_earlystopping=config["use_earlystopping"]
+                    pretrained_model, fine_tune_loader, config, timestamp,
+                    test_loader=cross_test_loader, pid=pid
                 )
 
                 # Evaluate the fine-tuned model on the user's test set

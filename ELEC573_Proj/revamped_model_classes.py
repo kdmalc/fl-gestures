@@ -165,6 +165,7 @@ class GenMomonaNet(nn.Module):
         """
         super().__init__()
 
+        self.config = config  # For debugging
         self.bs = config['batch_size']
         self.nc = config['num_channels']
         self.sl = config['sequence_length']

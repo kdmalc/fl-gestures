@@ -478,7 +478,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
             data_splits['train']['labels'], 
             sl=sequence_length, 
             ts=time_steps)
-        train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)  #, drop_last=True
+        train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True) #, drop_last=True)
         
         # INTRA SUBJECT (480)
         intra_test_dataset = my_gesture_dataset(
@@ -487,7 +487,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
             sl=sequence_length, 
             ts=time_steps)
         # Shuffle doesn't matter for testing
-        intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False)  #, drop_last=True
+        intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False) #, drop_last=True)
 
         # CROSS SUBJECT (560)
         ## Wait shouldn't I have 2 cross datasets? Are these the withheld users??
@@ -498,7 +498,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
             sl=sequence_length, 
             ts=time_steps)
         # Shuffle doesn't matter for testing
-        cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False)  #, drop_last=True
+        cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False) #, drop_last=True)
     else:
         train_loader = train_intra_cross_loaders[0]
         intra_test_loader = train_intra_cross_loaders[1]
@@ -517,7 +517,9 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     done = False
     earlystopping = EarlyStopping()
     # Open a text file for logging
-    log_file = open("training_log.txt", "w")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    # TODO: Add earlystopping toggle? On by default is chill here tho
+    log_file = open(f"{timestamp}_{model_type}_training_log.txt", "w")
     while not done and epoch < max_epochs:
         epoch += 1
         train_loss = train_model(model, train_loader, optimizer)
@@ -591,7 +593,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     }
 
 
-def fine_tune_model(finetuned_model, fine_tune_loader, config, test_loader=None, pid=None, use_earlystopping=True):
+def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_loader=None, pid=None, use_earlystopping=None):
     """
     Fine-tune the base model on a small subset of data
     
@@ -603,10 +605,14 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, test_loader=None,
     Returns:
     - Fine-tuned model
     """
+    
     if pid is None:
         pid = ""
     else:
         pid = pid + "_"
+
+    if use_earlystopping is None:
+        use_earlystopping = config["use_earlystopping"]
 
     # Extract the original pretrained model weights since finetuning happens in place
     frozen_base_model_state = copy.deepcopy(finetuned_model.state_dict())
@@ -622,7 +628,7 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, test_loader=None,
     if use_earlystopping:
         earlystopping = EarlyStopping()
     # Open a text file for logging
-    log_file = open("{pid}ft_log.txt", "w")
+    log_file = open(f"{timestamp}_{pid}ft_log.txt", "w")
     while not done and epoch < max_epochs:
         epoch += 1
 
