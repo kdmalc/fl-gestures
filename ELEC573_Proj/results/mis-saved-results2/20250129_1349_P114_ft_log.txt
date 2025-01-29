@@ -1,0 +1,1 @@
+Participant ID P114_, Epoch 35/500, FT Train Loss: 0.0337, Novel Intra Subject Testing Loss: 1.5071, Did early stopping trigger? True

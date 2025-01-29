@@ -1,3 +1,5 @@
+# OLD VERSION - NOT UP TO DATE. ARCHIVE THIS
+
 import torch
 import copy
 import pandas as pd
@@ -49,15 +51,14 @@ GenMomonaNet_hyperparameter_space = {
     "batch_size": [SHARED_BS],  #(int): Batch size.
     "lstm_dropout": [0.8],  #(float): Dropout probability for LSTM layers.
     "learning_rate": [0.0001, 0.001, 0.01, 0.1],
-    "num_epochs": [100, 500], #[30, 50, 70],
+    "num_epochs": [500], #[30, 50, 70],
     "optimizer": ["adam", "sgd"],
     "weight_decay": [0.0, 1e-4],
     "dropout_rate": [0.0, 0.3, 0.5],
     "ft_learning_rate": [0.0001, 0.001, 0.01, 0.1],
-    "num_ft_epochs": [100, 500], #[10, 30, 50],
+    "num_ft_epochs": [500], #[10, 30, 50],
     "ft_weight_decay": [0.0, 1e-4], 
     "use_earlystopping": [True]  # Always use this to save time, in ft and earlier training
-    # TODO: LOG WHEN WE STOP EARLY!!!
 }
 
 # Hyperparameter tuning function
@@ -69,6 +70,7 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
     configs = list(ParameterGrid({**hyperparameter_space, **architecture_space}))
     configs = configs[:num_configs_to_test]  # Limit the number of configurations to test
 
+    # This creates the (multiple) train/test splits
     data_splits_lst = []
     for datasplit in range(num_datasplits_to_test):
         all_participants = expdef_df['Participant'].unique()

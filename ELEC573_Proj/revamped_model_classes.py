@@ -166,7 +166,7 @@ class GenMomonaNet(nn.Module):
         super().__init__()
 
         self.config = config  # For debugging
-        self.bs = config['batch_size']
+        #self.bs = config['batch_size']
         self.nc = config['num_channels']
         self.sl = config['sequence_length']
 
@@ -220,7 +220,11 @@ class GenMomonaNet(nn.Module):
 
     def forward(self, x):
         # Reshape input to (batch_size, num_channels, sequence_length)
-        x = x.view(self.bs, self.nc, self.sl)
+        #x = x.view(self.bs, self.nc, self.sl)
+        # Dynamically infer batch size from input tensor
+        batch_size = x.size(0)  # Get the batch size from the input tensor
+        # Reshape input to (batch_size, num_channels, sequence_length)
+        x = x.view(batch_size, self.nc, self.sl)  # Use dynamic batch size
         # Apply convolutional layers
         for i, conv in enumerate(self.conv_layers):
             x = self.relu(conv(x))
@@ -250,7 +254,7 @@ class MomonaNet(nn.Module):
         tlen = 62  # TODO: Pass this in as a param? Or dynamically calc it?
         super().__init__()
 
-        self.bs = config['batch_size']
+        #self.bs = config['batch_size']
         self.nc = config['num_channels']
         self.sl = config['sequence_length']
 
@@ -273,7 +277,11 @@ class MomonaNet(nn.Module):
         )
 
     def forward(self, x):
-        x = x.view(self.bs, self.nc, self.sl)
+        #x = x.view(self.bs, self.nc, self.sl)
+        # Dynamically infer batch size from input tensor
+        batch_size = x.size(0)  # Get the batch size from the input tensor
+        # Reshape input to (batch_size, num_channels, sequence_length)
+        x = x.view(batch_size, self.nc, self.sl)  # Use dynamic batch size
         x = self.pool(self.conv1(x)) # CNN layer + pooling
         x = torch.swapaxes(x, 1, 2)
         x = self.relu(self.dense(x))

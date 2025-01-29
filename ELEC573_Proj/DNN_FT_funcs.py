@@ -605,7 +605,7 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     Returns:
     - Fine-tuned model
     """
-    
+
     if pid is None:
         pid = ""
     else:
@@ -615,7 +615,8 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         use_earlystopping = config["use_earlystopping"]
 
     # Extract the original pretrained model weights since finetuning happens in place
-    frozen_base_model_state = copy.deepcopy(finetuned_model.state_dict())
+    #frozen_base_model_state = copy.deepcopy(finetuned_model.state_dict())
+    frozen_original_model = copy.deepcopy(finetuned_model)
     finetuned_model.train()  # Ensure the model is in training mode
     # Loss and optimizer (with lower learning rate for fine-tuning)
     optimizer = set_optimizer(finetuned_model, lr=config["ft_learning_rate"], use_weight_decay=config["ft_weight_decay"] > 0, weight_decay=config["ft_weight_decay"])
@@ -654,11 +655,11 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     # Close the log file
     log_file.close()
 
-    original_model = finetuned_model.__class__(input_dim=finetuned_model.input_dim, num_classes=finetuned_model.num_classes)  
-    original_model.load_state_dict(frozen_base_model_state)  # Load pretrained weights into the new model
-    assert(not finetuned_model == original_model)
+    #original_model = finetuned_model.__class__(input_dim=finetuned_model.input_dim, num_classes=finetuned_model.num_classes)  
+    #original_model.load_state_dict(frozen_base_model_state)  # Load pretrained weights into the new model
+    assert(not finetuned_model == frozen_original_model)
 
-    return finetuned_model, original_model, train_loss_log, test_loss_log
+    return finetuned_model, frozen_original_model, train_loss_log, test_loss_log
 
 
 def plot_gesture_performance(performance_dict, title, save_filename, save_path="ELEC573_Proj\\results\\heatmaps"):
