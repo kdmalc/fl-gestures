@@ -55,7 +55,6 @@ DynamicMomonaNet_config = {
     "save_ft_models": [False]  # Not even applicable here
 }
 
-
 all_participants = expdef_df['Participant'].unique()
 # Shuffle the participants
 np.random.shuffle(all_participants)

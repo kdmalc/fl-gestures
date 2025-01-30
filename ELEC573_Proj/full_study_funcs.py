@@ -90,7 +90,7 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
 
         # 3) FT the above model (or all??) pretrained CNN model on the participant
         ft_model, original_cluster_model, train_loss_log, test_loss_log = fine_tune_model(
-            original_cluster_model, ft_loader, intra_test_loader, num_epochs=num_ft_epochs, lr=ft_lr)
+            original_cluster_model, ft_loader, intra_test_loader, num_epochs=config["num_ft_epochs"], lr=config["ft_lr"])
         ft_clus_res = evaluate_model(ft_model, intra_test_loader)
         novel_pid_res_dict[pid]["ft_acc"] = ft_clus_res["accuracy"]
 
