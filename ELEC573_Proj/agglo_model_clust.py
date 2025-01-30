@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+#import pandas as pd
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
@@ -13,9 +13,8 @@ from sklearn.model_selection import StratifiedKFold
 
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
-from torch.utils.data import TensorDataset
+#import torch.optim as optim
+from torch.utils.data import TensorDataset, DataLoader#, SubsetRandomSampler
 
 
 def agglo_merge_procedure(userdef_df, model, mhp_knn_k=5, test_split_percent=0.3, n_splits=2):
@@ -324,6 +323,7 @@ def test_models_on_clusters(test_df, trained_clus_models_ds, cluster_ids, cluste
         if verbose:
             print(f"Testing model for Cluster ID {cluster} ({clus_idx + 1}/{num_clusters})")
 
+        # Can I just delete this now?...
         #if pytorch_bool:
         #    model = trained_clus_models_ds[cluster]  # dict version
         #else:
@@ -344,13 +344,14 @@ def test_models_on_clusters(test_df, trained_clus_models_ds, cluster_ids, cluste
             if pytorch_bool:
                 X_test = torch.tensor(np.array([x for x in clus_testset[feature_column]]), dtype=torch.float32)
                 y_test = torch.tensor(y_test, dtype=torch.long)
+                # TODO: Replace with custom gesture dataset?...
                 val_dataset = TensorDataset(X_test, y_test)
                 val_loader = DataLoader(val_dataset, batch_size=bs, shuffle=True)
                 
-                model.eval()
                 total_loss = 0
                 total_correct = 0
                 total_samples = 0
+                model.eval()
                 with torch.no_grad():
                     for X_batch, y_batch in val_loader:
                         # Forward pass
@@ -362,7 +363,7 @@ def test_models_on_clusters(test_df, trained_clus_models_ds, cluster_ids, cluste
                         total_correct += (preds == y_batch).sum().item()
                         total_samples += y_batch.size(0)
                 # Average loss and accuracy
-                average_loss = total_loss / len(val_loader)  # Not using this rn
+                #average_loss = total_loss / len(val_loader)  # Not using this rn
                 acc_matrix[clus_idx, clus_idx2] = total_correct / total_samples
             else:
                 X_test = np.array([x.flatten() for x in clus_testset[feature_column]])

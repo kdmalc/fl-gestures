@@ -17,18 +17,15 @@ import torch
 from sklearn.metrics import accuracy_score
 
 
-def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, 
-                                   num_epochs=10,
-                                   cluster_column='Cluster_ID', feature_column='feature', 
-                                   target_column='Gesture_Encoded', n_splits=3, bs=32, 
-                                   lr=0.001, criterion=nn.CrossEntropyLoss()):
+def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, config, 
+                                   n_splits=3, cluster_column='Cluster_ID', feature_column='feature', 
+                                   target_column='Gesture_Encoded', criterion=nn.CrossEntropyLoss()):
     """
     Perform k-fold cross-validation for models trained on each cluster in the dataset.
     
     Parameters:
     - userdef_df (DataFrame): The input dataframe with cluster, feature, and target data.
-    - model (str or sklearn model object): The model to train. If string, it must be one of:
-      ['LogisticRegression', 'SVC', 'RF', 'GradientBoosting', 'KNN'].
+    - model 
     - cluster_ids (list): List of cluster IDs to process.
     - cluster_column (str): Column name representing the cluster IDs.
     - feature_column (str): Column name containing feature arrays.
@@ -38,37 +35,24 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids,
     Returns:
     - avg_val_accuracy (float): The average validation accuracy across all folds and clusters.
     """
+
+    num_epochs = config["num_epochs"]
+    bs = config["batch_size"]
+    lr = config["learning_rate"]
     
     unique_gestures = np.unique(train_df[target_column])
     num_classes = len(unique_gestures)
     input_dim = len(train_df[feature_column].iloc[0])
     
-    # Get the model object if a string is provided
-    if isinstance(model_type, str):
-        # Select model
-        if model_type == 'CNN':
-            model = CNNModel(input_dim, num_classes).to('cpu')
-        elif model_type == 'RNN':
-            model = RNNModel(input_dim, num_classes).to('cpu')
-        else:
-            raise ValueError(f"Unsupported model: {model_type}. Only CNNs and RNNs are supported.")
-    else:
-        # Assuming a model object was passed in
-        model = model_type
-    initial_state = model.state_dict()
+    model = select_model(model_type, config, device="cpu", input_dim=input_dim, num_classes=num_classes)
+    initial_state = copy.deepcopy(model.state_dict())
 
     total_val_accuracy = 0
     num_folds_processed = 0
     clus_model_dict = {}
     for cluster in cluster_ids:
-        
-        #######################################################################
-        #######################################################################
-        #######################################################################
-        
         # Filter data for the current cluster
         cluster_data = train_df[train_df[cluster_column] == cluster]
-        #X = np.array([x.flatten() for x in cluster_data[feature_column]])
         X = np.array([x for x in cluster_data[feature_column]])
         y = np.array(cluster_data[target_column])
 
@@ -86,17 +70,18 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids,
             y_train_tensor = torch.tensor(y_train, dtype=torch.long)
             y_val_tensor = torch.tensor(y_val, dtype=torch.long)
             # Create TensorDataset
+            # TODO: Maybe I need to use my custom dataset classes? Maybe not for MomonaNet tho...
             train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
             val_dataset = TensorDataset(X_val_tensor, y_val_tensor)
             # Create DataLoader
             train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
             val_loader = DataLoader(val_dataset, batch_size=bs, shuffle=False)
             
-            #fold_model = base_model.__class__(**base_model.init_params)
-            fold_model = model.__class__(input_dim, num_classes)  # Create a fresh instance
+            # Create a fresh instance 
+            fold_model = model.__class__(config)  # , input_dim, num_classes
             # Load the saved initial weights from the variable
             fold_model.load_state_dict(initial_state)
-            optimizer = torch.optim.Adam(fold_model.parameters(), lr=lr)
+            optimizer = set_optimizer(fold_model, lr=lr, use_weight_decay=config["weight_decay"]>0, weight_decay=config["weight_decay"])
             
             # Now train your fold_model
             fold_model.train()  # Ensure the model is in training mode
@@ -115,10 +100,10 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids,
             fold_true_labels = []
             with torch.no_grad():
                 # Validation loop
-                predictions = []
-                for X_val, y_val in val_loader:  # Assuming you have a validation DataLoader
+                #predictions = []
+                for X_val, y_val in val_loader:
                     outputs = fold_model(X_val)
-                    _, preds = torch.max(outputs, 1)
+                    _, preds = torch.max(outputs, 1)  # ... the output is... logits? Why do we have to take the max? Shouldnt CrossEntropy softmax it anyways?...
                     fold_predictions.extend(preds.cpu().numpy())
                     fold_true_labels.extend(y_val.cpu().numpy())
             # Predict on the validation set and calculate accuracy
@@ -134,18 +119,13 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids,
                 ## Consistently biased but hopefully the val splits are all roughly equivalent
                 clus_model_dict[cluster] = copy.deepcopy(fold_model)
 
-        # REWRITE THIS!!!
+        # REWRITE THIS!!! --> Wait why, what's the issue...
         # Average accuracy for this cluster
-        cluster_val_accuracy /= n_splits
+        #cluster_val_accuracy /= n_splits
         # I think this really ought to append not add...
         ## TOTAL maintains the acc of the entire process (across all clusters)
-        total_val_accuracy += cluster_val_accuracy
-        num_folds_processed += 1
-        
-        #######################################################################
-        #######################################################################
-        #######################################################################
-
+        #total_val_accuracy += cluster_val_accuracy
+        #num_folds_processed += 1
     # Overall average accuracy across all clusters
     ## Why is this calcualted if it isn't returned?
     #avg_val_accuracy = total_val_accuracy / num_folds_processed
@@ -153,12 +133,15 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids,
     
     return clus_model_dict
 
-def DNN_agglo_merge_procedure(data_dfs_dict, model_type, n_splits=2):
+def DNN_agglo_merge_procedure(data_dfs_dict, model_type, config, n_splits=2):
     """
     Parameters:
-    - model (str or sklearn model object): The model to train. If string, it must be one of:
-      ['CNN', 'RNN', 'CNN-LSTM'].
+    - data_dfs_dict
+    - model
+    - config
     """
+
+    config_batch_size = config["batch_size"]
     
     #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # Unique gestures and number of classes
@@ -167,18 +150,7 @@ def DNN_agglo_merge_procedure(data_dfs_dict, model_type, n_splits=2):
     input_dim = len(data_dfs_dict['train']['feature'].iloc[0])
     
     # Get the model object if a string is provided
-    if isinstance(model_type, str):
-        # Select model
-        if model_type == 'CNN':
-            model = CNNModel(input_dim, num_classes).to('cpu')
-        elif model_type == 'RNN':
-            model = RNNModel(input_dim, num_classes).to('cpu')
-        else:
-            raise ValueError(f"Unsupported model: {model_type}. Only CNNs and RNNs are supported.")
-    else:
-        # Assuming a model object was passed in
-        model = model_type
-    initial_state = model.state_dict()
+    model = select_model(model_type, config, device="cpu", input_dim=input_dim, num_classes=num_classes)
         
     train_df = data_dfs_dict['train']
     test_df = data_dfs_dict['test']
@@ -207,15 +179,14 @@ def DNN_agglo_merge_procedure(data_dfs_dict, model_type, n_splits=2):
         if current_train_cluster_ids == current_test_cluster_ids:
             current_cluster_ids = current_train_cluster_ids
         else:
-            raise ValueError("Train/test Cluster ID lists not the same length... Stratify failed")
+            raise ValueError("Train and test datasets have mismatched Cluster_IDs (diff length?). Ensure proper stratification during data splitting.")
 
         # Train models with logging for specified clusters
-        ## UPDATED TO DNN VERSION HERE!
-        clus_model_dict = train_and_cv_DNN_cluster_model(train_df, model, current_cluster_ids, n_splits=n_splits)
-        nested_clus_model_dict[f"Iter{iterations}"] = copy.deepcopy(clus_model_dict)
+        clus_model_dict = train_and_cv_DNN_cluster_model(train_df, model, current_cluster_ids, config, n_splits=n_splits)
         clus_model_lst = list(clus_model_dict.values())
+        nested_clus_model_dict[f"Iter{iterations}"] = copy.deepcopy(clus_model_dict)
         # Pairwise test models with logging for specified clusters
-        sym_acc_arr = test_models_on_clusters(test_df, clus_model_lst, current_cluster_ids, pytorch_bool=True)
+        sym_acc_arr = test_models_on_clusters(test_df, clus_model_lst, current_cluster_ids, pytorch_bool=True, bs=config_batch_size)
 
         for idx, cluster_id in enumerate(current_cluster_ids):
             cross_acc_sum = 0
@@ -253,7 +224,6 @@ def DNN_agglo_merge_procedure(data_dfs_dict, model_type, n_splits=2):
         # Get actual cluster IDs to merge
         row_cluster_to_merge = current_cluster_ids[row_idx_to_merge]
         col_cluster_to_merge = current_cluster_ids[col_idx_to_merge]
-
         # Create a new cluster ID for the merged cluster
         new_cluster_id = max(current_cluster_ids) + 1
         #print(f"MERGE: {row_cluster_to_merge, col_cluster_to_merge} @ {similarity_score*100:.2f}. New cluster: {new_cluster_id}")

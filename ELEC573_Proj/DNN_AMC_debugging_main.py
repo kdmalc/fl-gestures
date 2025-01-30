@@ -6,10 +6,6 @@ from sklearn.preprocessing import LabelEncoder
 #from sklearn.model_selection import KFold
 #from sklearn.cross_decomposition import CCA
 #from sklearn.decomposition import PCA
-#from sklearn.model_selection import train_test_split
-#from sklearn.metrics import accuracy_score
-#import matplotlib.pyplot as plt
-#import seaborn as sns
 
 from moments_engr import *
 from agglo_model_clust import *
@@ -21,39 +17,41 @@ MODEL_STR = "DynamicMomonaNet"
 expdef_df = load_expdef_gestures(apply_hc_feateng=False)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
+# NOTE: entries only need to be lists when it is the space
+## Otherwise, if it is just a config, should be the actual integers
 DynamicMomonaNet_config = {
-    "num_channels": [NUM_CHANNELS],  #(int): Number of input channels.
-    "sequence_length": [64],  #(int): Length of the input sequence.
+    "num_channels": NUM_CHANNELS,  #(int): Number of input channels.
+    "sequence_length": 64,  #(int): Length of the input sequence.
     # ^ 32 wasn't working, it doesn't support time_steps to do multiple sequence batches for each slice
-    "time_steps": [None],  # Required so that reused code doesn't break. Not used in DynamicMomonaNet
-    "conv_layers": [[(32, 5, 1), (64, 3, 1), (128, 2, 1)]], 
-    "pooling_layers": [[True, False, False, False]],  # Max pooling only after the first conv layer
-    "use_dense_cnn_lstm": [True],  # Use dense layer between CNN and LSTM
-    "lstm_hidden_size": [16],  #(int): Hidden size for LSTM layers.
-    "lstm_num_layers": [1],  #(int): Number of LSTM layers.
-    "fc_layers": [[128, 64]],  #(list of int): List of integers specifying the sizes of fully connected layers.
-    "num_classes": [10], #(int): Number of output classes.
+    "time_steps": None,  # Required so that reused code doesn't break. Not used in DynamicMomonaNet
+    "conv_layers": [(32, 5, 1), (64, 3, 1), (128, 2, 1)], 
+    "pooling_layers": [True, False, False, False],  # Max pooling only after the first conv layer
+    "use_dense_cnn_lstm": True,  # Use dense layer between CNN and LSTM
+    "lstm_hidden_size": 16,  #(int): Hidden size for LSTM layers.
+    "lstm_num_layers": 1,  #(int): Number of LSTM layers.
+    "fc_layers": [128, 64],  #(list of int): List of integers specifying the sizes of fully connected layers.
+    "num_classes": 10, #(int): Number of output classes.
     # HYPERPARAMS
-    "batch_size": [16],  #SHARED_BS #(int): Batch size.
-    "lstm_dropout": [0.8],  #(float): Dropout probability for LSTM layers.
-    "learning_rate": [0.001],
-    "num_epochs": [500],
-    "optimizer": ["adam"],
-    "weight_decay": [1e-4],
-    "dropout_rate": [0.3],
-    "ft_learning_rate": [0.01],
-    "num_ft_epochs": [500],
-    "ft_weight_decay": [1e-4], 
-    "ft_batch_size": [1], 
-    "use_earlystopping": [True],  # Always use this to save time, in ft and earlier training
+    "batch_size": 16,  #SHARED_BS #(int): Batch size.
+    "lstm_dropout": 0.8,  #(float): Dropout probability for LSTM layers.
+    "learning_rate": 0.001,
+    "num_epochs": 500,
+    "optimizer": "adam",
+    "weight_decay": 1e-4,
+    "dropout_rate": 0.3,
+    "ft_learning_rate": 0.01,
+    "num_ft_epochs": 500,
+    "ft_weight_decay": 1e-4, 
+    "ft_batch_size": 1, 
+    "use_earlystopping": True,  # Always use this to save time, in ft and earlier training
     # METADATA
-    "results_save_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\{timestamp}"],
-    "models_save_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\{timestamp}"], 
-    "perf_log_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs"], 
-    "timestamp": [timestamp],
-    "verbose": [True],
-    "log_each_pid_results": [False], 
-    "save_ft_models": [False]  # Not even applicable here
+    "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\{timestamp}",
+    "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\{timestamp}", 
+    "perf_log_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs", 
+    "timestamp": timestamp,
+    "verbose": True,
+    "log_each_pid_results": False, 
+    "save_ft_models": False  # Not even applicable here
 }
 
 data_splits = make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3)
@@ -91,5 +89,5 @@ cross_test_df['Cluster_ID'] = label_encoder.fit_transform(cross_test_df['partici
 
 # Only clustering wrt intra_test results, not cross_test results, for now...
 data_dfs_dict = {'train':train_df, 'test':intra_test_df}
-merge_log, intra_cluster_performance, cross_cluster_performance = DNN_agglo_merge_procedure(data_dfs_dict, MODEL_STR, n_splits=2)
+merge_log, intra_cluster_performance, cross_cluster_performance = DNN_agglo_merge_procedure(data_dfs_dict, MODEL_STR, DynamicMomonaNet_config, n_splits=2)
 
