@@ -1,0 +1,15 @@
+Epoch 1/500, Train Loss: 3.3667, Intra Testing Loss: 2.3140, Cross Testing Loss: 2.3140, 
+Epoch 2/500, Train Loss: 2.3185, Intra Testing Loss: 2.3148, Cross Testing Loss: 2.3148, No improvement in the last 1 epochs
+Epoch 3/500, Train Loss: 2.3205, Intra Testing Loss: 2.3280, Cross Testing Loss: 2.3280, No improvement in the last 2 epochs
+Epoch 4/500, Train Loss: 2.3254, Intra Testing Loss: 2.3176, Cross Testing Loss: 2.3176, No improvement in the last 3 epochs
+Epoch 5/500, Train Loss: 2.3236, Intra Testing Loss: 2.3099, Cross Testing Loss: 2.3099, Improvement found, counter reset to 0
+Epoch 6/500, Train Loss: 2.3207, Intra Testing Loss: 2.3136, Cross Testing Loss: 2.3136, No improvement in the last 1 epochs
+Epoch 7/500, Train Loss: 2.3241, Intra Testing Loss: 2.3173, Cross Testing Loss: 2.3173, No improvement in the last 2 epochs
+Epoch 8/500, Train Loss: 2.3218, Intra Testing Loss: 2.3394, Cross Testing Loss: 2.3394, No improvement in the last 3 epochs
+Epoch 9/500, Train Loss: 2.3238, Intra Testing Loss: 2.3172, Cross Testing Loss: 2.3172, No improvement in the last 4 epochs
+Epoch 10/500, Train Loss: 2.3217, Intra Testing Loss: 2.3084, Cross Testing Loss: 2.3084, Improvement found, counter reset to 0
+Epoch 11/500, Train Loss: 2.3239, Intra Testing Loss: 2.3124, Cross Testing Loss: 2.3124, No improvement in the last 1 epochs
+Epoch 12/500, Train Loss: 2.3244, Intra Testing Loss: 2.3154, Cross Testing Loss: 2.3154, No improvement in the last 2 epochs
+Epoch 13/500, Train Loss: 2.3235, Intra Testing Loss: 2.3271, Cross Testing Loss: 2.3271, No improvement in the last 3 epochs
+Epoch 14/500, Train Loss: 2.3250, Intra Testing Loss: 2.3094, Cross Testing Loss: 2.3094, No improvement in the last 4 epochs
+Epoch 15/500, Train Loss: 2.3216, Intra Testing Loss: 2.3162, Cross Testing Loss: 2.3162, Early stopping triggered after 5 epochs.

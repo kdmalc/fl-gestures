@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 #import pandas as pd
 #import pickle
 import random
+random.seed(42)
 import json
 import numpy as np
 from collections import defaultdict
@@ -17,7 +18,7 @@ from DNN_FT_funcs import *
 from revamped_model_classes import *
 
 
-NUM_CONFIGS = 20
+NUM_CONFIGS = 50
 MODEL_STR = "DynamicMomonaNet"
 expdef_df = load_expdef_gestures(apply_hc_feateng=False)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
@@ -196,6 +197,7 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
     for datasplit in range(num_datasplits_to_test):
         all_participants = expdef_df['Participant'].unique()
         # Shuffle the participants for train/test user split --> UNIQUE
+        # TODO: Replace this with just random so I don't have to import np just for this lol
         np.random.shuffle(all_participants)
         test_participants = all_participants[24:]  # 24 train / 8 test
         data_splits_lst.append(prepare_data(
@@ -251,4 +253,4 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
 # Run the main function
 #results = main()
 results = hyperparam_tuning_for_ft(MODEL_STR, expdef_df, DynamicMomonaNet_hyperparameter_space, DynamicMomonaNet_architecture_space, metadata_config, 
-                             num_configs_to_test=2, num_datasplits_to_test=2, num_train_trials=8, num_ft_trials=3)
+                             num_configs_to_test=NUM_CONFIGS, num_datasplits_to_test=2, num_train_trials=8, num_ft_trials=3)

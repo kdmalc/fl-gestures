@@ -11,8 +11,9 @@ from DNN_AMC_funcs import *
 from revamped_model_classes import *
 
 
-def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, config, pretrained_generic_model,
-                        nested_clus_model_dict, model_str, cluster_iter_str='Iter18'):
+def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, config, pretrained_generic_CNN_model,
+                        nested_clus_model_dict, cluster_iter_str='Iter18',
+                        num_local_training_epochs=50, num_ft_epochs=50, ft_lr=0.001):
     
     train_pids = np.unique(finetuning_datasplits['train']['participant_ids'])
     novel_participant_ft_data = finetuning_datasplits['novel_trainFT']
@@ -46,22 +47,22 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         clust_asgn_loader = DataLoader(clust_asgn_dataset, batch_size=config["batch_size"], shuffle=True)
 
         # 1) Train a local CNN model
-        # MomonaNets do not need input_dim and num_classes, other models need to be updated to infer that or pull it from config
-        local_model = select_model(model_str, config)
-        # This passes in the model object! Not the model string...
-        local_results = main_training_pipeline(data_splits=None, all_participants=train_pids, test_participants=novel_pids, model_type=local_model, config=config, 
-                           train_intra_cross_loaders=[ft_loader, intra_test_loader, cross_test_loader])
+        # TODO: Update this to be CNN-LSTM once that is integrated...
+        local_model = CNNModel_3layer(config, input_dim=80, num_classes=10)
+        local_results = main_training_pipeline(data_splits=None, train_intra_cross_loaders=[ft_loader, intra_test_loader, cross_test_loader],
+                            all_participants=train_pids, test_participants=novel_pids, model_type=local_model,  
+                            num_epochs=num_local_training_epochs, config=config)
         # This is kind of repeated but whatever
         local_clus_res = evaluate_model(local_model, intra_test_loader)
         novel_pid_res_dict[pid]["local_acc"] = local_clus_res["accuracy"]
 
         # 1.5) Test the pretrained GENERIC (e.g. not cluster-level) model
-        generic_clus_res = evaluate_model(pretrained_generic_model, intra_test_loader)
+        generic_clus_res = evaluate_model(pretrained_generic_CNN_model, intra_test_loader)
         novel_pid_res_dict[pid]["generic_acc"] = generic_clus_res["accuracy"]
 
         # 2) Have the pretrained CNN model from the best cluster do inference
         #   - Have all cluster models do inference and compare assign to whichever cluster gives best results
-        #pretrained_generic_model
+        #pretrained_generic_CNN_model
 
         # Apply all the cluster models at the chosen iteration on the given participant data
         ## Record that cluster's performance (all cluster's performances?... Ideally)

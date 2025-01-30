@@ -411,7 +411,7 @@ def select_dataset_class(model_str):
 
 
 def main_training_pipeline(data_splits, all_participants, test_participants, model_type, config, 
-                           use_weight_decay=True, train_intra_cross_loaders=None):
+                           train_intra_cross_loaders=None):
     """
     Main training pipeline with comprehensive performance tracking
     
@@ -422,7 +422,6 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     - model_type: string of model name
     - config: dictionary of configuration values for model architecture and hyperparams
     - train_intra_cross_loaders: ... not sure what this is, it seems to be left to the default None
-    # use_weight_decay should be called from config... if I set weight_decay to 0 is that the same as having it off?
     Returns:
     - Trained model, performance metrics
     """
@@ -505,7 +504,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         cross_test_loader = train_intra_cross_loaders[2]
     
     # Loss and optimizer
-    optimizer = set_optimizer(model, lr=lr, use_weight_decay=use_weight_decay, weight_decay=weight_decay)
+    optimizer = set_optimizer(model, lr=lr, use_weight_decay=weight_decay>0, weight_decay=weight_decay)
     
     # Training
     train_loss_log = []
