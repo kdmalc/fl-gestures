@@ -1,15 +1,11 @@
-import torch
-from torch.utils.data import DataLoader
+#import torch
+#from torch.utils.data import DataLoader
 #import copy
 #import pandas as pd
 #import pickle
 import random
 random.seed(42)
-import json
-import numpy as np
-from collections import defaultdict
 from datetime import datetime
-from sklearn.model_selection import ParameterGrid
 import os
 cwd = os.getcwd()
 print("Current Working Directory: ", cwd)
@@ -22,7 +18,6 @@ NUM_CONFIGS = 50
 MODEL_STR = "DynamicMomonaNet"
 expdef_df = load_expdef_gestures(apply_hc_feateng=False)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-
 
 # Define the search space
 ## Is anything about these configs specific to DynamicMomonaNet? Or can I use the same one for each model?
@@ -81,176 +76,6 @@ metadata_config = {
     "save_ft_models": [False]  # Don't need to be saved during hyperparam tuning
 }
 
-def save_results(results, save_dir, timestamp):
-    """Save the results to a JSON file, sorted by overall average accuracy."""
-    # Sort results by overall average accuracy in descending order
-    sorted_results = sorted(results, key=lambda x: x["overall_avg_accuracy"], reverse=True)
-
-    # Add a note about the best configuration
-    if sorted_results:
-        best_config = sorted_results[0]["config"]
-        best_accuracy = sorted_results[0]["overall_avg_accuracy"]
-        sorted_results.insert(0, {
-            "note": f"Best configuration: {best_config} with overall average accuracy: {best_accuracy:.4f}"
-        })
-
-    # Save to JSON file
-    results_path = os.path.join(save_dir, f'{timestamp}_results.json')
-    os.makedirs(os.path.dirname(results_path), exist_ok=True)  # Ensure the directory exists
-    with open(results_path, 'w') as f:
-        json.dump(sorted_results, f, indent=4)
-
-    #print(f"Results saved to: {results_path}")
-
-def group_data_by_participant(features, labels, pids):
-    """Helper function to group features and labels by participant ID."""
-    user_data = defaultdict(lambda: ([], []))  # Tuple of lists: (features, labels)
-    for feature, label, pid in zip(features, labels, pids):
-        user_data[pid][0].append(feature)
-        user_data[pid][1].append(label)
-    return user_data
-
-def evaluate_configuration_on_ft(datasplit, pretrained_model, config, model_str, timestamp):
-    """Evaluate a configuration on a given data split."""
-    user_accuracies = []
-
-    # Group data by participant ID
-    ft_user_data = group_data_by_participant(
-        datasplit['novel_trainFT']['feature'],
-        datasplit['novel_trainFT']['labels'],
-        datasplit['novel_trainFT']['participant_ids']
-    )
-    cross_user_data = group_data_by_participant(
-        datasplit['cross_subject_test']['feature'],
-        datasplit['cross_subject_test']['labels'],
-        datasplit['cross_subject_test']['participant_ids']
-    )
-
-    # Iterate through each unique participant ID
-    for pid in ft_user_data.keys() & cross_user_data.keys():  # Only common participant IDs
-        print(f"Fine-tuning on user {pid}")
-
-        # Prepare datasets
-        my_gesture_dataset = select_dataset_class(model_str)
-        ft_train_dataset = my_gesture_dataset(
-            *ft_user_data[pid], sl=config['sequence_length'], ts=config['time_steps']
-        )
-        cross_test_dataset = my_gesture_dataset(
-            *cross_user_data[pid], sl=config['sequence_length'], ts=config['time_steps']
-        )
-
-        # Create dataloaders
-        fine_tune_loader = DataLoader(ft_train_dataset, batch_size=config['batch_size'], shuffle=True)
-        cross_test_loader = DataLoader(cross_test_dataset, batch_size=config['batch_size'], shuffle=False)
-
-        # Fine-tune and evaluate the model
-        finetuned_model, _, _, _ = fine_tune_model(
-            pretrained_model, fine_tune_loader, config, timestamp, 
-            test_loader=cross_test_loader,
-            pid=pid, use_earlystopping=config["use_earlystopping"]
-        )
-        metrics = evaluate_model(finetuned_model, cross_test_loader)
-        user_accuracies.append(metrics["accuracy"])
-        if config["save_ft_models"]:
-            save_model(finetuned_model, model_str, config["models_save_dir"], f"{pid}_pretrainedFT", verbose=config["verbose"])
-
-
-    return user_accuracies
-
-def save_model(model, model_str, save_dir, model_scenario_str, verbose=True, timestamp=None):
-    # TODO: save_model verbose should pull from config...
-    """Save the model with a timestamp."""
-    if timestamp is None:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-    full_path = os.path.join(save_dir, f'{timestamp}_{model_scenario_str}_{model_str}_model.pth')
-    if verbose:
-        print("Full Path:", full_path)
-    torch.save(model.state_dict(), full_path)
-
-# main function
-def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, architecture_space, metadata_config,
-                             num_configs_to_test=20, num_datasplits_to_test=2, num_train_trials=8, num_ft_trials=3):
-    
-    print("Creating directories")
-    # Results
-    os.makedirs(metadata_config["results_save_dir"][0])
-    print(f'Directory {metadata_config["results_save_dir"][0]} created successfully!')
-    # Models
-    os.makedirs(metadata_config["models_save_dir"][0])
-    print(f'Directory {metadata_config["models_save_dir"][0]} created successfully!')
-
-    # Generate all possible configurations
-    ## Does this like shuffle or is this deterministic?
-    print("Combining configs")
-    configs = list(ParameterGrid({**hyperparameter_space, **architecture_space, **metadata_config}))
-    # Shuffle the configurations
-    random.shuffle(configs)
-    configs = configs[:num_configs_to_test]  # Limit the number of configurations to test
-    # Random search variant
-    ## This would probably be more efficient, assuming it just samples and doesn't create the whole space like my current version does
-    #from sklearn.model_selection import ParameterSampler
-    #configs = list(ParameterSampler({**hyperparameter_space, **architecture_space, **metadata_config}, n_iter=num_configs_to_test))
-
-    # This creates the (multiple) train/test splits
-    print("Creating datasplits")
-    data_splits_lst = []
-    for datasplit in range(num_datasplits_to_test):
-        all_participants = expdef_df['Participant'].unique()
-        # Shuffle the participants for train/test user split --> UNIQUE
-        # TODO: Replace this with just random so I don't have to import np just for this lol
-        np.random.shuffle(all_participants)
-        test_participants = all_participants[24:]  # 24 train / 8 test
-        data_splits_lst.append(prepare_data(
-            expdef_df, 'feature', 'Gesture_Encoded', 
-            all_participants, test_participants, 
-            training_trials_per_gesture=num_train_trials, 
-            finetuning_trials_per_gesture=num_ft_trials,
-        ))
-
-    results = []
-    for config_idx, config in enumerate(configs):
-        print(f"Testing config {config_idx + 1}/{len(configs)}: {config}")
-
-        split_results = []
-        for datasplit in data_splits_lst:
-            # Here, each config+datasplit pair gets its own timestamp... not sure what is optimal
-            ## Dont want anything to overwrite mainly
-            ## TODO: Augment saving to create and save to folders (folders are timestamps?)
-            ## I did that for results, but maybe should make the folder include the model name and scenario...
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-
-            # Train the model
-            training_results = main_training_pipeline(
-                datasplit, all_participants=all_participants, test_participants=test_participants,
-                model_type=model_str, config=config
-            )
-            pretrained_model = training_results["model"]
-
-            # Save the pretrained model
-            save_model(pretrained_model, model_str, metadata_config["models_save_dir"][0], "pretrained", verbose=metadata_config["verbose"][0])
-
-            # Evaluate the configuration on the current data split
-            user_accuracies = evaluate_configuration_on_ft(datasplit, pretrained_model, config, model_str, timestamp)
-            avg_accuracy = sum(user_accuracies) / len(user_accuracies)
-            split_results.append({"avg_accuracy": avg_accuracy, "user_accuracies": user_accuracies})
-
-        # Aggregate results across data splits
-        overall_avg_accuracy = sum(split_result["avg_accuracy"] for split_result in split_results) / len(split_results)
-        overall_user_accuracies = [acc for split_result in split_results for acc in split_result["user_accuracies"]]
-        results.append({
-            "config": config,
-            "overall_avg_accuracy": overall_avg_accuracy,
-            "overall_user_accuracies": overall_user_accuracies,
-            "split_results": split_results
-        })
-
-    # Save the 
-    ## This is the aggregated and sorted JSON file. This always needs to be saved
-    save_results(results, metadata_config["results_save_dir"][0], metadata_config["timestamp"][0])
-
-    return results
-
 # Run the main function
-#results = main()
 results = hyperparam_tuning_for_ft(MODEL_STR, expdef_df, DynamicMomonaNet_hyperparameter_space, DynamicMomonaNet_architecture_space, metadata_config, 
                              num_configs_to_test=NUM_CONFIGS, num_datasplits_to_test=2, num_train_trials=8, num_ft_trials=3)

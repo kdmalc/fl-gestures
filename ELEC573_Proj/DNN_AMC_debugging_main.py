@@ -1,16 +1,14 @@
 import pandas as pd
-import pickle
 import numpy as np
-from sklearn.model_selection import KFold
-from sklearn.preprocessing import LabelEncoder
-from sklearn.cross_decomposition import CCA
-from sklearn.decomposition import PCA
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-import matplotlib.pyplot as plt
-import seaborn as sns
-
 np.random.seed(42) 
+from sklearn.preprocessing import LabelEncoder
+#from sklearn.model_selection import KFold
+#from sklearn.cross_decomposition import CCA
+#from sklearn.decomposition import PCA
+#from sklearn.model_selection import train_test_split
+#from sklearn.metrics import accuracy_score
+#import matplotlib.pyplot as plt
+#import seaborn as sns
 
 from moments_engr import *
 from agglo_model_clust import *
@@ -18,21 +16,47 @@ from DNN_FT_funcs import *
 from DNN_AMC_funcs import *
 
 
-path1 = 'C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'
-with open(path1, 'rb') as file:
-    raw_userdef_data_df = pickle.load(file)  # (204800, 19)
+MODEL_STR = "DynamicMomonaNet"
+expdef_df = load_expdef_gestures(apply_hc_feateng=False)
+timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
-# STEP 1: Train a classification model on every single individual user
-userdef_df = raw_userdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_feature_vectors)
-#output is df with particpant, gesture_ID, gesture_num and feature (holds 80 len vector)
-userdef_df = userdef_df.reset_index(drop=True)
-#convert Gesture_ID to numerical with new Gesture_Encoded column
-label_encoder = LabelEncoder()
-userdef_df['Gesture_Encoded'] = label_encoder.fit_transform(userdef_df['Gesture_ID'])
-label_encoder2 = LabelEncoder()
-userdef_df['Cluster_ID'] = label_encoder2.fit_transform(userdef_df['Participant'])
+DynamicMomonaNet_config = {
+    "num_channels": [NUM_CHANNELS],  #(int): Number of input channels.
+    "sequence_length": [64],  #(int): Length of the input sequence.
+    # ^ 32 wasn't working, it doesn't support time_steps to do multiple sequence batches for each slice
+    "time_steps": [None],  # Required so that reused code doesn't break. Not used in DynamicMomonaNet
+    "conv_layers": [[(32, 5, 1), (64, 3, 1), (128, 2, 1)]], 
+    "pooling_layers": [[True, False, False, False]],  # Max pooling only after the first conv layer
+    "use_dense_cnn_lstm": [True],  # Use dense layer between CNN and LSTM
+    "lstm_hidden_size": [16],  #(int): Hidden size for LSTM layers.
+    "lstm_num_layers": [1],  #(int): Number of LSTM layers.
+    "fc_layers": [[128, 64]],  #(list of int): List of integers specifying the sizes of fully connected layers.
+    "num_classes": [10], #(int): Number of output classes.
+    # HYPERPARAMS
+    "batch_size": [16],  #SHARED_BS #(int): Batch size.
+    "lstm_dropout": [0.8],  #(float): Dropout probability for LSTM layers.
+    "learning_rate": [0.001],
+    "num_epochs": [500],
+    "optimizer": ["adam"],
+    "weight_decay": [1e-4],
+    "dropout_rate": [0.3],
+    "ft_learning_rate": [0.01],
+    "num_ft_epochs": [500],
+    "ft_weight_decay": [1e-4], 
+    "ft_batch_size": [1], 
+    "use_earlystopping": [True],  # Always use this to save time, in ft and earlier training
+    # METADATA
+    "results_save_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\{timestamp}"],
+    "models_save_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\{timestamp}"], 
+    "perf_log_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs"], 
+    "timestamp": [timestamp],
+    "verbose": [True],
+    "log_each_pid_results": [False], 
+    "save_ft_models": [False]  # Not even applicable here
+}
 
-all_participants = userdef_df['Participant'].unique()
+
+all_participants = expdef_df['Participant'].unique()
 # Shuffle the participants
 np.random.shuffle(all_participants)
 # Split into two groups
@@ -41,7 +65,7 @@ test_participants = all_participants[24:]  # Remaining 8 participants
 
 # Prepare data
 data_splits = prepare_data(
-    userdef_df, 'feature', 'Gesture_Encoded', 
+    expdef_df, 'feature', 'Gesture_Encoded', 
     all_participants, test_participants, 
     training_trials_per_gesture=8, finetuning_trials_per_gesture=3,
 )
