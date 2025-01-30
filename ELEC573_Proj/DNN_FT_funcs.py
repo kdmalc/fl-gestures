@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 #import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
-import numpy as np
+#import numpy as np
 import json
 from collections import defaultdict
 from sklearn.model_selection import ParameterGrid
@@ -138,8 +138,7 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
     for datasplit in range(num_datasplits_to_test):
         all_participants = expdef_df['Participant'].unique()
         # Shuffle the participants for train/test user split --> UNIQUE
-        # TODO: Replace this with just random so I don't have to import np just for this lol
-        np.random.shuffle(all_participants)
+        random.shuffle(all_participants)
         test_participants = all_participants[24:]  # 24 train / 8 test
         data_splits_lst.append(prepare_data(
             expdef_df, 'feature', 'Gesture_Encoded', 
