@@ -56,9 +56,9 @@ DynamicMomonaNet_config = {
     "save_ft_models": [False]  # Not even applicable here
 }
 
-
 data_splits = make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3)
 
+# If I'm not using Pytorch, then I don't need dataloaders, need to revamp...
 features_df = pd.DataFrame(data_splits['train']['feature'])
 # Create a new column 'features' that contains all 80 columns as lists
 features_df['feature'] = features_df.apply(lambda row: row.tolist(), axis=1)
@@ -75,21 +75,21 @@ features_df['feature'] = features_df.apply(lambda row: row.tolist(), axis=1)
 # Keep only the new combined column
 features_df = features_df[['feature']]
 # Combine with labels and participant_ids into a single DataFrame
-test_df = pd.concat([features_df, pd.Series(data_splits['intra_subject_test']['labels'], name='Gesture_Encoded'), pd.Series(data_splits['intra_subject_test']['participant_ids'], name='participant_ids')], axis=1)
+intra_test_df = pd.concat([features_df, pd.Series(data_splits['intra_subject_test']['labels'], name='Gesture_Encoded'), pd.Series(data_splits['intra_subject_test']['participant_ids'], name='participant_ids')], axis=1)
 label_encoder = LabelEncoder()
-test_df['Cluster_ID'] = label_encoder.fit_transform(test_df['participant_ids'])
+intra_test_df['Cluster_ID'] = label_encoder.fit_transform(intra_test_df['participant_ids'])
 
-# ENTIRELY WITHHOLDING CROSS CLUSTER DATASET (NOVEL TEST SUBJECTS) FOR NOW. 
-#test_df
-#features_df = pd.DataFrame(data_splits['train']['features'])
-## Create a new column 'features' that contains all 80 columns as lists
-#features_df['features'] = features_df.apply(lambda row: row.tolist(), axis=1)
-## Keep only the new combined column
-#features_df = features_df[['features']]
-## Combine with labels and participant_ids into a single DataFrame
-#train_df = pd.concat([features_df, pd.Series(data_splits['train']['labels'], name='Gesture_Encoded'), pd.Series(data_splits['train']['participant_ids'], name='participant_ids')], axis=1)
+features_df = pd.DataFrame(data_splits['cross_subject_test']['feature'])
+# Create a new column 'features' that contains all 80 columns as lists
+features_df['feature'] = features_df.apply(lambda row: row.tolist(), axis=1)
+# Keep only the new combined column
+features_df = features_df[['feature']]
+# Combine with labels and participant_ids into a single DataFrame
+cross_test_df = pd.concat([features_df, pd.Series(data_splits['cross_subject_test']['labels'], name='Gesture_Encoded'), pd.Series(data_splits['cross_subject_test']['participant_ids'], name='participant_ids')], axis=1)
+label_encoder = LabelEncoder()
+cross_test_df['Cluster_ID'] = label_encoder.fit_transform(cross_test_df['participant_ids'])
 
-data_dfs_dict = {'train':train_df, 'test':test_df}
-
-merge_log, intra_cluster_performance, cross_cluster_performance = DNN_agglo_merge_procedure(data_dfs_dict, "CNN", n_splits=2)
+# Only clustering wrt intra_test results, not cross_test results, for now...
+data_dfs_dict = {'train':train_df, 'test':intra_test_df}
+merge_log, intra_cluster_performance, cross_cluster_performance = DNN_agglo_merge_procedure(data_dfs_dict, MODEL_STR, n_splits=2)
 

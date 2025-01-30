@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 #import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 #import numpy as np
 import json
 from collections import defaultdict
@@ -127,7 +127,7 @@ def save_model(model, model_str, save_dir, model_scenario_str, verbose=True, tim
         print("Full Path:", full_path)
     torch.save(model.state_dict(), full_path)
 
-# main function
+# main function for hyperparameter tuning the finetuned models
 def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, architecture_space, metadata_config,
                              num_configs_to_test=20, num_datasplits_to_test=2, num_train_trials=8, num_ft_trials=3):
     
@@ -155,7 +155,16 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
     print("Creating datasplits")
     data_splits_lst = []
     for datasplit in range(num_datasplits_to_test):
-        data_splits_lst.append(make_data_split(expdef_df, num_gesture_training_trials=num_train_trials, num_gesture_ft_trials=num_ft_trials))
+        all_participants = expdef_df['Participant'].unique()
+        # Shuffle the participants for train/test user split --> UNIQUE
+        random.shuffle(all_participants)
+        test_participants = all_participants[24:]  # 24 train / 8 test
+        data_splits_lst.append(prepare_data(
+            expdef_df, 'feature', 'Gesture_Encoded', 
+            all_participants, test_participants, 
+            training_trials_per_gesture=num_train_trials, 
+            finetuning_trials_per_gesture=num_ft_trials,
+        ))
 
     results = []
     for config_idx, config in enumerate(configs):
@@ -227,128 +236,6 @@ def load_expdef_gestures(apply_hc_feateng=True, filepath_pkl='C:\\Users\\kdmen\\
     expdef_df['Cluster_ID'] = label_encoder2.fit_transform(expdef_df['Participant'])
 
     return expdef_df
-
-
-class GestureDataset(Dataset):
-    # 2D
-    def __init__(self, features, labels, sl=1, ts=64, stride=None):
-        # NOTE: SL, TS, Stride all NOT used, just a polymorphism relic...
-
-        self.features = torch.tensor(features, dtype=torch.float32)
-        self.labels = torch.tensor(labels, dtype=torch.long)
-    
-    def __len__(self):
-        return len(self.labels)
-    
-    def __getitem__(self, idx):
-        return self.features[idx], self.labels[idx]
-    
-
-class GestureDataset_3D(Dataset):
-    def __init__(self, features, labels, sl=1, ts=64, stride=None):
-        """
-        Dataset for gesture data with optional sliding window.
-        Args:
-        - features (numpy.ndarray): Shape (num_samples, total_time_steps, num_channels).
-        - labels (numpy.ndarray): Corresponding labels for features.
-        - sl (int) * ts (int) should be the desired window size
-        - stride (int): Stride for sliding window. Defaults to ts (no overlap).
-        """
-        self.features = torch.tensor(features, dtype=torch.float32)
-        self.labels = torch.tensor(labels, dtype=torch.long)
-        self.window_size = sl*ts
-        self.stride = stride if stride else ts
-        self.num_channels = 16  # Hardcoded based on known data structure.
-
-        # Apply sliding window transformation
-        self.windows, self.window_labels = self._create_sliding_windows()
-
-    def _create_sliding_windows(self):
-        """
-        Create sliding windows over the feature data.
-        Returns:
-        - all_windows: Numpy array of windows, shape (num_windows, window_size, num_channels).
-        - all_labels: Numpy array of corresponding labels for the windows.
-        """
-        all_windows = []
-        all_labels = []
-
-        for i in range(len(self.features)):
-            # Reshape each flattened feature vector into (total_time_steps, num_channels)
-            feature = self.features[i].reshape(-1, self.num_channels)  # Shape: (total_time_steps, num_channels)
-            label = self.labels[i]
-
-            # Generate sliding windows for the current feature
-            num_windows = (feature.shape[0] - self.window_size) // self.stride + 1
-            for w in range(num_windows):
-                start_idx = w * self.stride
-                end_idx = start_idx + self.window_size
-                if end_idx <= feature.shape[0]:
-                    # Extract window and reshape into (window_size, num_channels)
-                    window = feature[start_idx:end_idx].reshape(-1, self.num_channels)
-                    all_windows.append(window)
-                    all_labels.append(label)  # Replicate the label for the sequence
-
-        return np.array(all_windows, dtype=np.float32), np.array(all_labels, dtype=np.int64)
-
-    def __len__(self):
-        return len(self.windows)
-
-    def __getitem__(self, idx):
-        return self.windows[idx], self.window_labels[idx]
-    
-
-class GestureDataset_4D(Dataset):
-    def __init__(self, features, labels, sl=1, ts=64, stride=None):
-        """
-        Dataset for gesture data with optional sliding window.
-        Args:
-        - features (numpy.ndarray): Shape (num_samples, total_time_steps, num_channels).
-        - labels (numpy.ndarray): Corresponding labels for features.
-        - sl (int): Sequence length (number of windows).
-        - ts (int): Time steps per window.
-        - stride (int): Stride for sliding window. Defaults to ts (no overlap).
-        """
-        self.features = torch.tensor(features, dtype=torch.float32)
-        self.labels = torch.tensor(labels, dtype=torch.long)
-        self.sl = sl
-        self.ts = ts
-        self.stride = stride if stride else ts
-        # TODO: A way not to hardcode that is robust against adding IMU channels?
-        if features.shape[1]!=1024:
-            raise ValueError("Hardcoding no longer valid")
-        self.num_channels = 16  # Hardcoded based on flattened shape (64 * 16). 16 emg channels.
-
-        # Apply sliding window transformation
-        self.windows, self.window_labels = self._create_sliding_windows()
-
-    def _create_sliding_windows(self):
-        all_windows = []
-        all_labels = []
-
-        for i in range(len(self.features)):
-            # Reshape each flattened feature vector into (64, 16)
-            feature = self.features[i].reshape(-1, self.num_channels)  # Shape: (64, 16)
-            label = self.labels[i]
-
-            # Generate sliding windows for the current feature
-            num_windows = (feature.shape[0] - self.sl * self.ts) // self.stride + 1
-            for w in range(num_windows):
-                start_idx = w * self.stride
-                end_idx = start_idx + self.sl * self.ts
-                if end_idx <= feature.shape[0]:
-                    # Extract window and reshape into (SL, TS, NC)
-                    window = feature[start_idx:end_idx].reshape(self.sl, self.ts, self.num_channels)
-                    all_windows.append(window)
-                    all_labels.append(label)  # Replicate the label for the sequence
-
-        return np.array(all_windows, dtype=np.float32), np.array(all_labels, dtype=np.int64)
-
-    def __len__(self):
-        return len(self.windows)
-
-    def __getitem__(self, idx):
-        return torch.tensor(self.windows[idx], dtype=torch.float32), self.window_labels[idx]
 
 
 def set_optimizer(model, lr=0.001, use_weight_decay=False, weight_decay=0.01, optimizer_name="ADAM"):
@@ -546,51 +433,6 @@ def gesture_performance_by_participant(predictions, true_labels, all_unique_part
         performance[participant] = participant_performance
     
     return performance
-
-
-def select_model(model_type, config, device="cpu", input_dim=16, num_classes=10):
-    if isinstance(model_type, str):
-        if model_type == 'CNN':  # 2D
-            if config is None:
-                model = CNNModel(input_dim, num_classes).to(device)
-            else:
-                #model = CNNModel_3layer(config, input_dim=80, num_classes=10)
-                model = DynamicCNNModel(config, input_dim=80, num_classes=10)
-        elif model_type == 'RNN':  # 3D
-            model = RNNModel(input_dim, num_classes).to(device)
-        elif model_type == 'HybridCNNLSTM':  # 3D
-            model = HybridCNNLSTM()  # TODO: This needs to be modified to take input sizes smh
-        elif model_type == 'CRNN':  # 3D
-            model = CRNN(input_channels=80, window_size=1, num_classes=10)
-        elif model_type == 'EMGHandNet':  # 4D
-            model = EMGHandNet(input_channels=80, num_classes=10)
-        elif model_type == 'MomonaNet':  # 2D
-            model = MomonaNet(config)  # Arch is hardcoded in but it'e fine
-            # Overwriting... basically hardcoding these in...
-            ## There's a better way to do this (since you could use the default vals)
-            #sequence_length = 1
-            #time_steps = 64
-            # Nvm just hardcode the reshape...
-            ## It really ought to be 3 tho... but I have to reshape no matter what I think
-        elif model_type == "DynamicMomonaNet":  # 2D
-            model = DynamicMomonaNet(config) # Config should specify everything about arch?
-        else:
-            raise ValueError(f"{model_type} not recognized.")
-    else:
-        model = model_type
-
-    return model
-
-
-def select_dataset_class(model_str):
-    if model_str in ["CNN",  "MomonaNet", "DynamicMomonaNet"]:
-        return GestureDataset  # This is 2D
-    elif model_str in ["RNN", "HybridCNNLSTM", "CRNN"]:
-        return GestureDataset_3D
-    elif model_str in ["EMGHandNet"]:
-        return GestureDataset_4D
-    else:
-        raise ValueError
 
 
 def main_training_pipeline(data_splits, all_participants, test_participants, model_type, config, 

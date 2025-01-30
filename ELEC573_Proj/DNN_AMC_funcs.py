@@ -147,7 +147,8 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids,
         #######################################################################
 
     # Overall average accuracy across all clusters
-    avg_val_accuracy = total_val_accuracy / num_folds_processed
+    ## Why is this calcualted if it isn't returned?
+    #avg_val_accuracy = total_val_accuracy / num_folds_processed
     #print(f"\nOverall Average Validation Accuracy: {avg_val_accuracy:.4f}")
     
     return clus_model_dict

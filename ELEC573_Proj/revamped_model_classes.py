@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from configs import *
 import copy
+from gesture_dataset_classes import *
 
 
 class EarlyStopping:
@@ -33,6 +34,52 @@ class EarlyStopping:
                     model.load_state_dict(self.best_model)
                 return True
         return False
+    
+
+def select_model(model_type, config, device="cpu", input_dim=16, num_classes=10):
+    if isinstance(model_type, str):
+        if model_type == 'CNN':  # 2D
+            if config is None:
+                model = CNNModel(input_dim, num_classes).to(device)
+            else:
+                #model = CNNModel_3layer(config, input_dim=80, num_classes=10)
+                model = DynamicCNNModel(config, input_dim=80, num_classes=10)
+        elif model_type == 'RNN':  # 3D
+            model = RNNModel(input_dim, num_classes).to(device)
+        elif model_type == 'HybridCNNLSTM':  # 3D
+            model = HybridCNNLSTM()  # TODO: This needs to be modified to take input sizes smh
+        elif model_type == 'CRNN':  # 3D
+            model = CRNN(input_channels=80, window_size=1, num_classes=10)
+        elif model_type == 'EMGHandNet':  # 4D
+            model = EMGHandNet(input_channels=80, num_classes=10)
+        elif model_type == 'MomonaNet':  # 2D
+            model = MomonaNet(config)  # Arch is hardcoded in but it'e fine
+            # Overwriting... basically hardcoding these in...
+            ## There's a better way to do this (since you could use the default vals)
+            #sequence_length = 1
+            #time_steps = 64
+            # Nvm just hardcode the reshape...
+            ## It really ought to be 3 tho... but I have to reshape no matter what I think
+        elif model_type == "DynamicMomonaNet":  # 2D
+            model = DynamicMomonaNet(config) # Config should specify everything about arch?
+        else:
+            raise ValueError(f"{model_type} not recognized.")
+    else:
+        model = model_type
+
+    return model
+
+
+def select_dataset_class(model_str):
+    if model_str in ["CNN",  "MomonaNet", "DynamicMomonaNet"]:
+        return GestureDataset  # This is 2D
+    elif model_str in ["RNN", "HybridCNNLSTM", "CRNN"]:
+        return GestureDataset_3D
+    elif model_str in ["EMGHandNet"]:
+        return GestureDataset_4D
+    else:
+        raise ValueError
+
 
 # Utility functions for modular design
 def get_conv_block(in_channels, out_channels, kernel_size, stride, padding, maxpool, use_batch_norm, activation=nn.ReLU()):
