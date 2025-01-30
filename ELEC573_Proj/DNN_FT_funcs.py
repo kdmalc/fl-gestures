@@ -98,6 +98,25 @@ def evaluate_configuration_on_ft(datasplit, pretrained_model, config, model_str,
 
     return user_accuracies
 
+
+def make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3):
+    all_participants = expdef_df['Participant'].unique()
+    # Shuffle the participants
+    random.shuffle(all_participants)
+    # Split into two groups
+    #train_participants = all_participants[:24]  # First 24 participants
+    test_participants = all_participants[24:]  # Remaining 8 participants
+
+    # Prepare data
+    data_splits = prepare_data(
+        expdef_df, 'feature', 'Gesture_Encoded', 
+        all_participants, test_participants, 
+        training_trials_per_gesture=num_gesture_training_trials, finetuning_trials_per_gesture=num_gesture_ft_trials,
+    )
+
+    return data_splits
+
+
 def save_model(model, model_str, save_dir, model_scenario_str, verbose=True, timestamp=None):
     # TODO: save_model verbose should pull from config... or at least make sure verbose is passed in through config
     """Save the model with a timestamp."""
@@ -136,16 +155,7 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
     print("Creating datasplits")
     data_splits_lst = []
     for datasplit in range(num_datasplits_to_test):
-        all_participants = expdef_df['Participant'].unique()
-        # Shuffle the participants for train/test user split --> UNIQUE
-        random.shuffle(all_participants)
-        test_participants = all_participants[24:]  # 24 train / 8 test
-        data_splits_lst.append(prepare_data(
-            expdef_df, 'feature', 'Gesture_Encoded', 
-            all_participants, test_participants, 
-            training_trials_per_gesture=num_train_trials, 
-            finetuning_trials_per_gesture=num_ft_trials,
-        ))
+        data_splits_lst.append(make_data_split(expdef_df, num_gesture_training_trials=num_train_trials, num_gesture_ft_trials=num_ft_trials))
 
     results = []
     for config_idx, config in enumerate(configs):

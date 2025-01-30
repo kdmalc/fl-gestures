@@ -1,6 +1,7 @@
 import pandas as pd
-import numpy as np
-np.random.seed(42) 
+#import numpy as np
+#np.random.seed(42) 
+import random
 from sklearn.preprocessing import LabelEncoder
 #from sklearn.model_selection import KFold
 #from sklearn.cross_decomposition import CCA
@@ -55,19 +56,8 @@ DynamicMomonaNet_config = {
     "save_ft_models": [False]  # Not even applicable here
 }
 
-all_participants = expdef_df['Participant'].unique()
-# Shuffle the participants
-np.random.shuffle(all_participants)
-# Split into two groups
-#train_participants = all_participants[:24]  # First 24 participants
-test_participants = all_participants[24:]  # Remaining 8 participants
 
-# Prepare data
-data_splits = prepare_data(
-    expdef_df, 'feature', 'Gesture_Encoded', 
-    all_participants, test_participants, 
-    training_trials_per_gesture=8, finetuning_trials_per_gesture=3,
-)
+data_splits = make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3)
 
 features_df = pd.DataFrame(data_splits['train']['feature'])
 # Create a new column 'features' that contains all 80 columns as lists
