@@ -5,7 +5,8 @@ from torch.utils.data import DataLoader
 #import numpy as np
 import json
 from collections import defaultdict
-from sklearn.model_selection import ParameterGrid
+#from sklearn.model_selection import ParameterGrid
+from sklearn.model_selection import ParameterSampler
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -129,7 +130,8 @@ def save_model(model, model_str, save_dir, model_scenario_str, verbose=True, tim
 
 # main function for hyperparameter tuning the finetuned models
 def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, architecture_space, metadata_config,
-                             num_configs_to_test=20, num_datasplits_to_test=2, num_train_trials=8, num_ft_trials=3):
+                             num_configs_to_test=20, num_datasplits_to_test=2, num_train_trials=8, num_ft_trials=3, 
+                             guaranteed_configs_to_test_lst=None, seed=100):
     
     print("Creating directories")
     # Results
@@ -142,14 +144,20 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
     # Generate all possible configurations
     ## Does this like shuffle or is this deterministic?
     print("Combining configs")
-    configs = list(ParameterGrid({**hyperparameter_space, **architecture_space, **metadata_config}))
+    # Grid Search (generates full space, so O(N))
+    #configs = list(ParameterGrid({**hyperparameter_space, **architecture_space, **metadata_config}))
+    # Random search variant (samples so O(1))
+    #configs = list(ParameterSampler({**hyperparameter_space, **architecture_space, **metadata_config}, n_iter=num_configs_to_test))
+    configs = list(ParameterSampler(
+        {**hyperparameter_space, **architecture_space, **metadata_config},
+        n_iter=num_configs_to_test,
+        random_state=seed
+    ))
     # Shuffle the configurations
     random.shuffle(configs)
     configs = configs[:num_configs_to_test]  # Limit the number of configurations to test
-    # Random search variant
-    ## This would probably be more efficient, assuming it just samples and doesn't create the whole space like my current version does
-    #from sklearn.model_selection import ParameterSampler
-    #configs = list(ParameterSampler({**hyperparameter_space, **architecture_space, **metadata_config}, n_iter=num_configs_to_test))
+    if guaranteed_configs_to_test_lst is not None:
+        configs.extend(guaranteed_configs_to_test_lst)
 
     # This creates the (multiple) train/test splits
     print("Creating datasplits")

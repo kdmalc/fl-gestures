@@ -6,14 +6,15 @@ import pickle
 from sklearn.preprocessing import LabelEncoder
 from moments_engr import *
 from DNN_FT_funcs import *
+from hyperparam_tuned_configs import *
 np.random.seed(42) 
 import os
 cwd = os.getcwd()
 print("Current Working Directory: ", cwd)
 
 
-MY_CONFIG = MomonaNet_config
-MODEL_STR = 'MomonaNet'  # [CNN, RNN, HybridCNNLSTM, CRNN, EMGHandNet, MomonaNet]
+MY_CONFIG = DynamicMomonaNet_config
+MODEL_STR = 'DynamicMomonaNet'  # [CNN, RNN, HybridCNNLSTM, CRNN, EMGHandNet, MomonaNet]
 if MODEL_STR in ["CNN", "DynamicCNN"]:  # Is CNN just DynamicCNN now? Pretty sure yes
     do_feature_engr = True
 else:

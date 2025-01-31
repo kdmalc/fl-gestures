@@ -2,7 +2,7 @@ ACCURACIES 55.98%, 54.5%, 51.4%
 
 bs: 16 | 16 | 32, 
 conv_layers: 32,5,1; 64,3,1; 128,2,1 | 32,5,1; 64,3,1; 128,2,1 | 32,5,1; 64,3,1; 128,2,1
-do: 0.3 | 0 | 0.3 --> Wait if dense layer isn't used, does this do anything? Is this applied to LSTM... or dense layer, or output dense? Do I even have output dense?
+do: 0.3 | 0 | 0.3 --> Wait if dense layer isn't used, does this do anything? Is this applied to LSTM... or dense layer, or output dense? Do I even have output dense? --> Yah do wasn't even implemented for the dense layers
 fc: 128,64 | 128,64 | 64,32
 ft_bs: 10 | 5 | 1
 ft_lr: 0.01 | 0.001 | 0.01
@@ -19,7 +19,7 @@ wd: 0 | 0.0001 | 0.0001
 BEST
 bs: 16?
 conv_layers: 32,5,1; 64,3,1; 128,2,1
-do: 0.3? [double check how/where this is applied]
+do: 0.3? [double check how/where this is applied] --> Wasnt on...
 fc: 128, 64?
 ft_bs: no consensus: 10?
 ft_lr: 0.01?

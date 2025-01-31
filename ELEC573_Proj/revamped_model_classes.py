@@ -213,17 +213,21 @@ class DynamicMomonaNet(nn.Module):
         super().__init__()
 
         self.config = config  # For debugging
-        #self.bs = config['batch_size']
+        #self.bs = config['batch_size']  # Dynamically infer bs from the input, so model isn't locked in to one bs
         self.nc = config['num_channels']
         self.sl = config['sequence_length']
+        self.cnn_dropout = config['cnn_dropout']
+        self.dense_cnnlstm_dropout = config['dense_cnnlstm_dropout']
+        self.fc_dropout = config['fc_dropout']
 
         # Convolutional layers
         self.conv_layers = nn.ModuleList()
         in_channels = self.nc
         for out_channels, kernel_size, stride in config['conv_layers']:
-            self.conv_layers.append(
-                nn.Conv1d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride)
-            )
+            self.conv_layers.append(nn.Sequential(
+                nn.Conv1d(in_channels, out_channels, kernel_size, stride),
+                nn.Dropout(self.cnn_dropout) if self.cnn_dropout > 0 else nn.Identity()
+            ))
             in_channels = out_channels  # Update in_channels for the next layer
 
         # Max pooling
@@ -231,9 +235,11 @@ class DynamicMomonaNet(nn.Module):
         self.pool = nn.MaxPool1d(kernel_size=2, stride=1)
 
         # Dense layer between CNN and LSTM
-        self.use_dense_cnn_lstm = config.get('use_dense_cnn_lstm', False)  # Default to False
         if self.use_dense_cnn_lstm:
-            self.dense_cnn_lstm = nn.Linear(in_channels, in_channels)  # Transform CNN output to LSTM input
+            self.dense_cnn_lstm = nn.Sequential(
+                nn.Linear(in_channels, in_channels),
+                nn.Dropout(self.dense_cnnlstm_dropout) if self.dense_cnnlstm_dropout > 0 else nn.Identity()
+            )
 
         # LSTM layers
         self.lstm = nn.LSTM(
@@ -241,7 +247,7 @@ class DynamicMomonaNet(nn.Module):
             hidden_size=config['lstm_hidden_size'],
             num_layers=config['lstm_num_layers'],
             batch_first=True,
-            dropout=config['lstm_dropout']
+            dropout=config['lstm_dropout'] if config['lstm_num_layers'] > 1 else 0
         )
 
         # Calculate the sequence length after convolutions and pooling
@@ -255,8 +261,11 @@ class DynamicMomonaNet(nn.Module):
         self.fc_layers = nn.ModuleList()
         in_features = config['lstm_hidden_size'] * tlen
         for out_features in config['fc_layers']:
-            self.fc_layers.append(nn.Linear(in_features, out_features))
-            in_features = out_features  # Update in_features for the next layer
+            self.fc_layers.append(nn.Sequential(
+                nn.Linear(in_features, out_features),
+                nn.Dropout(self.fc_dropout) if self.fc_dropout > 0 else nn.Identity()
+            ))
+            in_features = out_features
 
         # Output layer
         self.output_layer = nn.Linear(in_features, config['num_classes'])

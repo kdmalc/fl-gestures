@@ -51,6 +51,8 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, config,
     num_folds_processed = 0
     clus_model_dict = {}
     for cluster in cluster_ids:
+        print(f"train_and_cv_DNN_cluster_model cluster {cluster}")
+
         # Filter data for the current cluster
         cluster_data = train_df[train_df[cluster_column] == cluster]
         X = np.array([x for x in cluster_data[feature_column]])
@@ -140,6 +142,8 @@ def DNN_agglo_merge_procedure(data_dfs_dict, model_type, config, n_splits=2):
     - model
     - config
     """
+
+    print("DNN_agglo_merge_procedure started!")
 
     config_batch_size = config["batch_size"]
     
