@@ -395,7 +395,6 @@ def evaluate_model(model, dataloader, criterion=nn.CrossEntropyLoss(), device=No
     total_loss = 0
     all_preds = []
     all_labels = []
-    
     with torch.no_grad():
         for batch_features, batch_labels in dataloader:
             batch_features, batch_labels = batch_features.to(device), batch_labels.to(device)
@@ -552,7 +551,6 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     # Toggle this? Is this by participant? Or just once per config?
     #if 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-    # TODO: Add earlystopping toggle? On by default is chill here tho
     log_file = open(f"{config['results_save_dir']}\\{timestamp}_{model_type}_pretrained_training_log.txt", "w")
     while not done and epoch < max_epochs:
         epoch += 1

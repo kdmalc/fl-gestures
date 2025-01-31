@@ -36,7 +36,7 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, config,
     - avg_val_accuracy (float): The average validation accuracy across all folds and clusters.
     """
 
-    num_epochs = config["num_epochs"]
+    max_epochs = config["num_epochs"]
     bs = config["batch_size"]
     lr = config["learning_rate"]
     
@@ -85,34 +85,47 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, config,
             fold_model.load_state_dict(initial_state)
             optimizer = set_optimizer(fold_model, lr=lr, use_weight_decay=config["weight_decay"]>0, weight_decay=config["weight_decay"])
             
+            ######################################################################################
+            ######################################################################################
+            ######################################################################################
             # Now train your fold_model
-            fold_model.train()  # Ensure the model is in training mode
-            for epoch in range(num_epochs):
-                # Training loop with your X_train and y_train
-                for X_batch, y_batch in train_loader:  # Assuming you have a DataLoader
-                    optimizer.zero_grad()
-                    outputs = fold_model(X_batch)
-                    loss = criterion(outputs, y_batch)
-                    loss.backward()
-                    optimizer.step()
+            #fold_model.train()  # Ensure the model is in training mode
+            # ^ Double check that that is handled in train_model()...
+            epoch = 0
+            done = False
+            earlystopping = EarlyStopping()
+            # Open a text file for logging
+            # Toggle timestamp? Is this by participant? Or just once per config?
+            #timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+            #log_file = open(f"{config['results_save_dir']}\\{timestamp}_{model_type}_pretrained_training_log.txt", "w")
+            while not done and epoch < max_epochs:
+                epoch += 1
+                train_loss = train_model(model, train_loader, optimizer)
+                #train_loss_log.append(train_loss)
 
-            # Evaluate the model on the validation set
-            fold_model.eval()
-            fold_predictions = []
-            fold_true_labels = []
-            with torch.no_grad():
-                # Validation loop
-                #predictions = []
-                for X_val, y_val in val_loader:
-                    outputs = fold_model(X_val)
-                    _, preds = torch.max(outputs, 1)  # ... the output is... logits? Why do we have to take the max? Shouldnt CrossEntropy softmax it anyways?...
-                    fold_predictions.extend(preds.cpu().numpy())
-                    fold_true_labels.extend(y_val.cpu().numpy())
-            # Predict on the validation set and calculate accuracy
-            #y_pred = fold_model.predict(X_val)
-            #cluster_val_accuracy += accuracy_score(y_val, y_pred)
-            # Calculate accuracy for the current fold
-            fold_accuracy = accuracy_score(fold_true_labels, fold_predictions)
+                # Validation
+                intra_test_res = evaluate_model(model, val_loader)
+                intra_test_loss = intra_test_res['loss']
+                #intra_test_loss_log.append(intra_test_loss)
+                #cross_test_loss = evaluate_model(model, cross_test_loader)['loss']
+                #cross_test_loss_log.append(cross_test_loss)
+
+                # Early stopping check
+                if earlystopping(model, intra_test_loss):
+                    done = True
+                # Log metrics to the console and the text file
+                log_message = (
+                    f"Epoch {epoch}/{max_epochs}, "
+                    f"Train Loss: {train_loss:.4f}, "
+                    f"Intra Testing Loss: {intra_test_loss:.4f}, "
+                    #f"Cross Testing Loss: {cross_test_loss:.4f}, "
+                    f"{earlystopping.status}\n")
+                if config["verbose"]:
+                    print(log_message, end="")  # Print to console
+                #log_file.write(log_message)  # Write to file
+            # Close the log file
+            #log_file.close()
+            fold_accuracy = intra_test_res['accuracy']
             cluster_val_accuracy += fold_accuracy
 
             if idx==0:
@@ -135,68 +148,64 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, config,
     
     return clus_model_dict
 
-def DNN_agglo_merge_procedure(data_dfs_dict, model_type, config, n_splits=2):
-    """
-    Parameters:
-    - data_dfs_dict
-    - model
-    - config
-    """
 
+def DNN_agglo_merge_procedure(data_dfs_dict, model_type, config, n_splits=2):
     print("DNN_agglo_merge_procedure started!")
 
     config_batch_size = config["batch_size"]
     
-    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # Unique gestures and number of classes
-    unique_gestures = np.unique(data_dfs_dict['train']['Gesture_Encoded'])
-    num_classes = len(unique_gestures)
-    input_dim = len(data_dfs_dict['train']['feature'].iloc[0])
-    
-    # Get the model object if a string is provided
-    model = select_model(model_type, config, device="cpu", input_dim=input_dim, num_classes=num_classes)
-        
     train_df = data_dfs_dict['train']
     test_df = data_dfs_dict['test']
-        
-    # Data structures for logging cluster merging procedure
-    merge_log = []  # List of tuples: [(cluster1, cluster2, distance, new_cluster), ...]
-    unique_clusters_log = []  # List of lists: [list of unique clusters at each step]
-    # Dictionary to store self-performance over iterations
+    
+    # Initialize model tracking structures
+    clus_model_dict = {}  # Persists across iterations
+    previous_clusters = set()
+    nested_clus_model_dict = {}
+
+    # Data structures for logging
+    merge_log = []
+    unique_clusters_log = []
     intra_cluster_performance = {}
     cross_cluster_performance = {}
-    nested_clus_model_dict = {}
-    # Simulate cluster merging and model performance tracking
+
     iterations = 0
-    # Main loop for cluster merging
     while len(train_df['Cluster_ID'].unique()) > 1:
         print(f"Iter {iterations}: {len(train_df['Cluster_ID'].unique())} Clusters Remaining")
-        # Log the current state of clusters
-        unique_clusters_log.append(sorted(train_df['Cluster_ID'].unique()))
+        current_clusters = sorted(train_df['Cluster_ID'].unique())
+        current_cluster_set = set(current_clusters)
+        unique_clusters_log.append(current_clusters)
 
-        # userdef_df continuously changes wrt cluster ID
-        ## So... do train_df and test_df continuously change? Cluster ID changes... 
-        ## but that... may or may not affect stratificiation in a meaningful way (I'm not using cluster metadata...)
-        # These 2 should be the same... it's stratified...
-        current_train_cluster_ids = sorted(train_df['Cluster_ID'].unique())
-        current_test_cluster_ids = sorted(test_df['Cluster_ID'].unique())
-        if current_train_cluster_ids == current_test_cluster_ids:
-            current_cluster_ids = current_train_cluster_ids
-        else:
-            raise ValueError("Train and test datasets have mismatched Cluster_IDs (diff length?). Ensure proper stratification during data splitting.")
+        # Identify new clusters that need training
+        new_clusters = current_cluster_set - previous_clusters
+        print(f"New clusters to train: {new_clusters}")
 
-        # Train models with logging for specified clusters
-        clus_model_dict = train_and_cv_DNN_cluster_model(train_df, model, current_cluster_ids, config, n_splits=n_splits)
-        clus_model_lst = list(clus_model_dict.values())
+        # Train only new clusters
+        if new_clusters:
+            new_models = train_and_cv_DNN_cluster_model(
+                train_df, model_type, list(new_clusters), config, n_splits=n_splits
+            )
+            clus_model_dict.update(new_models)
+
+        # Remove models for merged clusters (no longer exist)
+        ## I don't think I need this? I don't think it matters that much
+        # This prevents memory bloat and ensures we only keep relevant models
+        #clus_model_dict = {k: v for k in clus_model_dict if k in current_cluster_set}  # Also an error saying v isn't defined...
+        
+        # Log current state of models
         nested_clus_model_dict[f"Iter{iterations}"] = copy.deepcopy(clus_model_dict)
-        # Pairwise test models with logging for specified clusters
-        sym_acc_arr = test_models_on_clusters(test_df, clus_model_lst, current_cluster_ids, pytorch_bool=True, bs=config_batch_size)
 
-        for idx, cluster_id in enumerate(current_cluster_ids):
+        # Test all current models on current clusters
+        current_models = [clus_model_dict[clus] for clus in current_clusters]
+        sym_acc_arr = test_models_on_clusters(
+            test_df, current_models, current_clusters, 
+            pytorch_bool=True, bs=config_batch_size
+        )
+
+        for idx, cluster_id in enumerate(current_clusters):
             cross_acc_sum = 0
             cross_acc_count = 0
 
-            for idx2, cluster_id2 in enumerate(current_cluster_ids):
+            for idx2, cluster_id2 in enumerate(current_clusters):
                 if cluster_id not in intra_cluster_performance:
                     intra_cluster_performance[cluster_id] = []  # Initialize list
 
@@ -219,17 +228,19 @@ def DNN_agglo_merge_procedure(data_dfs_dict, model_type, config, n_splits=2):
                 cross_cluster_performance[cluster_id] = []  # Initialize list
             cross_cluster_performance[cluster_id].append((iterations, avg_cross_acc))
 
+        # Find and merge clusters
         masked_diag_array = sym_acc_arr.copy()
         np.fill_diagonal(masked_diag_array, 0.0)
         similarity_score = np.max(masked_diag_array)
         max_index = np.unravel_index(np.argmax(masked_diag_array), masked_diag_array.shape)
+        
         row_idx_to_merge = max_index[0]
         col_idx_to_merge = max_index[1]
         # Get actual cluster IDs to merge
-        row_cluster_to_merge = current_cluster_ids[row_idx_to_merge]
-        col_cluster_to_merge = current_cluster_ids[col_idx_to_merge]
+        row_cluster_to_merge = current_clusters[row_idx_to_merge]
+        col_cluster_to_merge = current_clusters[col_idx_to_merge]
         # Create a new cluster ID for the merged cluster
-        new_cluster_id = max(current_cluster_ids) + 1
+        new_cluster_id = max(current_clusters) + 1
         #print(f"MERGE: {row_cluster_to_merge, col_cluster_to_merge} @ {similarity_score*100:.2f}. New cluster: {new_cluster_id}")
         # Log the merge
         merge_log.append((iterations, row_cluster_to_merge, col_cluster_to_merge, similarity_score, new_cluster_id))
@@ -244,6 +255,8 @@ def DNN_agglo_merge_procedure(data_dfs_dict, model_type, config, n_splits=2):
         cross_cluster_performance[row_cluster_to_merge].append((iterations, None))
         cross_cluster_performance[col_cluster_to_merge].append((iterations, None))
 
+        # Update cluster tracking
+        previous_clusters = current_cluster_set
         iterations += 1
-    
+
     return merge_log, intra_cluster_performance, cross_cluster_performance, nested_clus_model_dict
