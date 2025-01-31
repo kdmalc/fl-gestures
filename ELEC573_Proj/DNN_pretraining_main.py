@@ -22,6 +22,14 @@ else:
 finetune = False
 do_normal_logging = True
 
+print("Creating directories")
+# Results
+os.makedirs(MY_CONFIG["results_save_dir"])
+print(f'Directory {MY_CONFIG["results_save_dir"]} created successfully!')
+# Models
+os.makedirs(MY_CONFIG["models_save_dir"])
+print(f'Directory {MY_CONFIG["models_save_dir"]} created successfully!')
+
 ##################################################
 
 expdef_df = load_expdef_gestures(apply_hc_feateng=do_feature_engr)
@@ -48,9 +56,10 @@ results = main_training_pipeline(
     model_type=MODEL_STR,
     config=MY_CONFIG)
 
-full_path = os.path.join(cwd, 'ELEC573_Proj', 'models', 'generic_CNN_model.pth')
-print("Full Path:", full_path)
-torch.save(results["model"].state_dict(), full_path)
+#save_dir = MY_CONFIG["models_save_dir"]
+#print("Save Path:", save_dir)
+#torch.save(results["model"].state_dict(), full_path)
+save_model(results["model"], MODEL_STR, MY_CONFIG["models_save_dir"], "pretrained", verbose=True, timestamp=MY_CONFIG["timestamp"])
 
 if finetune:
     # Fine-tune on first test participant's data

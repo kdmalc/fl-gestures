@@ -219,6 +219,7 @@ class DynamicMomonaNet(nn.Module):
         self.cnn_dropout = config['cnn_dropout']
         self.dense_cnnlstm_dropout = config['dense_cnnlstm_dropout']
         self.fc_dropout = config['fc_dropout']
+        self.use_dense_cnn_lstm = config["use_dense_cnn_lstm"]
 
         # Convolutional layers
         self.conv_layers = nn.ModuleList()
