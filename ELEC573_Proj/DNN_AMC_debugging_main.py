@@ -16,8 +16,8 @@ from hyperparam_tuned_configs import *
 
 
 MODEL_STR = "DynamicMomonaNet"
+MY_CONFIG = DynamicMomonaNet_config
 expdef_df = load_expdef_gestures(apply_hc_feateng=False)
-timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
 data_splits = make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3)
 
@@ -54,5 +54,15 @@ cross_test_df['Cluster_ID'] = label_encoder.fit_transform(cross_test_df['partici
 
 # Only clustering wrt intra_test results, not cross_test results, for now...
 data_dfs_dict = {'train':train_df, 'test':intra_test_df}
-merge_log, intra_cluster_performance, cross_cluster_performance = DNN_agglo_merge_procedure(data_dfs_dict, MODEL_STR, DynamicMomonaNet_config, n_splits=2)
+merge_log, intra_cluster_performance, cross_cluster_performance, nested_clus_model_dict = DNN_agglo_merge_procedure(data_dfs_dict, MODEL_STR, DynamicMomonaNet_config, n_splits=2)
 
+# Save the data to a file
+## TODO: Ensure this is saving to the correct place
+print(f'{MY_CONFIG["results_save_dir"]}\\{MY_CONFIG["timestamp"]}')
+print()
+with open(f'{MY_CONFIG["results_save_dir"]}\\{MY_CONFIG["timestamp"]}_{MODEL_STR}_agglo_merge_res.pkl', 'wb') as f:
+    pickle.dump(merge_log, f)
+    pickle.dump(intra_cluster_performance, f)
+    pickle.dump(cross_cluster_performance, f)
+    pickle.dump(nested_clus_model_dict, f)
+print("Data has been saved successfully!")

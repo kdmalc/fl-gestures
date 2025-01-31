@@ -45,7 +45,7 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         clust_asgn_dataset = GestureDataset([novel_pid_clus_asgn_data['feature'][i] for i in indices], [novel_pid_clus_asgn_data['labels'][i] for i in indices])
         clust_asgn_loader = DataLoader(clust_asgn_dataset, batch_size=config["batch_size"], shuffle=True)
 
-        # 1) Train a local CNN model
+        # 1) Train a local model
         # MomonaNets do not need input_dim and num_classes, other models need to be updated to infer that or pull it from config
         local_model = select_model(model_str, config)
         # This passes in the model object! Not the model string...
@@ -55,17 +55,21 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         local_clus_res = evaluate_model(local_model, intra_test_loader)
         novel_pid_res_dict[pid]["local_acc"] = local_clus_res["accuracy"]
 
-        # 1.5) Test the pretrained GENERIC (e.g. not cluster-level) model
+        # 2) Test the full pretrained model
         generic_clus_res = evaluate_model(pretrained_generic_model, intra_test_loader)
-        novel_pid_res_dict[pid]["generic_acc"] = generic_clus_res["accuracy"]
+        novel_pid_res_dict[pid]["centralized_acc"] = generic_clus_res["accuracy"]
 
-        # 2) Have the pretrained CNN model from the best cluster do inference
+        # 3) Test finetuned pretrained model
+        # ft_model, original_cluster_model, train_loss_log, test_loss_log = fine_tune_model()
+        ft_centralized_model, original_cluster_model, _, _ = fine_tune_model(
+            pretrained_generic_model, ft_loader, intra_test_loader, num_epochs=config["num_ft_epochs"], lr=config["ft_lr"])
+        ft_centralized_res = evaluate_model(ft_centralized_model, intra_test_loader)
+        novel_pid_res_dict[pid]["ft_centralized_acc"] = ft_centralized_res["accuracy"]
+
+        # 4) CLUSTER MODEL: Have the pretrained model from the best cluster do inference
         #   - Have all cluster models do inference and compare assign to whichever cluster gives best results
-        #pretrained_generic_model
-
         # Apply all the cluster models at the chosen iteration on the given participant data
         ## Record that cluster's performance (all cluster's performances?... Ideally)
-
         clus_model_res_dict = {}
         cluster_lst = list(nested_clus_model_dict[cluster_iter_str].keys())
         for clus_id in cluster_lst:
@@ -73,7 +77,6 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
             clus_res = evaluate_model(clus_model, clust_asgn_loader) 
             clus_acc = clus_res["accuracy"]
             clus_model_res_dict[clus_id] = clus_acc
-            
         # Assign participant to highest scoring cluster
         # Find the key with the highest accuracy
         max_key = max(clus_model_res_dict, key=clus_model_res_dict.get)
@@ -81,40 +84,48 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         print(f"The highest accuracy is {max_value} and it is associated with the key {max_key}.")
         print("Full cluster assignment results dict:")
         print(clus_model_res_dict)
-
         original_cluster_model = nested_clus_model_dict[cluster_iter_str][max_key]
-
-        # Have the pretrained CNN model from the best cluster do inference
+        # Have the pretrained model from the best cluster do inference
         pretrained_clus_res = evaluate_model(original_cluster_model, intra_test_loader)
-        novel_pid_res_dict[pid]["pretrained_acc"] = pretrained_clus_res["accuracy"]
+        novel_pid_res_dict[pid]["pretrained_cluster_acc"] = pretrained_clus_res["accuracy"]
 
-        # 3) FT the above model (or all??) pretrained CNN model on the participant
-        ft_model, original_cluster_model, train_loss_log, test_loss_log = fine_tune_model(
+        # 5) FT the pretrained cluster model on the participant
+        # ft_model, original_cluster_model, train_loss_log, test_loss_log = fine_tune_model()
+        ft_cluster_model, original_cluster_model, _, _ = fine_tune_model(
             original_cluster_model, ft_loader, intra_test_loader, num_epochs=config["num_ft_epochs"], lr=config["ft_lr"])
-        ft_clus_res = evaluate_model(ft_model, intra_test_loader)
-        novel_pid_res_dict[pid]["ft_acc"] = ft_clus_res["accuracy"]
+        ft_clus_res = evaluate_model(ft_cluster_model, intra_test_loader)
+        novel_pid_res_dict[pid]["ft_cluster_acc"] = ft_clus_res["accuracy"]
 
     local_acc_data = [] 
-    pretrained_acc_data = [] 
-    ft_acc_data = [] 
-    generic_acc_data = []
+    centralized_acc_data = [] 
+    ft_centralized_acc_data = []
+    pretrained_cluster_acc_data = []
+    ft_cluster_acc_data = [] 
     # Collecting data from the dictionary 
     for pid in novel_pid_res_dict: 
         local_acc_data.append(novel_pid_res_dict[pid]['local_acc']) 
-        pretrained_acc_data.append(novel_pid_res_dict[pid]['pretrained_acc']) 
-        ft_acc_data.append(novel_pid_res_dict[pid]['ft_acc']) 
-        generic_acc_data.append(novel_pid_res_dict[pid]['generic_acc']) 
+        centralized_acc_data.append(novel_pid_res_dict[pid]['centralized_acc']) 
+        ft_centralized_acc_data.append(novel_pid_res_dict[pid]['ft_centralized_acc']) 
+        pretrained_cluster_acc_data.append(novel_pid_res_dict[pid]['pretrained_cluster_acc']) 
+        ft_cluster_acc_data.append(novel_pid_res_dict[pid]['ft_cluster_acc']) 
 
-    return local_acc_data, pretrained_acc_data, ft_acc_data, generic_acc_data
+    data_dict = {'local_acc_data':local_acc_data, 'centralized_acc_data':centralized_acc_data, 'ft_centralized_acc_data':ft_centralized_acc_data, 'pretrained_cluster_acc_data':pretrained_cluster_acc_data, 'ft_cluster_acc_data':ft_cluster_acc_data}
+    return data_dict
 
 
-def plot_model_acc_boxplots(generic_acc_data, pretrained_acc_data, local_acc_data, ft_acc_data, colors_lst=None, my_title="CNN Accuracy", save_fig=False, plot_save_name="Final_CNN_Acc", save_dir="C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results"):
-    data = [generic_acc_data, pretrained_acc_data, local_acc_data, ft_acc_data] 
+def plot_model_acc_boxplots(data_dict, model_str, colors_lst=None, my_title=None, save_fig=False, plot_save_name=None, save_dir="C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results"):
+    # Default order
+    #data = [data_dict['local_acc_data'], data_dict['centralized_acc_data'], data_dict['ft_centralized_acc_data'], data_dict['pretrained_cluster_acc_data'], data_dict['ft_cluster_acc_data']] 
+    # Ordering according to performance:
+    data = [data_dict['centralized_acc_data'], data_dict['pretrained_cluster_acc_data'], data_dict['ft_centralized_acc_data'], data_dict['local_acc_data'], data_dict['ft_cluster_acc_data']] 
+
     if colors_lst is None:
-        colors_lst = ['blue', 'purple', 'green', 'yellow']
+        colors_lst = ['blue', 'purple', 'orange', 'green', 'yellow']
+    if my_title is None:
+        my_title = f"{model_str} Accuracies Averaged Across Participants"
 
     fig, ax = plt.subplots(figsize=(6, 6)) 
-    bp = ax.boxplot(data, patch_artist=True, labels=['Generic', 'Pretrained Cluster', 'Local', 'Fine-Tuned Cluster']) 
+    bp = ax.boxplot(data, patch_artist=True, labels=['Generic Centralized', 'Pretrained Cluster', 'Fine-Tuned Centralized', 'Local', 'Fine-Tuned Cluster']) 
     # Customize boxplot colors 
     for patch, color in zip(bp['boxes'], colors_lst): 
         patch.set_facecolor(color) 

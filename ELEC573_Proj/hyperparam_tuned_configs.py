@@ -36,7 +36,7 @@ DynamicMomonaNet_config = {
     "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\{timestamp}", 
     "perf_log_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs", 
     "timestamp": timestamp,
-    "verbose": True,
+    "verbose": False,
     "log_each_pid_results": False, 
     "save_ft_models": False  # Not even applicable here
 }
