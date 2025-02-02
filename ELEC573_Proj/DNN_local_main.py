@@ -1,3 +1,5 @@
+# THIS HAS NOT BEEN UPDATED AT ALL YET AND IS THE SAME AS DNN_AMC_Debugging
+
 import pandas as pd
 #import numpy as np
 #np.random.seed(42) 
@@ -57,12 +59,9 @@ data_dfs_dict = {'train':train_df, 'test':intra_test_df}
 merge_log, intra_cluster_performance, cross_cluster_performance, nested_clus_model_dict = DNN_agglo_merge_procedure(data_dfs_dict, MODEL_STR, DynamicMomonaNet_config, n_splits=2)
 
 # Save the data to a file
-# This saving code hasn't been validated here yet
 ## TODO: Ensure this is saving to the correct place
 print(f'{MY_CONFIG["results_save_dir"]}\\{MY_CONFIG["timestamp"]}')
-# Might need to make this dir...
 print()
-# Include timestamp in file name?
 with open(f'{MY_CONFIG["results_save_dir"]}\\{MY_CONFIG["timestamp"]}_{MODEL_STR}_agglo_merge_res.pkl', 'wb') as f:
     pickle.dump(merge_log, f)
     pickle.dump(intra_cluster_performance, f)

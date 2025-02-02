@@ -591,6 +591,8 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
 
     if train_intra_cross_loaders is None:
         # This isn't working and I don't have time to fix it
+        ## Is this running right now? I think so?
+        
         # Performance by participant and gesture
         train_performance = gesture_performance_by_participant(
             train_results['predictions'], 
@@ -622,6 +624,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         'train_performance': train_performance,
         'intra_test_performance': intra_test_performance,
         'cross_test_performance': cross_test_performance,
+        # These are the final accuracies on the respective datasets
         'train_accuracy': train_results['accuracy'],
         'intra_test_accuracy': intra_test_results['accuracy'],
         'cross_test_accuracy': cross_test_results['accuracy'], 
