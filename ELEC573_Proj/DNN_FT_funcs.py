@@ -458,13 +458,12 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     - Trained model, performance metrics
     """
 
-    if config is not None:
-        bs = config["batch_size"]
-        #criterion = config["criterion"]  # This doesnt do anything rn
-        lr = config["learning_rate"]
-        weight_decay = config["weight_decay"]
-        sequence_length = config["sequence_length"]
-        time_steps = config["time_steps"]
+    bs = config["batch_size"]
+    #criterion = config["criterion"]  # This doesnt do anything rn
+    lr = config["learning_rate"]
+    weight_decay = config["weight_decay"]
+    sequence_length = config["sequence_length"]
+    time_steps = config["time_steps"]
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
@@ -474,19 +473,30 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     ## The testing dataloaders don't shuffle tho
     ## intra_test_results are in order [0,0,1,1,2,2, etc]
     ## So I'm pretty sure train_pids is wrong then, it should be shuffled...
-    unique_gestures = np.unique(data_splits['train']['labels'])
-    num_classes = len(unique_gestures)
-    input_dim = data_splits['train']['feature'].shape[1]
-    if train_intra_cross_loaders is not None:
+
+    if train_intra_cross_loaders is not None:  # This is used in the NB full study...
         # Hardcoding cause I don't wanna deal with dataloader extraction
         #num_classes = 10
         #unique_gestures = list(range(num_classes))
         #input_dim = 80
 
+        train_loader = train_intra_cross_loaders[0]
+        intra_test_loader = train_intra_cross_loaders[1]
+        cross_test_loader = train_intra_cross_loaders[2]
+
+        # Here we can assume that data_splits is None
+        #unique_gestures = np.unique(data_splits['train']['labels'])
+        num_classes = 10
+        input_dim = next(iter(train_loader))[0].shape
+
         train_pids = [pid for pid in all_participants if pid not in test_participants]
         intra_pids = train_pids
         cross_pids = test_participants
     else:
+        unique_gestures = np.unique(data_splits['train']['labels'])
+        num_classes = len(unique_gestures)
+        input_dim = data_splits['train']['feature'].shape[1]
+
         # MomonaNet
         # TODO: Is DynamicMomonaNet handled here too? Idk
 
@@ -498,10 +508,6 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         intra_pids = data_splits['intra_subject_test']['participant_ids']
         cross_pids = data_splits['cross_subject_test']['participant_ids']
     
-    # Select model
-    model = select_model(model_type, config, device=device, input_dim=input_dim, num_classes=num_classes)
-
-    if train_intra_cross_loaders is None:
         my_gesture_dataset = select_dataset_class(model_type)
         
         train_dataset = my_gesture_dataset(
@@ -530,10 +536,9 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
             ts=time_steps)
         # Shuffle doesn't matter for testing
         cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False) #, drop_last=True)
-    else:
-        train_loader = train_intra_cross_loaders[0]
-        intra_test_loader = train_intra_cross_loaders[1]
-        cross_test_loader = train_intra_cross_loaders[2]
+
+    # Select model
+    model = select_model(model_type, config, device=device, input_dim=input_dim, num_classes=num_classes)
     
     # Loss and optimizer
     optimizer = set_optimizer(model, lr=lr, use_weight_decay=weight_decay>0, weight_decay=weight_decay)
