@@ -14,6 +14,8 @@ from revamped_model_classes import *
 def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, config, pretrained_generic_model,
                         nested_clus_model_dict, model_str, cluster_iter_str='Iter18'):
     
+    os.makedirs(config['results_save_dir'], exist_ok=True)
+    
     train_pids = np.unique(finetuning_datasplits['train']['participant_ids'])
     novel_participant_ft_data = finetuning_datasplits['novel_trainFT']
     novel_participant_test_data = finetuning_datasplits['cross_subject_test']
@@ -49,7 +51,7 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         # MomonaNets do not need input_dim and num_classes, other models need to be updated to infer that or pull it from config
         local_model = select_model(model_str, config)
         # This passes in the model object! Not the model string...
-        local_results = main_training_pipeline(data_splits=None, all_participants=train_pids, test_participants=novel_pids, model_type=local_model, config=config, 
+        local_results = main_training_pipeline(data_splits=None, all_participants=train_pids, test_participants=novel_pids, model_type=model_str, config=config, 
                            train_intra_cross_loaders=[ft_loader, intra_test_loader, cross_test_loader])
         # This is kind of repeated but whatever
         local_clus_res = evaluate_model(local_model, intra_test_loader)
@@ -61,8 +63,9 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
 
         # 3) Test finetuned pretrained model
         # ft_model, original_cluster_model, train_loss_log, test_loss_log = fine_tune_model()
-        ft_centralized_model, original_cluster_model, _, _ = fine_tune_model(
-            pretrained_generic_model, ft_loader, intra_test_loader, num_epochs=config["num_ft_epochs"], lr=config["ft_lr"])
+        #def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_loader=None, pid=None, use_earlystopping=None):
+        ft_centralized_model, original_petrained_model, _, _ = fine_tune_model(
+            pretrained_generic_model, ft_loader, config, config['timestamp'], test_loader=intra_test_loader, pid=pid)
         ft_centralized_res = evaluate_model(ft_centralized_model, intra_test_loader)
         novel_pid_res_dict[pid]["ft_centralized_acc"] = ft_centralized_res["accuracy"]
 
@@ -81,9 +84,10 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         # Find the key with the highest accuracy
         max_key = max(clus_model_res_dict, key=clus_model_res_dict.get)
         max_value = clus_model_res_dict[max_key]
-        print(f"The highest accuracy is {max_value} and it is associated with the key {max_key}.")
-        print("Full cluster assignment results dict:")
-        print(clus_model_res_dict)
+        print(f"Cluster {max_key} had the highest accuracy ({max_value})")
+        if config['verbose']:
+            print("Full cluster assignment results dict:")
+            print(clus_model_res_dict)
         original_cluster_model = nested_clus_model_dict[cluster_iter_str][max_key]
         # Have the pretrained model from the best cluster do inference
         pretrained_clus_res = evaluate_model(original_cluster_model, intra_test_loader)
@@ -91,8 +95,9 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
 
         # 5) FT the pretrained cluster model on the participant
         # ft_model, original_cluster_model, train_loss_log, test_loss_log = fine_tune_model()
+        #def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_loader=None, pid=None, use_earlystopping=None):
         ft_cluster_model, original_cluster_model, _, _ = fine_tune_model(
-            original_cluster_model, ft_loader, intra_test_loader, num_epochs=config["num_ft_epochs"], lr=config["ft_lr"])
+            original_cluster_model, ft_loader, config, config['timestamp'], test_loader=intra_test_loader, pid=pid)
         ft_clus_res = evaluate_model(ft_cluster_model, intra_test_loader)
         novel_pid_res_dict[pid]["ft_cluster_acc"] = ft_clus_res["accuracy"]
 
@@ -113,7 +118,7 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
     return data_dict
 
 
-def plot_model_acc_boxplots(data_dict, model_str, colors_lst=None, my_title=None, save_fig=False, plot_save_name=None, save_dir="C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results"):
+def plot_model_acc_boxplots(data_dict, model_str=None, colors_lst=None, my_title=None, save_fig=False, plot_save_name=None, save_dir="C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results"):
     # Default order
     #data = [data_dict['local_acc_data'], data_dict['centralized_acc_data'], data_dict['ft_centralized_acc_data'], data_dict['pretrained_cluster_acc_data'], data_dict['ft_cluster_acc_data']] 
     # Ordering according to performance:
@@ -121,7 +126,7 @@ def plot_model_acc_boxplots(data_dict, model_str, colors_lst=None, my_title=None
 
     if colors_lst is None:
         colors_lst = ['blue', 'purple', 'orange', 'green', 'yellow']
-    if my_title is None:
+    if my_title is None and model_str is not None:
         my_title = f"{model_str} Accuracies Averaged Across Participants"
 
     fig, ax = plt.subplots(figsize=(6, 6)) 
