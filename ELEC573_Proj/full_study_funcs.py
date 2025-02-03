@@ -18,7 +18,7 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
 
     local_user_dict = prepare_data_for_local_models(finetuning_datasplits, model_str, config)
     
-    train_pids = np.unique(finetuning_datasplits['train']['participant_ids'])
+    #train_pids = np.unique(finetuning_datasplits['train']['participant_ids'])
     novel_participant_ft_data = finetuning_datasplits['novel_trainFT']
     novel_participant_test_data = finetuning_datasplits['cross_subject_test']
     novel_pids = np.unique(finetuning_datasplits['novel_trainFT']['participant_ids'])
@@ -43,7 +43,7 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         ############## Novel Participant Cross Testing Dataset ##############
         indices = [i for i, datasplit_pid in enumerate(novel_participant_test_data['participant_ids']) if datasplit_pid != pid]
         cross_test_dataset = GestureDataset([novel_participant_test_data['feature'][i] for i in indices], [novel_participant_test_data['labels'][i] for i in indices])
-        cross_test_loader = DataLoader(cross_test_dataset, batch_size=config["batch_size"], shuffle=True)
+        #cross_test_loader = DataLoader(cross_test_dataset, batch_size=config["batch_size"], shuffle=True)
         ############## One Trial Cluster Assignment Dataset ##############
         indices = [i for i, datasplit_pid in enumerate(novel_pid_clus_asgn_data['participant_ids']) if datasplit_pid == pid]
         clust_asgn_dataset = GestureDataset([novel_pid_clus_asgn_data['feature'][i] for i in indices], [novel_pid_clus_asgn_data['labels'][i] for i in indices])
@@ -73,7 +73,7 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
 
         # 3) Test finetuned pretrained model
         #def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_loader=None, pid=None, use_earlystopping=None):
-        ft_centralized_model, original_petrained_model, _, _ = fine_tune_model(
+        ft_centralized_model, _, _, _ = fine_tune_model(
             pretrained_generic_model, ft_loader, config, config['timestamp'], test_loader=intra_test_loader, pid=pid)
         ft_centralized_res = evaluate_model(ft_centralized_model, intra_test_loader)
         novel_pid_res_dict[pid]["ft_centralized_acc"] = ft_centralized_res["accuracy"]
