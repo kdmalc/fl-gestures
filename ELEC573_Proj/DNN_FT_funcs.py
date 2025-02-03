@@ -632,7 +632,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     }
 
 
-def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_loader=None, pid=None, use_earlystopping=None):
+def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_loader=None, pid=None, use_earlystopping=None, num_epochs=50):
     """
     Fine-tune the base model on a small subset of data
     
@@ -652,6 +652,11 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
 
     if use_earlystopping is None:
         use_earlystopping = config["use_earlystopping"]
+        # Assume num_epochs is an integer (ideally 50) and use that
+        max_epochs = num_epochs
+    else:
+        max_epochs = config["num_ft_epochs"]
+    
 
     # Extract the original pretrained model weights since finetuning happens in place
     #frozen_base_model_state = copy.deepcopy(finetuned_model.state_dict())
@@ -662,7 +667,6 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     # Fine-tuning
     train_loss_log = []
     test_loss_log = []
-    max_epochs = config["num_ft_epochs"]
     epoch = 0
     done = False
     if use_earlystopping:
@@ -698,8 +702,6 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         # Close the log file
         log_file.close()
 
-    #original_model = finetuned_model.__class__(input_dim=finetuned_model.input_dim, num_classes=finetuned_model.num_classes)  
-    #original_model.load_state_dict(frozen_base_model_state)  # Load pretrained weights into the new model
     assert(not finetuned_model == frozen_original_model)
 
     return finetuned_model, frozen_original_model, train_loss_log, test_loss_log

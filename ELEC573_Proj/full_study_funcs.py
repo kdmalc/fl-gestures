@@ -62,7 +62,6 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         novel_pid_res_dict[pid]["centralized_acc"] = generic_clus_res["accuracy"]
 
         # 3) Test finetuned pretrained model
-        # ft_model, original_cluster_model, train_loss_log, test_loss_log = fine_tune_model()
         #def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_loader=None, pid=None, use_earlystopping=None):
         ft_centralized_model, original_petrained_model, _, _ = fine_tune_model(
             pretrained_generic_model, ft_loader, config, config['timestamp'], test_loader=intra_test_loader, pid=pid)
@@ -146,3 +145,66 @@ def plot_model_acc_boxplots(data_dict, model_str=None, colors_lst=None, my_title
     if save_fig:
         plt.savefig(f"{save_dir}\\{plot_save_name}.png", dpi=500, bbox_inches='tight') 
     plt.show()
+
+    # FOR LOCAL
+def group_data_by_pid(features, labels, pids):
+    """Group features and labels by unique participant IDs."""
+    pids_npy = np.array(pids)
+    unique_pids = np.unique(pids)
+    pid_data = {}
+    for pid in unique_pids:
+        mask = (pids_npy == pid)
+        pid_features = features[mask]
+        pid_labels = labels[mask]
+        pid_data[pid] = (pid_features, pid_labels)
+    return pid_data
+
+def prepare_data_for_local_models(data_splits, model_str, config):
+
+    bs = config["batch_size"]
+    sequence_length = config["sequence_length"]
+    time_steps = config["time_steps"]
+
+    # Group data from each split by participant ID
+    train_groups = group_data_by_pid(
+        data_splits['train']['feature'],
+        data_splits['train']['labels'],
+        data_splits['train']['participant_ids']
+    )
+    intra_groups = group_data_by_pid(
+        data_splits['intra_subject_test']['feature'],
+        data_splits['intra_subject_test']['labels'],
+        data_splits['intra_subject_test']['participant_ids']
+    )
+
+    # Get all unique participant IDs across all splits
+    all_pids = set(train_groups.keys()).union(intra_groups.keys())#.union(cross_groups.keys())
+    my_gesture_dataset = select_dataset_class(model_str)
+
+    #features, labels = cross_groups[pid]
+    cross_dataset = my_gesture_dataset(
+        data_splits['cross_subject_test']['feature'], data_splits['cross_subject_test']['labels'], sl=sequence_length, ts=time_steps
+    )
+    cross_loader = DataLoader(cross_dataset, batch_size=bs, shuffle=False)
+
+    user_dict = {}
+    for pid in all_pids:
+        train_loader, intra_loader = None, None
+        
+        # Create train loader if participant exists in training split
+        if pid in train_groups:
+            features, labels = train_groups[pid]
+            train_dataset = my_gesture_dataset(
+                features, labels, sl=sequence_length, ts=time_steps
+            )
+            train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
+        # Create intra-subject test loader
+        if pid in intra_groups:
+            features, labels = intra_groups[pid]
+            intra_dataset = my_gesture_dataset(
+                features, labels, sl=sequence_length, ts=time_steps
+            )
+            intra_loader = DataLoader(intra_dataset, batch_size=bs, shuffle=False)
+        # USE THE SAME CROSS LOADER FOR ALL USERS. NO SUBJECT SPECIFC CROSS SUBJECT (BY DEFINITION)
+        user_dict[pid] = (train_loader, intra_loader, cross_loader)
+    return user_dict
