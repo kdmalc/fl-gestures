@@ -15,6 +15,8 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
                         nested_clus_model_dict, model_str, cluster_iter_str='Iter18'):
     
     os.makedirs(config['results_save_dir'], exist_ok=True)
+
+    local_user_dict = prepare_data_for_local_models(finetuning_datasplits, model_str, config)
     
     train_pids = np.unique(finetuning_datasplits['train']['participant_ids'])
     novel_participant_ft_data = finetuning_datasplits['novel_trainFT']
@@ -48,13 +50,21 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         clust_asgn_loader = DataLoader(clust_asgn_dataset, batch_size=config["batch_size"], shuffle=True)
 
         # 1) Train a local model
-        # MomonaNets do not need input_dim and num_classes, other models need to be updated to infer that or pull it from config
-        local_model = select_model(model_str, config)
-        # This passes in the model object! Not the model string...
-        local_results = main_training_pipeline(data_splits=None, all_participants=train_pids, test_participants=novel_pids, model_type=model_str, config=config, 
-                           train_intra_cross_loaders=[ft_loader, intra_test_loader, cross_test_loader])
-        # This is kind of repeated but whatever
-        local_clus_res = evaluate_model(local_model, intra_test_loader)
+        ## MomonaNets do not need input_dim and num_classes, other models need to be updated to infer that or pull it from config
+        #local_model = select_model(model_str, config)
+        ## This passes in the model object! Not the model string...
+        #local_results = main_training_pipeline(data_splits=None, all_participants=train_pids, test_participants=novel_pids, model_type=model_str, config=config, 
+        #                   train_intra_cross_loaders=[ft_loader, intra_test_loader, cross_test_loader])
+        ## This is kind of repeated but whatever
+        #local_clus_res = evaluate_model(local_model, intra_test_loader)
+        #novel_pid_res_dict[pid]["local_acc"] = local_clus_res["accuracy"]
+
+        # Wait can I just pass finetuning datasplits in here? I dont think so since I'm using FT not train data?
+        local_res = main_training_pipeline(data_splits=None, all_participants=list(set(novel_participant_test_data['participant_ids'])), 
+                                                test_participants=finetuning_datasplits['cross_subject_test']['participant_ids'], 
+                                                model_type=model_str, config=config, 
+                                                train_intra_cross_loaders=local_user_dict[pid])
+        local_clus_res = evaluate_model(local_res["model"], intra_test_loader)
         novel_pid_res_dict[pid]["local_acc"] = local_clus_res["accuracy"]
 
         # 2) Test the full pretrained model
