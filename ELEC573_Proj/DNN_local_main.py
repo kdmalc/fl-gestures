@@ -1,9 +1,7 @@
-# THIS HAS NOT BEEN UPDATED AT ALL YET AND IS THE SAME AS DNN_AMC_Debugging
-
 import pandas as pd
 #import numpy as np
+#import random
 #np.random.seed(42) 
-import random
 from sklearn.preprocessing import LabelEncoder
 #from sklearn.model_selection import KFold
 #from sklearn.cross_decomposition import CCA
@@ -16,55 +14,35 @@ from DNN_AMC_funcs import *
 from hyperparam_tuned_configs import *
 
 
-
 MODEL_STR = "DynamicMomonaNet"
 MY_CONFIG = DynamicMomonaNet_config
+NUM_LOCAL_MODELS = 15
+
 expdef_df = load_expdef_gestures(apply_hc_feateng=False)
+all_participants = list(expdef_df['Participant'].unique())
 
-data_splits = make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3)
+# Choosing NUM_LOCAL_MODELS somewhat arbitrarily, don't need to look at all 32 results... save some computation ig
+# Setting num_gesture_training_trials=3 so that this replicates finetuning data used for local
+# num_gesture_ft_trials should not be used I don't think, not in main_training_pipeline anyways
+data_splits = make_data_split(expdef_df, num_gesture_training_trials=3, num_gesture_ft_trials=3, num_train_users=NUM_LOCAL_MODELS)
 
-# If I'm not using Pytorch, then I don't need dataloaders, need to revamp...
-features_df = pd.DataFrame(data_splits['train']['feature'])
-# Create a new column 'features' that contains all 80 columns as lists
-features_df['feature'] = features_df.apply(lambda row: row.tolist(), axis=1)
-# Keep only the new combined column
-features_df = features_df[['feature']]
-# Combine with labels and participant_ids into a single DataFrame
-train_df = pd.concat([features_df, pd.Series(data_splits['train']['labels'], name='Gesture_Encoded'), pd.Series(data_splits['train']['participant_ids'], name='participant_ids')], axis=1)
-label_encoder = LabelEncoder()
-train_df['Cluster_ID'] = label_encoder.fit_transform(train_df['participant_ids'])
+res_dict_lst = []
+#for pid in train_df['participant_ids'].unique():
+for p_idx, pid in enumerate(list(set(data_splits['train']['participant_ids']))):
+    print(f"Training local model for {pid} ({p_idx}/{NUM_LOCAL_MODELS})")
+    res_dict_lst.append(main_training_pipeline(data_splits, all_participants, data_splits['cross_subject_test']['participant_ids'], MODEL_STR, MY_CONFIG))
 
-features_df = pd.DataFrame(data_splits['intra_subject_test']['feature'])
-# Create a new column 'features' that contains all 80 columns as lists
-features_df['feature'] = features_df.apply(lambda row: row.tolist(), axis=1)
-# Keep only the new combined column
-features_df = features_df[['feature']]
-# Combine with labels and participant_ids into a single DataFrame
-intra_test_df = pd.concat([features_df, pd.Series(data_splits['intra_subject_test']['labels'], name='Gesture_Encoded'), pd.Series(data_splits['intra_subject_test']['participant_ids'], name='participant_ids')], axis=1)
-label_encoder = LabelEncoder()
-intra_test_df['Cluster_ID'] = label_encoder.fit_transform(intra_test_df['participant_ids'])
-
-features_df = pd.DataFrame(data_splits['cross_subject_test']['feature'])
-# Create a new column 'features' that contains all 80 columns as lists
-features_df['feature'] = features_df.apply(lambda row: row.tolist(), axis=1)
-# Keep only the new combined column
-features_df = features_df[['feature']]
-# Combine with labels and participant_ids into a single DataFrame
-cross_test_df = pd.concat([features_df, pd.Series(data_splits['cross_subject_test']['labels'], name='Gesture_Encoded'), pd.Series(data_splits['cross_subject_test']['participant_ids'], name='participant_ids')], axis=1)
-label_encoder = LabelEncoder()
-cross_test_df['Cluster_ID'] = label_encoder.fit_transform(cross_test_df['participant_ids'])
-
-# Only clustering wrt intra_test results, not cross_test results, for now...
-data_dfs_dict = {'train':train_df, 'test':intra_test_df}
-merge_log, intra_cluster_performance, cross_cluster_performance, nested_clus_model_dict = DNN_agglo_merge_procedure(data_dfs_dict, MODEL_STR, DynamicMomonaNet_config, n_splits=2)
+# res_dict_lst would either need to be saved, or extracted in a iPYNB so that we can plot train/test logs...
 
 # Save the data to a file
 ## TODO: Ensure this is saving to the correct place
-print(f'{MY_CONFIG["results_save_dir"]}\\{MY_CONFIG["timestamp"]}')
-print()
-with open(f'{MY_CONFIG["results_save_dir"]}\\{MY_CONFIG["timestamp"]}_{MODEL_STR}_agglo_merge_res.pkl', 'wb') as f:
-    pickle.dump(merge_log, f)
-    pickle.dump(intra_cluster_performance, f)
-    pickle.dump(cross_cluster_performance, f)
-    pickle.dump(nested_clus_model_dict, f)
-print("Data has been saved successfully!")
+## TODO: This is the saving for the AMC, not for local.
+# Need to save the results from local tho...
+#print(f'{MY_CONFIG["results_save_dir"]}\\{MY_CONFIG["timestamp"]}')
+#print()
+#with open(f'{MY_CONFIG["results_save_dir"]}\\{MY_CONFIG["timestamp"]}_{MODEL_STR}_agglo_merge_res.pkl', 'wb') as f:
+#    pickle.dump(merge_log, f)
+#    pickle.dump(intra_cluster_performance, f)
+#    pickle.dump(cross_cluster_performance, f)
+#    pickle.dump(nested_clus_model_dict, f)
+#print("Data has been saved successfully!")

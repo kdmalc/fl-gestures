@@ -100,13 +100,13 @@ def evaluate_configuration_on_ft(datasplit, pretrained_model, config, model_str,
     return user_accuracies
 
 
-def make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3):
+def make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3, num_train_users=24):
     all_participants = expdef_df['Participant'].unique()
     # Shuffle the participants
     random.shuffle(all_participants)
     # Split into two groups
-    #train_participants = all_participants[:24]  # First 24 participants
-    test_participants = all_participants[24:]  # Remaining 8 participants
+    #train_participants = all_participants[:num_train_users]  # First num_train_users participants
+    test_participants = all_participants[num_train_users:]  # Remaining 32-num_train_users participants
 
     # Prepare data
     data_splits = prepare_data(
@@ -443,7 +443,7 @@ def gesture_performance_by_participant(predictions, true_labels, all_unique_part
 
 
 def main_training_pipeline(data_splits, all_participants, test_participants, model_type, config, 
-                           train_intra_cross_loaders=None):
+                           train_intra_cross_loaders=None, save_loss_here=False):
     """
     Main training pipeline with comprehensive performance tracking
     
@@ -483,6 +483,8 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         train_loader = train_intra_cross_loaders[0]
         intra_test_loader = train_intra_cross_loaders[1]
         cross_test_loader = train_intra_cross_loaders[2]
+        if len(train_intra_cross_loaders)==4:
+            ft_loader = train_intra_cross_loaders[3]
 
         # Here we can assume that data_splits is None
         #unique_gestures = np.unique(data_splits['train']['labels'])
@@ -496,13 +498,6 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         unique_gestures = np.unique(data_splits['train']['labels'])
         num_classes = len(unique_gestures)
         input_dim = data_splits['train']['feature'].shape[1]
-
-        # MomonaNet
-        # TODO: Is DynamicMomonaNet handled here too? Idk
-
-        #unique_gestures = np.unique(data_splits['train']['labels'])
-        #num_classes = len(unique_gestures)
-        #input_dim = data_splits['train']['feature'].shape[1]
 
         train_pids = data_splits['train']['participant_ids']  # THIS IS IN ORDER! NOT SHUFFLED!!
         intra_pids = data_splits['intra_subject_test']['participant_ids']
@@ -552,11 +547,12 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     epoch = 0
     done = False
     earlystopping = EarlyStopping()
-    # Open a text file for logging
-    # Toggle this? Is this by participant? Or just once per config?
-    #if 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-    log_file = open(f"{config['results_save_dir']}\\{timestamp}_{model_type}_pretrained_training_log.txt", "w")
+    
+    # Is this by participant? Or just once per config?
+    if save_loss_here:
+        # Open a text file for logging
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        log_file = open(f"{config['results_save_dir']}\\{timestamp}_{model_type}_pretrained_training_log.txt", "w")
     while not done and epoch < max_epochs:
         epoch += 1
         train_loss = train_model(model, train_loader, optimizer)
@@ -580,9 +576,11 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
             f"{earlystopping.status}\n")
         if config["verbose"]:
             print(log_message, end="")  # Print to console
-        log_file.write(log_message)  # Write to file
-    # Close the log file
-    log_file.close()
+        if save_loss_here:
+            log_file.write(log_message)  # Write to file
+    if save_loss_here:
+        # Close the log file
+        log_file.close()
     
     # Evaluation --> One-off final results! Gets used in gesture_performance_by_participant
     train_results = evaluate_model(model, train_loader)
