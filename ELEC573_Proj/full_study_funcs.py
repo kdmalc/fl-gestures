@@ -30,6 +30,8 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         print(f"PID {pid}, {pid_count}/{len(novel_pids)}")
         novel_pid_res_dict[pid] = {}
 
+        # TODO: Confirm this is working as expected, it seems like this creates the subject specific dataloaders for me...
+        ## If that is true then I didnt need to do all the Local development (for this func at least, on its own is another story)
         # Create the testloader by segmenting out this specific pid
         # Filter based on participant_id
         indices = [i for i, datasplit_pid in enumerate(novel_participant_ft_data['participant_ids']) if datasplit_pid == pid]
@@ -42,7 +44,7 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         intra_test_loader = DataLoader(intra_test_dataset, batch_size=config["batch_size"], shuffle=True)
         ############## Novel Participant Cross Testing Dataset ##############
         indices = [i for i, datasplit_pid in enumerate(novel_participant_test_data['participant_ids']) if datasplit_pid != pid]
-        cross_test_dataset = GestureDataset([novel_participant_test_data['feature'][i] for i in indices], [novel_participant_test_data['labels'][i] for i in indices])
+        #cross_test_dataset = GestureDataset([novel_participant_test_data['feature'][i] for i in indices], [novel_participant_test_data['labels'][i] for i in indices])
         #cross_test_loader = DataLoader(cross_test_dataset, batch_size=config["batch_size"], shuffle=True)
         ############## One Trial Cluster Assignment Dataset ##############
         indices = [i for i, datasplit_pid in enumerate(novel_pid_clus_asgn_data['participant_ids']) if datasplit_pid == pid]
@@ -67,11 +69,11 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         local_clus_res = evaluate_model(local_res["model"], intra_test_loader)
         novel_pid_res_dict[pid]["local_acc"] = local_clus_res["accuracy"]
 
-        # 2) Test the full pretrained model
+        # 2) Test the full pretrained (centralized) model
         generic_clus_res = evaluate_model(pretrained_generic_model, intra_test_loader)
         novel_pid_res_dict[pid]["centralized_acc"] = generic_clus_res["accuracy"]
 
-        # 3) Test finetuned pretrained model
+        # 3) Test finetuned pretrained (centralized) model
         #def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_loader=None, pid=None, use_earlystopping=None):
         ft_centralized_model, _, _, _ = fine_tune_model(
             pretrained_generic_model, ft_loader, config, config['timestamp'], test_loader=intra_test_loader, pid=pid)
@@ -156,7 +158,7 @@ def plot_model_acc_boxplots(data_dict, model_str=None, colors_lst=None, my_title
         plt.savefig(f"{save_dir}\\{plot_save_name}.png", dpi=500, bbox_inches='tight') 
     plt.show()
 
-    # FOR LOCAL
+# FOR LOCAL
 def group_data_by_pid(features, labels, pids):
     """Group features and labels by unique participant IDs."""
     pids_npy = np.array(pids)

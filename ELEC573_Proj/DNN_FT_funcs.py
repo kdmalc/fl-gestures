@@ -546,7 +546,8 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     max_epochs = config["num_epochs"]
     epoch = 0
     done = False
-    earlystopping = EarlyStopping()
+    if config['use_earlystopping']:
+        earlystopping = EarlyStopping()
     
     # Is this by participant? Or just once per config?
     if save_loss_here:
@@ -565,15 +566,18 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         cross_test_loss_log.append(cross_test_loss)
 
         # Early stopping check
-        if earlystopping(model, intra_test_loss):
+        if config['use_earlystopping'] and earlystopping(model, intra_test_loss):
             done = True
+            earlystopping_status = earlystopping.status
+        else:
+            earlystopping_status = ""
         # Log metrics to the console and the text file
         log_message = (
             f"Epoch {epoch}/{max_epochs}, "
             f"Train Loss: {train_loss:.4f}, "
             f"Intra Testing Loss: {intra_test_loss:.4f}, "
             f"Cross Testing Loss: {cross_test_loss:.4f}, "
-            f"{earlystopping.status}\n")
+            f"{earlystopping_status}\n")
         if config["verbose"]:
             print(log_message, end="")  # Print to console
         if save_loss_here:
@@ -683,9 +687,11 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         test_loss_log.append(novel_intra_test_loss)
 
         # Early stopping check
-        if use_earlystopping:
-            if earlystopping(finetuned_model, novel_intra_test_loss):
-                done = True
+        if use_earlystopping==True and earlystopping(finetuned_model, novel_intra_test_loss):
+            done = True
+            earlystopping_status = earlystopping.status
+        else:
+            earlystopping_status = ""
 
     # Log metrics to the console and the text file, AFTER the while loop has finished
     log_message = (
@@ -694,7 +700,7 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         # TODO: Why are these losses and not accuracies...
         f"FT Train Loss: {train_loss:.4f}, "
         f"Novel Intra Subject Testing Loss: {novel_intra_test_loss:.4f}, "
-        f"Early stop? {done}\n")
+        f"{earlystopping_status}\n")
     if config["verbose"]:
             print(log_message, end="")  # Print to console
     if config["log_each_pid_results"]:
