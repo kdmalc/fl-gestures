@@ -58,8 +58,7 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         #local_model = select_model(model_str, config)
         #local_results = main_training_pipeline(data_splits=None, all_participants=train_pids, test_participants=novel_pids, model_type=model_str, config=config, 
         #                   train_intra_cross_loaders=[ft_loader, intra_test_loader, cross_test_loader])
-        # ^ This stuff was subject specific... so I'm not sure why
-        ## This is kind of repeated but whatever
+        # ^ This stuff was subject specific... so I'm not sure why performance was the same (RC) unless all models are severely over/under-trained
         #local_clus_res = evaluate_model(local_model, intra_test_loader)
         #novel_pid_res_dict[pid]["local_acc"] = local_clus_res["accuracy"]
 

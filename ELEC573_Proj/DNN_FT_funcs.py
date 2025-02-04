@@ -710,6 +710,20 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
 
     assert(not finetuned_model == frozen_original_model)
 
+    # Could refactor this func to return a dict like the main training pipline...
+    #return {
+        #    'model': model,
+        #    'train_performance': train_performance,
+        #    'intra_test_performance': intra_test_performance,
+        #    'cross_test_performance': cross_test_performance,
+        #    # These are the final accuracies on the respective datasets
+        #    'train_accuracy': train_results['accuracy'],
+        #    'intra_test_accuracy': intra_test_results['accuracy'],
+        #    'cross_test_accuracy': cross_test_results['accuracy'], 
+        #    'train_loss_log': train_loss_log,
+        #    'intra_test_loss_log': intra_test_loss_log,
+        #    'cross_test_loss_log': cross_test_loss_log
+        #}
     return finetuned_model, frozen_original_model, train_loss_log, test_loss_log
 
 
