@@ -40,10 +40,12 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         ft_loader = DataLoader(ft_dataset, batch_size=config["batch_size"], shuffle=True)
         ############## Novel Participant Intra Testing Dataset ##############
         indices = [i for i, datasplit_pid in enumerate(novel_participant_test_data['participant_ids']) if datasplit_pid == pid]
+        # ^ These indices should be the same as the above indices I think...
         intra_test_dataset = GestureDataset([novel_participant_test_data['feature'][i] for i in indices], [novel_participant_test_data['labels'][i] for i in indices])
         intra_test_loader = DataLoader(intra_test_dataset, batch_size=config["batch_size"], shuffle=True)
         ############## Novel Participant Cross Testing Dataset ##############
-        indices = [i for i, datasplit_pid in enumerate(novel_participant_test_data['participant_ids']) if datasplit_pid != pid]
+        # This code is testing on all the other novel participants... I don't think we care about that right now
+        #indices = [i for i, datasplit_pid in enumerate(novel_participant_test_data['participant_ids']) if datasplit_pid != pid]
         #cross_test_dataset = GestureDataset([novel_participant_test_data['feature'][i] for i in indices], [novel_participant_test_data['labels'][i] for i in indices])
         #cross_test_loader = DataLoader(cross_test_dataset, batch_size=config["batch_size"], shuffle=True)
         ############## One Trial Cluster Assignment Dataset ##############
@@ -54,9 +56,9 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         # 1) Train a local model
         ## MomonaNets do not need input_dim and num_classes, other models need to be updated to infer that or pull it from config
         #local_model = select_model(model_str, config)
-        ## This passes in the model object! Not the model string...
         #local_results = main_training_pipeline(data_splits=None, all_participants=train_pids, test_participants=novel_pids, model_type=model_str, config=config, 
         #                   train_intra_cross_loaders=[ft_loader, intra_test_loader, cross_test_loader])
+        # ^ This stuff was subject specific... so I'm not sure why
         ## This is kind of repeated but whatever
         #local_clus_res = evaluate_model(local_model, intra_test_loader)
         #novel_pid_res_dict[pid]["local_acc"] = local_clus_res["accuracy"]
