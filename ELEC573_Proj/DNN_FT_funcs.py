@@ -70,7 +70,8 @@ def evaluate_configuration_on_ft(datasplit, pretrained_model, config, model_str,
 
     # Iterate through each unique participant ID
     for pid in ft_user_data.keys() & cross_user_data.keys():  # Only common participant IDs
-        print(f"Fine-tuning on user {pid}")
+        if config["verbose"]:
+            print(f"Fine-tuning on user {pid}")
 
         # Prepare datasets
         my_gesture_dataset = select_dataset_class(model_str)
@@ -178,7 +179,7 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
 
     results = []
     for config_idx, config in enumerate(configs):
-        print(f"Testing config {config_idx + 1}/{len(configs)}: {config}")
+        print(f"Testing config {config_idx + 1}/{len(configs)}:\n{config}")
 
         split_results = []
         for datasplit in data_splits_lst:
@@ -195,8 +196,8 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
             )
             pretrained_model = training_results["model"]
 
-            # Save the pretrained model
-            save_model(pretrained_model, model_str, metadata_config["models_save_dir"][0], "pretrained", verbose=metadata_config["verbose"][0])
+            # Save the pretrained model --> Don't actually this is super slow...
+            #save_model(pretrained_model, model_str, metadata_config["models_save_dir"][0], "pretrained", verbose=metadata_config["verbose"][0])
 
             # Evaluate the configuration on the current data split
             user_accuracies = evaluate_configuration_on_ft(datasplit, pretrained_model, config, model_str, timestamp)
@@ -212,6 +213,7 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
             "overall_user_accuracies": overall_user_accuracies,
             "split_results": split_results
         })
+        print(f"Overall accuracies: {overall_avg_accuracy}\n")
 
     # Save the results
     ## This is the aggregated and sorted JSON file. This always needs to be saved

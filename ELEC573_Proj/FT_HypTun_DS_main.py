@@ -71,15 +71,15 @@ DynamicMomonaNet_architecture_space = {
 DynamicMomonaNet_hyperparameter_space = {
     "batch_size": [16, 32, 64, 128],  #SHARED_BS #(int): Batch size.
     "lstm_dropout": [0.0, 0.5, 0.8],  #(float): Dropout probability for LSTM layers.
-    "learning_rate": [0.0001, 0.001, 0.01, 0.1],
-    "num_epochs": [500], #[30, 50, 70],
+    "learning_rate": [0.0001, 0.001, 0.01],
+    "num_epochs": [100], #[30, 50, 70],
     "optimizer": ["adam", "sgd"],
     "weight_decay": [0.0, 1e-4],
-    "cnn_dropout": [0.0, 0.3, 0.5],
-    "dense_cnnlstm_dropout": [0.0, 0.3, 0.5], 
-    "fc_dropout": [0.0, 0.3, 0.5], 
+    "cnn_dropout": [0.0, 0.3],
+    "dense_cnnlstm_dropout": [0.0, 0.3], 
+    "fc_dropout": [0.0, 0.3], 
     "ft_learning_rate": [0.0001, 0.001, 0.01],
-    "num_ft_epochs": [500], #[10, 30, 50],
+    "num_ft_epochs": [100], #[10, 30, 50],
     "ft_weight_decay": [0.0, 1e-4], 
     "ft_batch_size": [1, 5, 10], 
     "use_earlystopping": [True],  # Always use this to save time, in ft and earlier training
@@ -91,8 +91,8 @@ DynamicMomonaNet_hyperparameter_space = {
     #    - "freeze_cnn_lstm": Freeze CNN + LSTM, train only dense layers.
     #    - "freeze_all_add_dense": Freeze entire model, add a new dense layer.
     #    - "progressive_unfreeze": Start with frozen CNN/LSTM, progressively unfreeze.
-    "progressive_unfreezing_schedule": [1, 2, 5], 
-    "added_dense_ft_hidden_size": [32, 64, 128]
+    "progressive_unfreezing_schedule": [2, 5], 
+    "added_dense_ft_hidden_size": [64, 128]
 }
 
 metadata_config = {
