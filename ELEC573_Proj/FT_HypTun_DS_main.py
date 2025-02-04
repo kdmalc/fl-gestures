@@ -92,7 +92,8 @@ DynamicMomonaNet_hyperparameter_space = {
     #    - "freeze_all_add_dense": Freeze entire model, add a new dense layer.
     #    - "progressive_unfreeze": Start with frozen CNN/LSTM, progressively unfreeze.
     "progressive_unfreezing_schedule": [2, 5], 
-    "added_dense_ft_hidden_size": [64, 128]
+    "added_dense_ft_hidden_size": [64, 128], 
+    "lr_scheduler_gamma": [0.9, 0.95, 1.0]
 }
 
 metadata_config = {

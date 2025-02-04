@@ -487,8 +487,8 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         train_loader = train_intra_cross_loaders[0]
         intra_test_loader = train_intra_cross_loaders[1]
         cross_test_loader = train_intra_cross_loaders[2]
-        if len(train_intra_cross_loaders)==4:
-            ft_loader = train_intra_cross_loaders[3]
+        #if len(train_intra_cross_loaders)==4:
+        #    ft_loader = train_intra_cross_loaders[3]  # Not used at all...
 
         # Here we can assume that data_splits is None
         #unique_gestures = np.unique(data_splits['train']['labels'])
@@ -538,9 +538,11 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
 
     # Select model
     model = select_model(model_type, config, device=device, input_dim=input_dim, num_classes=num_classes)
-    
     # Loss and optimizer
     optimizer = set_optimizer(model, lr=lr, use_weight_decay=weight_decay>0, weight_decay=weight_decay)
+    # Annealing the learning rate if applicable
+    if config["lr_scheduler_gamma"]<1.0:
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config["lr_scheduler_gamma"])
     
     # Training
     train_loss_log = []
@@ -568,6 +570,10 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         intra_test_loss_log.append(intra_test_loss)
         cross_test_loss = evaluate_model(model, cross_test_loader)['loss']
         cross_test_loss_log.append(cross_test_loss)
+
+        # Anneal the learning rate (advance scheduler) if applicable
+        if config["lr_scheduler_gamma"]<1.0:
+            scheduler.step()
 
         # Early stopping check
         if config['use_earlystopping'] and earlystopping(model, intra_test_loss):
@@ -733,7 +739,10 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
 
     # Loss and optimizer (with different learning rate for fine-tuning)
     optimizer = set_optimizer(finetuned_model, lr=config["ft_learning_rate"], use_weight_decay=config["ft_weight_decay"] > 0, weight_decay=config["ft_weight_decay"])
-    
+    # Set up learning rate scheduler if applicable
+    if config["lr_scheduler_gamma"]<1.0:
+        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config["lr_scheduler_gamma"])
+
     # Fine-tuning training loop
     train_loss_log = []
     test_loss_log = []
@@ -762,6 +771,10 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         train_loss_log.append(train_loss)
         novel_intra_test_loss = evaluate_model(finetuned_model, test_loader)['loss']
         test_loss_log.append(novel_intra_test_loss)
+
+        # Anneal the learning rate if applicable (advance the scheduler)
+        if config["lr_scheduler_gamma"]<1.0:
+            scheduler.step()
 
         # Early stopping check
         if use_earlystopping==True and earlystopping(finetuned_model, novel_intra_test_loss):
