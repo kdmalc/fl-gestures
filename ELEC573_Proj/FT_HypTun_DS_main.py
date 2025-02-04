@@ -83,7 +83,8 @@ DynamicMomonaNet_hyperparameter_space = {
     "ft_weight_decay": [0.0, 1e-4], 
     "ft_batch_size": [1, 5, 10], 
     "use_earlystopping": [True],  # Always use this to save time, in ft and earlier training
-    "finetune_strategy": ["full", "freeze_cnn", "freeze_cnn_lstm", "freeze_all_add_dense", "progressive_unfreeze"],
+    "finetune_strategy": ["full", "freeze_cnn", "freeze_cnn_lstm", "progressive_unfreeze"],
+    #["full", "freeze_cnn", "freeze_cnn_lstm", "freeze_all_add_dense", "progressive_unfreeze"],
     #finetune_strategy: The fine-tuning method to use. Options:
     #    - "full": Train the entire model.
     #    - "freeze_cnn": Freeze CNN, train LSTM and dense layers.

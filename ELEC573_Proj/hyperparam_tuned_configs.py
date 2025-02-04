@@ -38,7 +38,7 @@ DynamicMomonaNet_config = {
     "timestamp": timestamp,
     "verbose": False,
     "log_each_pid_results": False, 
-    "save_ft_models": False  # Not even applicable here
+    "save_ft_models": False  # KEEP FALSE WHEN HYPERPARAM TUNING
 }
 
 # BEST PARAMS FOR GENERIC MODEL

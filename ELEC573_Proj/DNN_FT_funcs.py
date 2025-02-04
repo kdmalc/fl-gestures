@@ -101,6 +101,8 @@ def evaluate_configuration_on_ft(datasplit, pretrained_model, config, model_str,
 
 
 def make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3, num_train_users=24):
+    """This is just a wrapper function around prepare_data(), downside is you can't access all_participants and test_participants"""
+
     all_participants = expdef_df['Participant'].unique()
     # Shuffle the participants
     random.shuffle(all_participants)
@@ -677,7 +679,10 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     finetuned_model.train()  # Ensure the model is in training mode
 
     # Apply fine-tuning strategy
-    if finetune_strategy == "freeze_cnn":
+    if finetune_strategy == "full":
+        # Do nothing
+        pass
+    elif finetune_strategy == "freeze_cnn":
         #for name, param in finetuned_model.named_parameters():
         #    if "cnn" in name:  # Assuming CNN layers are named with "cnn"
         #        param.requires_grad = False
@@ -710,9 +715,17 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         for param in finetuned_model.parameters():
             param.requires_grad = False
         
-        # Unfreeze progressively
-        layers = list(finetuned_model.named_parameters())[::-1]  # Start from last layer
-        unfreeze_step = len(layers) // num_epochs  # Unfreeze gradually
+        # Get all named layers in reverse order (last layer first)
+        layers = list(finetuned_model.named_parameters())[::-1]  
+        # Unfreeze only the last dense layer at the beginning
+        last_layer_name, last_layer_param = layers[0]
+        last_layer_param.requires_grad = True
+        #print(f"Initially unfrozen: {last_layer_name}")
+        # Track how many layers are currently unfrozen
+        num_unfrozen = 1  # Since last layer is already unfrozen
+        total_layers = len(layers)  # Total number of layers
+        # Define unfreeze step
+        unfreeze_step = 1  # Adjust this as needed
     else:
         raise ValueError(f"finetune_strategy ({finetune_strategy}) not recognized!")
 
@@ -733,11 +746,15 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         epoch += 1
 
         # Progressive unfreezing logic
-        if finetune_strategy == "progressive_unfreeze" and epoch % config["progressive_unfreezing_schedule"] == 0:
-            # Unfreeze one additional layer every few epochs
-            num_unfreeze = (epoch // config["progressive_unfreezing_schedule"]) * unfreeze_step
-            for name, param in layers[:num_unfreeze]:
+        if (finetune_strategy == "progressive_unfreeze" and 
+            num_unfrozen < total_layers and 
+            epoch % config["progressive_unfreezing_schedule"] == 0):
+            # Unfreeze one additional layer
+            num_unfreeze = min(num_unfrozen + unfreeze_step, total_layers)
+            for name, param in layers[num_unfrozen:num_unfreeze]:
                 param.requires_grad = True
+                #print(f"Unfroze layer: {name}")
+            num_unfrozen = num_unfreeze  # Update unfrozen layer count
 
         train_loss = train_model(finetuned_model, fine_tune_loader, optimizer)
         train_loss_log.append(train_loss)

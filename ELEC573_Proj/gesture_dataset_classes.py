@@ -83,8 +83,10 @@ class GestureDataset_4D(Dataset):
         - ts (int): Time steps per window.
         - stride (int): Stride for sliding window. Defaults to ts (no overlap).
         """
-        self.features = torch.tensor(features, dtype=torch.float32)
-        self.labels = torch.tensor(labels, dtype=torch.long)
+        #self.features = torch.tensor(features, dtype=torch.float32)
+        #self.labels = torch.tensor(labels, dtype=torch.long)
+        self.features = torch.tensor(np.array(features), dtype=torch.float32)
+        self.labels = torch.tensor(np.array(labels), dtype=torch.long)
         self.sl = sl
         self.ts = ts
         self.stride = stride if stride else ts
