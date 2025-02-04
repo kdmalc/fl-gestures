@@ -649,6 +649,16 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     - Fine-tuned model
     """
 
+    finetune_strategy = config["finetune_strategy"]
+    '''
+    - finetune_strategy: The fine-tuning method to use. Options:
+        - "full": Train the entire model.
+        - "freeze_cnn": Freeze CNN, train LSTM and dense layers.
+        - "freeze_cnn_lstm": Freeze CNN + LSTM, train only dense layers.
+        - "freeze_all_add_dense": Freeze entire model, add a new dense layer.
+        - "progressive_unfreeze": Start with frozen CNN/LSTM, progressively unfreeze.
+    '''
+
     if pid is None:
         pid = ""
     else:
@@ -661,14 +671,55 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     else:
         max_epochs = config["num_ft_epochs"]
     
-
-    # Extract the original pretrained model weights since finetuning happens in place
-    #frozen_base_model_state = copy.deepcopy(finetuned_model.state_dict())
+    # Make a copy of the original (pretrained) model
     frozen_original_model = copy.deepcopy(finetuned_model)
+
     finetuned_model.train()  # Ensure the model is in training mode
-    # Loss and optimizer (with lower learning rate for fine-tuning)
+
+    # Apply fine-tuning strategy
+    if finetune_strategy == "freeze_cnn":
+        #for name, param in finetuned_model.named_parameters():
+        #    if "cnn" in name:  # Assuming CNN layers are named with "cnn"
+        #        param.requires_grad = False
+        for param in finetuned_model.conv_layers.parameters():
+            param.requires_grad = False
+    elif finetune_strategy == "freeze_cnn_lstm":
+        #for name, param in finetuned_model.named_parameters():
+        #    if "cnn" in name or "lstm" in name:  # Assuming LSTM layers are named with "lstm"
+        #        param.requires_grad = False
+        for param in finetuned_model.conv_layers.parameters():
+            param.requires_grad = False
+        for param in finetuned_model.lstm.parameters():
+            param.requires_grad = False
+    elif finetune_strategy == "freeze_all_add_dense":
+        for param in finetuned_model.parameters():
+            param.requires_grad = False  # Freeze entire model
+        # Add a new dense layer (assuming the last layer is called `fc`)
+        ## Actually assumed the last output has 10 (num_classes) nodes
+        num_features = config["num_classes"] #finetuned_model.fc.in_features
+        finetuned_model.fc = nn.Sequential(
+            nn.Linear(num_features, config["added_dense_ft_hidden_size"]),
+            nn.ReLU(),
+            nn.Linear(config["added_dense_ft_hidden_size"], config["num_classes"])
+        )
+        ## Add a new dense layer and train it
+        #new_dense = nn.Linear(128, 64)  # Adjust size based on your architecture
+        #finetuned_model.fc_layers.add_module("new_dense", new_dense)
+    elif finetune_strategy == "progressive_unfreeze":
+        # Freeze everything first
+        for param in finetuned_model.parameters():
+            param.requires_grad = False
+        
+        # Unfreeze progressively
+        layers = list(finetuned_model.named_parameters())[::-1]  # Start from last layer
+        unfreeze_step = len(layers) // num_epochs  # Unfreeze gradually
+    else:
+        raise ValueError(f"finetune_strategy ({finetune_strategy}) not recognized!")
+
+    # Loss and optimizer (with different learning rate for fine-tuning)
     optimizer = set_optimizer(finetuned_model, lr=config["ft_learning_rate"], use_weight_decay=config["ft_weight_decay"] > 0, weight_decay=config["ft_weight_decay"])
-    # Fine-tuning
+    
+    # Fine-tuning training loop
     train_loss_log = []
     test_loss_log = []
     epoch = 0
@@ -680,6 +731,13 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         log_file = open(f"{timestamp}_{pid}ft_log.txt", "w")
     while not done and epoch < max_epochs:
         epoch += 1
+
+        # Progressive unfreezing logic
+        if finetune_strategy == "progressive_unfreeze" and epoch % config["progressive_unfreezing_schedule"] == 0:
+            # Unfreeze one additional layer every few epochs
+            num_unfreeze = (epoch // config["progressive_unfreezing_schedule"]) * unfreeze_step
+            for name, param in layers[:num_unfreeze]:
+                param.requires_grad = True
 
         train_loss = train_model(finetuned_model, fine_tune_loader, optimizer)
         train_loss_log.append(train_loss)
