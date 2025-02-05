@@ -14,7 +14,7 @@ from DNN_FT_funcs import *
 from revamped_model_classes import *
 
 
-NUM_CONFIGS = 80
+NUM_CONFIGS = 2
 MODEL_STR = "DynamicMomonaNet"
 expdef_df = load_expdef_gestures(apply_hc_feateng=False, filepath_pkl="D:\\Kai_MetaGestureClustering_24\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl")
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
