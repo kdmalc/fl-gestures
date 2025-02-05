@@ -8,8 +8,10 @@ class GestureDataset(Dataset):
     def __init__(self, features, labels, sl=1, ts=64, stride=None):
         # NOTE: SL, TS, Stride all NOT used, just a polymorphism relic...
 
-        self.features = torch.tensor(features, dtype=torch.float32)
-        self.labels = torch.tensor(labels, dtype=torch.long)
+        #self.features = torch.tensor(features, dtype=torch.float32)
+        #self.labels = torch.tensor(labels, dtype=torch.long)
+        self.features = torch.tensor(np.array(features), dtype=torch.float32)
+        self.labels = torch.tensor(np.array(labels), dtype=torch.long)
     
     def __len__(self):
         return len(self.labels)
@@ -28,8 +30,10 @@ class GestureDataset_3D(Dataset):
         - sl (int) * ts (int) should be the desired window size
         - stride (int): Stride for sliding window. Defaults to ts (no overlap).
         """
-        self.features = torch.tensor(features, dtype=torch.float32)
-        self.labels = torch.tensor(labels, dtype=torch.long)
+        #self.features = torch.tensor(features, dtype=torch.float32)
+        #self.labels = torch.tensor(labels, dtype=torch.long)
+        self.features = torch.tensor(np.array(features), dtype=torch.float32)
+        self.labels = torch.tensor(np.array(labels), dtype=torch.long)
         self.window_size = sl*ts
         self.stride = stride if stride else ts
         self.num_channels = 16  # Hardcoded based on known data structure.

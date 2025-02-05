@@ -1,0 +1,49 @@
+Testing config 1/80:
+{'weight_decay': 0.0001, 'verbose': False, 'use_earlystopping': True, 'use_dense_cnn_lstm': False, 'timestamp': '20250204_2107', 'time_steps': None, 'sequence_length': 64, 'save_ft_models': False, 
+'results_save_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250204_2107', 'progressive_unfreezing_schedule': 5, 'pooling_layers': [True, False, False, False], 'perf_log_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs', 'optimizer': 'adam', 'num_ft_epochs': 100, 'num_epochs': 100, 'num_classes': 10, 'num_channels': 16, 'models_save_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250204_2107', 'lstm_num_layers': 2, 'lstm_hidden_size': 8, 'lstm_dropout': 0.0, 'lr_scheduler_gamma': 0.95, 'log_each_pid_results': False, 'learning_rate': 0.001, 'ft_weight_decay': 0.0001, 'ft_learning_rate': 0.001, 'ft_batch_size': 1, 'finetune_strategy': 'full', 'fc_layers': [32], 'fc_dropout': 0.0, 'dense_cnnlstm_dropout': 0.0, 'conv_layers': [(32, 5, 1), (64, 3, 1), (128, 2, 1)], 'cnn_dropout': 0.0, 'batch_size': 16, 
+'added_dense_ft_hidden_size': 128}
+C:\Users\YamagamiLab\Desktop\Dev\fl-gestures\ELEC573_Proj\gesture_dataset_classes.py:11: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at  C:\b\abs_f0dma8qm3d\croot\pytorch_1669187301762\work\torch\csrc\utils\tensor_new.cpp:204.)
+  self.features = torch.tensor(features, dtype=torch.float32)
+Overall accuracies: 0.26785714285714285
+
+Testing config 2/80:
+{'weight_decay': 0.0, 'verbose': False, 'use_earlystopping': True, 'use_dense_cnn_lstm': False, 'timestamp': '20250204_2107', 'time_steps': None, 'sequence_length': 64, 'save_ft_models': False, 'results_save_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250204_2107', 'progressive_unfreezing_schedule': 5, 'pooling_layers': [True, True, False, False], 'perf_log_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs', 'optimizer': 'adam', 'num_ft_epochs': 100, 'num_epochs': 100, 'num_classes': 10, 'num_channels': 16, 'models_save_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250204_2107', 'lstm_num_layers': 1, 
+'lstm_hidden_size': 16, 'lstm_dropout': 0.8, 'lr_scheduler_gamma': 0.95, 'log_each_pid_results': False, 'learning_rate': 0.001, 'ft_weight_decay': 0.0, 'ft_learning_rate': 0.0001, 'ft_batch_size': 
+1, 'finetune_strategy': 'progressive_unfreeze', 'fc_layers': [64, 32], 'fc_dropout': 0.0, 'dense_cnnlstm_dropout': 0.0, 'conv_layers': [(32, 5, 1), (64, 3, 1)], 'cnn_dropout': 0.0, 'batch_size': 64, 'added_dense_ft_hidden_size': 128}
+Overall accuracies: 0.10892857142857143
+
+Testing config 3/80:
+{'weight_decay': 0.0, 'verbose': False, 'use_earlystopping': True, 'use_dense_cnn_lstm': False, 'timestamp': '20250204_2107', 'time_steps': None, 'sequence_length': 64, 'save_ft_models': False, 'results_save_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250204_2107', 'progressive_unfreezing_schedule': 2, 'pooling_layers': [True, True, False, False], 'perf_log_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs', 'optimizer': 'sgd', 'num_ft_epochs': 100, 'num_epochs': 100, 'num_classes': 10, 'num_channels': 16, 'models_save_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250204_2107', 'lstm_num_layers': 1, 'lstm_hidden_size': 8, 'lstm_dropout': 0.8, 'lr_scheduler_gamma': 0.95, 'log_each_pid_results': False, 'learning_rate': 0.01, 'ft_weight_decay': 0.0001, 'ft_learning_rate': 0.01, 'ft_batch_size': 10, 'finetune_strategy': 'freeze_cnn', 'fc_layers': [64], 'fc_dropout': 0.0, 'dense_cnnlstm_dropout': 0.0, 'conv_layers': [(32, 5, 1), (64, 3, 1)], 'cnn_dropout': 0.3, 'batch_size': 16, 'added_dense_ft_hidden_size': 64}
+Overall accuracies: 0.2526785714285714
+
+Testing config 4/80:
+{'weight_decay': 0.0001, 'verbose': False, 'use_earlystopping': True, 'use_dense_cnn_lstm': False, 'timestamp': '20250204_2107', 'time_steps': None, 'sequence_length': 64, 'save_ft_models': False, 
+'results_save_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250204_2107', 'progressive_unfreezing_schedule': 2, 'pooling_layers': [True, True, False, False], 'perf_log_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs', 'optimizer': 'sgd', 'num_ft_epochs': 100, 'num_epochs': 100, 'num_classes': 10, 'num_channels': 16, 'models_save_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250204_2107', 'lstm_num_layers': 2, 'lstm_hidden_size': 8, 'lstm_dropout': 0.8, 'lr_scheduler_gamma': 0.95, 'log_each_pid_results': False, 'learning_rate': 0.001, 'ft_weight_decay': 0.0001, 'ft_learning_rate': 0.001, 'ft_batch_size': 1, 'finetune_strategy': 'freeze_cnn_lstm', 'fc_layers': [64], 'fc_dropout': 0.0, 'dense_cnnlstm_dropout': 0.0, 'conv_layers': [(32, 5, 1), (64, 3, 1), (128, 2, 1)], 'cnn_dropout': 0.3, 'batch_size': 32, 'added_dense_ft_hidden_size': 128}
+Overall accuracies: 0.13035714285714284
+
+Testing config 5/80:
+{'weight_decay': 0.0, 'verbose': False, 'use_earlystopping': True, 'use_dense_cnn_lstm': True, 'timestamp': '20250204_2107', 'time_steps': None, 'sequence_length': 64, 'save_ft_models': False, 'results_save_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250204_2107', 'progressive_unfreezing_schedule': 5, 'pooling_layers': [True, True, True, True], 'perf_log_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs', 'optimizer': 'sgd', 'num_ft_epochs': 100, 'num_epochs': 100, 'num_classes': 10, 'num_channels': 16, 'models_save_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250204_2107', 'lstm_num_layers': 2, 'lstm_hidden_size': 16, 'lstm_dropout': 0.0, 'lr_scheduler_gamma': 0.95, 'log_each_pid_results': False, 'learning_rate': 0.01, 'ft_weight_decay': 0.0, 'ft_learning_rate': 0.0001, 'ft_batch_size': 10, 'finetune_strategy': 'freeze_cnn_lstm', 'fc_layers': [32, 16], 'fc_dropout': 0.3, 'dense_cnnlstm_dropout': 0.0, 'conv_layers': [(16, 7, 2), (32, 5, 2), (64, 3, 1)], 'cnn_dropout': 0.0, 'batch_size': 64, 'added_dense_ft_hidden_size': 128}
+Overall accuracies: 0.10535714285714286
+
+Testing config 6/80:
+{'weight_decay': 0.0, 'verbose': False, 'use_earlystopping': True, 'use_dense_cnn_lstm': False, 'timestamp': '20250204_2107', 'time_steps': None, 'sequence_length': 64, 'save_ft_models': False, 'results_save_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250204_2107', 'progressive_unfreezing_schedule': 5, 'pooling_layers': [True, True, False, False], 'perf_log_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs', 'optimizer': 'adam', 'num_ft_epochs': 100, 'num_epochs': 100, 'num_classes': 10, 'num_channels': 16, 'models_save_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250204_2107', 'lstm_num_layers': 2, 
+'lstm_hidden_size': 16, 'lstm_dropout': 0.0, 'lr_scheduler_gamma': 0.95, 'log_each_pid_results': False, 'learning_rate': 0.01, 'ft_weight_decay': 0.0001, 'ft_learning_rate': 0.001, 'ft_batch_size': 1, 'finetune_strategy': 'full', 'fc_layers': [128, 64], 'fc_dropout': 0.0, 'dense_cnnlstm_dropout': 0.3, 'conv_layers': [(16, 7, 2), (32, 5, 2)], 'cnn_dropout': 0.0, 'batch_size': 32, 'added_dense_ft_hidden_size': 64}
+Overall accuracies: 0.11160714285714285
+
+Testing config 7/80:
+{'weight_decay': 0.0, 'verbose': False, 'use_earlystopping': True, 'use_dense_cnn_lstm': False, 'timestamp': '20250204_2107', 'time_steps': None, 'sequence_length': 64, 'save_ft_models': False, 'results_save_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250204_2107', 'progressive_unfreezing_schedule': 5, 'pooling_layers': [True, True, False, False], 'perf_log_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs', 'optimizer': 'adam', 'num_ft_epochs': 100, 'num_epochs': 100, 'num_classes': 10, 'num_channels': 16, 'models_save_dir': 'C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250204_2107', 'lstm_num_layers': 2, 
+'lstm_hidden_size': 16, 'lstm_dropout': 0.0, 'lr_scheduler_gamma': 0.95, 'log_each_pid_results': False, 'learning_rate': 0.01, 'ft_weight_decay': 0.0, 'ft_learning_rate': 0.01, 'ft_batch_size': 10, 'finetune_strategy': 'freeze_cnn_lstm', 'fc_layers': [32], 'fc_dropout': 0.0, 'dense_cnnlstm_dropout': 0.0, 'conv_layers': [(32, 5, 1), (64, 3, 1)], 'cnn_dropout': 0.0, 'batch_size': 16, 'added_dense_ft_hidden_size': 64}
+Overall accuracies: 0.23660714285714285
+
+
+
+
+
+
+
+
+
+
+
+
+
