@@ -13,6 +13,7 @@ import seaborn as sns
 import os
 import sys
 from datetime import datetime
+import time
 import copy
 import pickle
 import random
@@ -69,6 +70,8 @@ def evaluate_configuration_on_ft(datasplit, pretrained_model, config, model_str,
     )
 
     # Iterate through each unique participant ID
+    ## ft and cross are paired, like train and intra are paired 
+    ## The same users are in ft and cross datasets
     for pid in ft_user_data.keys() & cross_user_data.keys():  # Only common participant IDs
         if config["verbose"]:
             print(f"Fine-tuning on user {pid}")
@@ -180,6 +183,7 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
     results = []
     for config_idx, config in enumerate(configs):
         print(f"Testing config {config_idx + 1}/{len(configs)}:\n{config}")
+        start_time = time.time()
 
         split_results = []
         for datasplit in data_splits_lst:
@@ -213,7 +217,8 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
             "overall_user_accuracies": overall_user_accuracies,
             "split_results": split_results
         })
-        print(f"Overall accuracies: {overall_avg_accuracy}\n")
+        print(f"Overall accuracies: {overall_avg_accuracy}")
+        print(f"Completed in {time.time() - start_time}s\n")
 
     # Save the results
     ## This is the aggregated and sorted JSON file. This always needs to be saved
