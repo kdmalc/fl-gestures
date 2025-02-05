@@ -14,9 +14,9 @@ from DNN_FT_funcs import *
 from revamped_model_classes import *
 
 
-NUM_CONFIGS = 120
+NUM_CONFIGS = 80
 MODEL_STR = "DynamicMomonaNet"
-expdef_df = load_expdef_gestures(apply_hc_feateng=False)
+expdef_df = load_expdef_gestures(apply_hc_feateng=False, filepath_pkl="D:\\Kai_MetaGestureClustering_24\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl")
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
 # Define the search space
@@ -44,12 +44,8 @@ DynamicMomonaNet_architecture_space = {
         [(32, 5, 1), (64, 3, 1), (128, 2, 1)],
         # Progressive downsampling
         [(16, 7, 2), (32, 5, 2), (64, 3, 1)],
-        # ...
-        [(32, 3, 1), (64, 3, 1), (128, 3, 1)],
         # Larger Filters for Broader Features
-        [(32, 7, 1), (64, 5, 1), (128, 3, 1)],
-        # ...
-        [(32, 3, 1), (64, 3, 1), (128, 2, 1)]
+        [(32, 7, 1), (64, 5, 1), (128, 3, 1)]
         ], 
     # Is this gonna work with just 1-2 layer networks? I think it should be fine...
     "pooling_layers": [[True, False, False, False], 
@@ -58,9 +54,9 @@ DynamicMomonaNet_architecture_space = {
                        [True, True, False, False]
                        ],  # Max pooling only after the first conv layer
     "use_dense_cnn_lstm": [True, False],  # Use dense layer between CNN and LSTM
-    "lstm_hidden_size": [8, 16, 24, 32],  #(int): Hidden size for LSTM layers.
+    "lstm_hidden_size": [8, 16, 32],  #(int): Hidden size for LSTM layers.
     "lstm_num_layers": [1, 2],  #(int): Number of LSTM layers.
-    "fc_layers": [[16], [32], [64], [32, 16], [64, 32], [128, 64]],  #(list of int): List of integers specifying the sizes of fully connected layers.
+    "fc_layers": [[32], [64], [32, 16], [64, 32], [128, 64]],  #(list of int): List of integers specifying the sizes of fully connected layers.
     "num_classes": [10] #(int): Number of output classes.
     # Not added yet, might not help? If my batch size (esp in finetuning) is too small...
     #"use_CNN_batchnorm": [True, False],   # This is not added yet
@@ -69,7 +65,7 @@ DynamicMomonaNet_architecture_space = {
 }
 
 DynamicMomonaNet_hyperparameter_space = {
-    "batch_size": [16, 32, 64, 128],  #SHARED_BS #(int): Batch size.
+    "batch_size": [16, 32, 64],  #SHARED_BS #(int): Batch size.
     "lstm_dropout": [0.0, 0.5, 0.8],  #(float): Dropout probability for LSTM layers.
     "learning_rate": [0.0001, 0.001, 0.01],
     "num_epochs": [100], #[30, 50, 70],
@@ -81,7 +77,7 @@ DynamicMomonaNet_hyperparameter_space = {
     "ft_learning_rate": [0.0001, 0.001, 0.01],
     "num_ft_epochs": [100], #[10, 30, 50],
     "ft_weight_decay": [0.0, 1e-4], 
-    "ft_batch_size": [1, 5, 10], 
+    "ft_batch_size": [1, 10], 
     "use_earlystopping": [True],  # Always use this to save time, in ft and earlier training
     "finetune_strategy": ["full", "freeze_cnn", "freeze_cnn_lstm", "progressive_unfreeze"],
     #["full", "freeze_cnn", "freeze_cnn_lstm", "freeze_all_add_dense", "progressive_unfreeze"],
@@ -97,9 +93,13 @@ DynamicMomonaNet_hyperparameter_space = {
 }
 
 metadata_config = {
-    "results_save_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\{timestamp}"],
-    "models_save_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\{timestamp}"], 
-    "perf_log_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs"], 
+    #"results_save_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\{timestamp}"],
+    #"models_save_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\{timestamp}"], 
+    #"perf_log_dir": [f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs"], 
+    # BRC: 
+    "results_save_dir": [f"C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\{timestamp}"],  # \\hyperparam_tuning
+    "models_save_dir": [f"C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\{timestamp}"],  # \\hyperparam_tuning
+    "perf_log_dir": [f"C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs"], 
     "timestamp": [timestamp],
     "verbose": [False],
     "log_each_pid_results": [False], 

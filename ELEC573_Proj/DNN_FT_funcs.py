@@ -141,8 +141,8 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
     os.makedirs(metadata_config["results_save_dir"][0])
     print(f'Directory {metadata_config["results_save_dir"][0]} created successfully!')
     # Models
-    os.makedirs(metadata_config["models_save_dir"][0])
-    print(f'Directory {metadata_config["models_save_dir"][0]} created successfully!')
+    os.makedirs(metadata_config["models_save_dir"][0]) 
+    print(f'Directory {metadata_config["models_save_dir"][0]} created successfully!') 
 
     # Generate all possible configurations
     ## Does this like shuffle or is this deterministic?
@@ -217,7 +217,7 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
 
     # Save the results
     ## This is the aggregated and sorted JSON file. This always needs to be saved
-    save_results(results, metadata_config["results_save_dir"][0], metadata_config["timestamp"][0])
+    save_results(results, metadata_config["results_save_dir"][0], metadata_config["timestamp"][0]) 
 
     return results
 
