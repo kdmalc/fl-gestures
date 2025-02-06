@@ -694,18 +694,12 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
 
     # Apply fine-tuning strategy
     if finetune_strategy == "full":
-        # Do nothing
+        # We don't need to do any layer freezing
         pass
     elif finetune_strategy == "freeze_cnn":
-        #for name, param in finetuned_model.named_parameters():
-        #    if "cnn" in name:  # Assuming CNN layers are named with "cnn"
-        #        param.requires_grad = False
         for param in finetuned_model.conv_layers.parameters():
             param.requires_grad = False
     elif finetune_strategy == "freeze_cnn_lstm":
-        #for name, param in finetuned_model.named_parameters():
-        #    if "cnn" in name or "lstm" in name:  # Assuming LSTM layers are named with "lstm"
-        #        param.requires_grad = False
         for param in finetuned_model.conv_layers.parameters():
             param.requires_grad = False
         for param in finetuned_model.lstm.parameters():
@@ -713,17 +707,20 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     elif finetune_strategy == "freeze_all_add_dense":
         for param in finetuned_model.parameters():
             param.requires_grad = False  # Freeze entire model
-        # Add a new dense layer (assuming the last layer is called `fc`)
-        ## Actually assumed the last output has 10 (num_classes) nodes
-        num_features = config["num_classes"] #finetuned_model.fc.in_features
+        # Add a new dense layer
+        ## Actually assumed the last output has 10 (num_classes) nodes 
+        #finetuned_model.fc.in_features --> Attempting to programatically get the final size
+        ## I think the last layer is not named fc tho?
+        num_features = config["num_classes"] 
+        ## Add a new dense layer and train it
+        #new_dense = nn.Linear(128, 64)  # Adjust size based on your architecture
+        #finetuned_model.fc_layers.add_module("new_dense", new_dense)
+        # How to verify that this actually got added and is in the right place...
         finetuned_model.fc = nn.Sequential(
             nn.Linear(num_features, config["added_dense_ft_hidden_size"]),
             nn.ReLU(),
             nn.Linear(config["added_dense_ft_hidden_size"], config["num_classes"])
         )
-        ## Add a new dense layer and train it
-        #new_dense = nn.Linear(128, 64)  # Adjust size based on your architecture
-        #finetuned_model.fc_layers.add_module("new_dense", new_dense)
     elif finetune_strategy == "progressive_unfreeze":
         # Freeze everything first
         for param in finetuned_model.parameters():
