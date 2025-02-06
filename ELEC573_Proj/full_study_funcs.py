@@ -16,9 +16,10 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
     
     os.makedirs(config['results_save_dir'], exist_ok=True)
 
-    local_user_dict = prepare_data_for_local_models(finetuning_datasplits, model_str, config)
+    #local_user_dict = prepare_data_for_local_models(finetuning_datasplits, model_str, config)
+    ## This wasn't working, said it couldnt find P006 key. Maybe it wasn't there? Couldnt debug in ipynb
     
-    #train_pids = np.unique(finetuning_datasplits['train']['participant_ids'])
+    train_pids = np.unique(finetuning_datasplits['train']['participant_ids'])
     novel_participant_ft_data = finetuning_datasplits['novel_trainFT']
     novel_participant_test_data = finetuning_datasplits['cross_subject_test']
     novel_pids = np.unique(finetuning_datasplits['novel_trainFT']['participant_ids'])
@@ -45,9 +46,9 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         intra_test_loader = DataLoader(intra_test_dataset, batch_size=config["batch_size"], shuffle=True)
         ############## Novel Participant Cross Testing Dataset ##############
         # This code is testing on all the other novel participants... I don't think we care about that right now
-        #indices = [i for i, datasplit_pid in enumerate(novel_participant_test_data['participant_ids']) if datasplit_pid != pid]
-        #cross_test_dataset = GestureDataset([novel_participant_test_data['feature'][i] for i in indices], [novel_participant_test_data['labels'][i] for i in indices])
-        #cross_test_loader = DataLoader(cross_test_dataset, batch_size=config["batch_size"], shuffle=True)
+        indices = [i for i, datasplit_pid in enumerate(novel_participant_test_data['participant_ids']) if datasplit_pid != pid]
+        cross_test_dataset = GestureDataset([novel_participant_test_data['feature'][i] for i in indices], [novel_participant_test_data['labels'][i] for i in indices])
+        cross_test_loader = DataLoader(cross_test_dataset, batch_size=config["batch_size"], shuffle=True)
         ############## One Trial Cluster Assignment Dataset ##############
         indices = [i for i, datasplit_pid in enumerate(novel_pid_clus_asgn_data['participant_ids']) if datasplit_pid == pid]
         clust_asgn_dataset = GestureDataset([novel_pid_clus_asgn_data['feature'][i] for i in indices], [novel_pid_clus_asgn_data['labels'][i] for i in indices])
@@ -55,20 +56,20 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
 
         # 1) Train a local model
         ## MomonaNets do not need input_dim and num_classes, other models need to be updated to infer that or pull it from config
-        #local_model = select_model(model_str, config)
-        #local_results = main_training_pipeline(data_splits=None, all_participants=train_pids, test_participants=novel_pids, model_type=model_str, config=config, 
-        #                   train_intra_cross_loaders=[ft_loader, intra_test_loader, cross_test_loader])
+        local_res = main_training_pipeline(data_splits=None, all_participants=train_pids, test_participants=novel_pids, model_type=model_str, config=config, 
+                           train_intra_cross_loaders=[ft_loader, intra_test_loader, cross_test_loader])
         # ^ This stuff was subject specific... so I'm not sure why performance was the same (RC) unless all models are severely over/under-trained
-        #local_clus_res = evaluate_model(local_model, intra_test_loader)
-        #novel_pid_res_dict[pid]["local_acc"] = local_clus_res["accuracy"]
-
-        # Wait can I just pass finetuning datasplits in here? I dont think so since I'm using FT not train data?
-        local_res = main_training_pipeline(data_splits=None, all_participants=list(set(novel_participant_test_data['participant_ids'])), 
-                                                test_participants=finetuning_datasplits['cross_subject_test']['participant_ids'], 
-                                                model_type=model_str, config=config, 
-                                                train_intra_cross_loaders=local_user_dict[pid])
         local_clus_res = evaluate_model(local_res["model"], intra_test_loader)
         novel_pid_res_dict[pid]["local_acc"] = local_clus_res["accuracy"]
+
+        # This code pairs with local_user_dict = prepare_data_for_local_models(finetuning_datasplits, model_str, config)
+        # Wait can I just pass finetuning datasplits in here? I dont think so since I'm using FT not train data?
+        #local_res = main_training_pipeline(data_splits=None, all_participants=list(set(novel_participant_test_data['participant_ids'])), 
+        #                                        test_participants=finetuning_datasplits['cross_subject_test']['participant_ids'], 
+        #                                        model_type=model_str, config=config, 
+        #                                        train_intra_cross_loaders=local_user_dict[pid])
+        #local_clus_res = evaluate_model(local_res["model"], intra_test_loader)
+        #novel_pid_res_dict[pid]["local_acc"] = local_clus_res["accuracy"]
 
         # 2) Test the full pretrained (centralized) model
         generic_clus_res = evaluate_model(pretrained_generic_model, intra_test_loader)

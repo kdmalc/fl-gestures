@@ -2,8 +2,6 @@
 ## NO CLUSTERING!!!
 
 import numpy as np
-import pickle
-from sklearn.preprocessing import LabelEncoder
 from moments_engr import *
 from DNN_FT_funcs import *
 np.random.seed(42) 
@@ -14,12 +12,15 @@ print("Current Working Directory: ", cwd)
 from datetime import datetime
 NUM_CHANNELS = 16
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-FINETUNE = True
+FINETUNE = False
 LOG_AND_VISUALIZE = False
 
 MODEL_STR = "DynamicMomonaNet"
 
-config = {
+from hyperparam_tuned_configs import *
+config = DynamicMomonaNet_config
+
+needs_to_be_updated_config = {
     "num_channels": NUM_CHANNELS,  #(int): Number of input channels.
     "sequence_length": 64,  #(int): Length of the input sequence.
     # ^ 32 wasn't working, it doesn't support time_steps to do multiple sequence batches for each slice
@@ -112,8 +113,11 @@ results = main_training_pipeline(
     config=config)
 
 #full_path = os.path.join(cwd, 'ELEC573_Proj', 'models', 'generic_CNN_model.pth')
-#print("Full Path:", full_path)
-#torch.save(results["model"].state_dict(), full_path)
+full_path = config['models_save_dir']
+os.makedirs(os.path.dirname(full_path), exist_ok=True)  # Ensure the directory exists
+print("Full Path:", full_path)
+# TODO: pretty sure I have a save_model function...
+torch.save(results["model"].state_dict(), f"{full_path}\\pretrained_{MODEL_STR}_model.pth")
 
 # TODO: This only finetunes on one person lol should at least finetune over a couple
 ## Well I guess if this is just for debugging not performance this is fine

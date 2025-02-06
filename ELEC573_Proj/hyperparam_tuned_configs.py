@@ -4,7 +4,48 @@ NUM_CHANNELS = 16
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
 
-DynamicMomonaNet_config = {
+DynamicMomonaNet_config =  {
+    "weight_decay": 0.0,
+    "verbose": False,
+    "use_earlystopping": True,
+    "use_dense_cnn_lstm": True,
+    "timestamp": timestamp,
+    "time_steps": None,
+    "sequence_length": 64,
+    "save_ft_models": False,
+    "progressive_unfreezing_schedule": 5,
+    "pooling_layers": [True, True, True, True],
+    "optimizer": "sgd",
+    "num_ft_epochs": 100,
+    "num_epochs": 100,
+    "num_classes": 10,
+    "num_channels": NUM_CHANNELS,
+    "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
+    "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
+    "perf_log_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs", 
+    "lstm_num_layers": 1,
+    "lstm_hidden_size": 8,
+    "lstm_dropout": 0.8,
+    "lr_scheduler_gamma": 1.0,
+    "log_each_pid_results": False,
+    "learning_rate": 0.001,
+    "ft_weight_decay": 0.0,
+    "ft_learning_rate": 0.01,
+    "ft_batch_size": 10,
+    "finetune_strategy": "progressive_unfreeze",
+    "fc_layers": [128, 64],
+    "fc_dropout": 0.3,
+    "dense_cnnlstm_dropout": 0.3,
+    "conv_layers": [
+        [64, 3, 1],
+        [128, 3, 1]],
+    "cnn_dropout": 0.3,
+    "batch_size": 16,
+    "added_dense_ft_hidden_size": 64
+}
+
+
+old_DynamicMomonaNet_config = {
     "num_channels": NUM_CHANNELS,  #(int): Number of input channels.
     "sequence_length": 64,  #(int): Length of the input sequence.
     # ^ 32 wasn't working, it doesn't support time_steps to do multiple sequence batches for each slice
