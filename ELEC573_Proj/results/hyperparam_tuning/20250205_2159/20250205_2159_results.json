@@ -1,0 +1,3193 @@
+[
+    {
+        "note": "Best configuration: {'weight_decay': 0.0, 'verbose': False, 'use_earlystopping': True, 'use_dense_cnn_lstm': False, 'timestamp': '20250205_2159', 'time_steps': None, 'sequence_length': 64, 'save_ft_models': False, 'results_save_dir': 'C:\\\\Users\\\\YamagamiLab\\\\Desktop\\\\Dev\\\\fl-gestures\\\\ELEC573_Proj\\\\results\\\\hyperparam_tuning\\\\20250205_2159', 'progressive_unfreezing_schedule': 7, 'pooling_layers': [True, False, False, False], 'perf_log_dir': 'C:\\\\Users\\\\YamagamiLab\\\\Desktop\\\\Dev\\\\fl-gestures\\\\ELEC573_Proj\\\\results\\\\hyperparam_tuning\\\\performance_logs', 'optimizer': 'adam', 'num_ft_epochs': 100, 'num_epochs': 100, 'num_classes': 10, 'num_channels': 16, 'models_save_dir': 'C:\\\\Users\\\\YamagamiLab\\\\Desktop\\\\Dev\\\\fl-gestures\\\\ELEC573_Proj\\\\models\\\\hyperparam_tuning\\\\20250205_2159', 'lstm_num_layers': 1, 'lstm_hidden_size': 4, 'lstm_dropout': 0.5, 'lr_scheduler_gamma': 1.0, 'log_each_pid_results': False, 'learning_rate': 0.0001, 'ft_weight_decay': 0.0, 'ft_learning_rate': 0.01, 'ft_batch_size': 10, 'finetune_strategy': 'freeze_cnn', 'fc_layers': [128, 64], 'fc_dropout': 0.3, 'dense_cnnlstm_dropout': 0.3, 'conv_layers': [(32, 7, 1), (64, 5, 1), (128, 3, 1)], 'cnn_dropout': 0.5, 'batch_size': 8, 'added_dense_ft_hidden_size': 64} with overall average accuracy: 0.3398"
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": false,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 7,
+            "pooling_layers": [
+                true,
+                false,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 4,
+            "lstm_dropout": 0.5,
+            "lr_scheduler_gamma": 1.0,
+            "log_each_pid_results": false,
+            "learning_rate": 0.0001,
+            "ft_weight_decay": 0.0,
+            "ft_learning_rate": 0.01,
+            "ft_batch_size": 10,
+            "finetune_strategy": "freeze_cnn",
+            "fc_layers": [
+                128,
+                64
+            ],
+            "fc_dropout": 0.3,
+            "dense_cnnlstm_dropout": 0.3,
+            "conv_layers": [
+                [
+                    32,
+                    7,
+                    1
+                ],
+                [
+                    64,
+                    5,
+                    1
+                ],
+                [
+                    128,
+                    3,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.5,
+            "batch_size": 8,
+            "added_dense_ft_hidden_size": 64
+        },
+        "overall_avg_accuracy": 0.3398148148148148,
+        "overall_user_accuracies": [
+            0.1,
+            0.4888888888888889,
+            0.4888888888888889,
+            0.2,
+            0.14444444444444443,
+            0.35555555555555557,
+            0.28888888888888886,
+            0.3111111111111111,
+            0.35555555555555557,
+            0.4222222222222222,
+            0.3,
+            0.24444444444444444,
+            0.3,
+            0.32222222222222224,
+            0.5666666666666667,
+            0.28888888888888886,
+            0.25555555555555554,
+            0.3888888888888889,
+            0.28888888888888886,
+            0.4111111111111111,
+            0.17777777777777778,
+            0.3111111111111111,
+            0.7,
+            0.4444444444444444
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.29722222222222217,
+                "user_accuracies": [
+                    0.1,
+                    0.4888888888888889,
+                    0.4888888888888889,
+                    0.2,
+                    0.14444444444444443,
+                    0.35555555555555557,
+                    0.28888888888888886,
+                    0.3111111111111111
+                ]
+            },
+            {
+                "avg_accuracy": 0.35,
+                "user_accuracies": [
+                    0.35555555555555557,
+                    0.4222222222222222,
+                    0.3,
+                    0.24444444444444444,
+                    0.3,
+                    0.32222222222222224,
+                    0.5666666666666667,
+                    0.28888888888888886
+                ]
+            },
+            {
+                "avg_accuracy": 0.37222222222222223,
+                "user_accuracies": [
+                    0.25555555555555554,
+                    0.3888888888888889,
+                    0.28888888888888886,
+                    0.4111111111111111,
+                    0.17777777777777778,
+                    0.3111111111111111,
+                    0.7,
+                    0.4444444444444444
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": true,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 3,
+            "pooling_layers": [
+                true,
+                false,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "sgd",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 12,
+            "lstm_dropout": 0.8,
+            "lr_scheduler_gamma": 0.95,
+            "log_each_pid_results": false,
+            "learning_rate": 0.0001,
+            "ft_weight_decay": 0.0,
+            "ft_learning_rate": 0.01,
+            "ft_batch_size": 10,
+            "finetune_strategy": "freeze_cnn_lstm",
+            "fc_layers": [
+                128,
+                64
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.3,
+            "conv_layers": [
+                [
+                    32,
+                    5,
+                    1
+                ],
+                [
+                    64,
+                    3,
+                    1
+                ],
+                [
+                    128,
+                    2,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.3,
+            "batch_size": 16,
+            "added_dense_ft_hidden_size": 64
+        },
+        "overall_avg_accuracy": 0.2513888888888889,
+        "overall_user_accuracies": [
+            0.1,
+            0.37777777777777777,
+            0.3,
+            0.2,
+            0.12222222222222222,
+            0.15555555555555556,
+            0.15555555555555556,
+            0.15555555555555556,
+            0.3888888888888889,
+            0.45555555555555555,
+            0.2111111111111111,
+            0.2,
+            0.25555555555555554,
+            0.044444444444444446,
+            0.24444444444444444,
+            0.3,
+            0.28888888888888886,
+            0.34444444444444444,
+            0.23333333333333334,
+            0.3333333333333333,
+            0.1111111111111111,
+            0.2222222222222222,
+            0.4666666666666667,
+            0.36666666666666664
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.1958333333333333,
+                "user_accuracies": [
+                    0.1,
+                    0.37777777777777777,
+                    0.3,
+                    0.2,
+                    0.12222222222222222,
+                    0.15555555555555556,
+                    0.15555555555555556,
+                    0.15555555555555556
+                ]
+            },
+            {
+                "avg_accuracy": 0.2625,
+                "user_accuracies": [
+                    0.3888888888888889,
+                    0.45555555555555555,
+                    0.2111111111111111,
+                    0.2,
+                    0.25555555555555554,
+                    0.044444444444444446,
+                    0.24444444444444444,
+                    0.3
+                ]
+            },
+            {
+                "avg_accuracy": 0.29583333333333334,
+                "user_accuracies": [
+                    0.28888888888888886,
+                    0.34444444444444444,
+                    0.23333333333333334,
+                    0.3333333333333333,
+                    0.1111111111111111,
+                    0.2222222222222222,
+                    0.4666666666666667,
+                    0.36666666666666664
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": false,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 1,
+            "pooling_layers": [
+                true,
+                false,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "sgd",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 12,
+            "lstm_dropout": 0.5,
+            "lr_scheduler_gamma": 0.95,
+            "log_each_pid_results": false,
+            "learning_rate": 0.001,
+            "ft_weight_decay": 0.0001,
+            "ft_learning_rate": 0.001,
+            "ft_batch_size": 1,
+            "finetune_strategy": "full",
+            "fc_layers": [
+                128,
+                64
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.5,
+            "conv_layers": [
+                [
+                    16,
+                    7,
+                    2
+                ],
+                [
+                    32,
+                    5,
+                    2
+                ]
+            ],
+            "cnn_dropout": 0.3,
+            "batch_size": 16,
+            "added_dense_ft_hidden_size": 64
+        },
+        "overall_avg_accuracy": 0.23287037037037037,
+        "overall_user_accuracies": [
+            0.18888888888888888,
+            0.2777777777777778,
+            0.28888888888888886,
+            0.1111111111111111,
+            0.17777777777777778,
+            0.34444444444444444,
+            0.26666666666666666,
+            0.25555555555555554,
+            0.14444444444444443,
+            0.32222222222222224,
+            0.2111111111111111,
+            0.15555555555555556,
+            0.15555555555555556,
+            0.2111111111111111,
+            0.3111111111111111,
+            0.24444444444444444,
+            0.3333333333333333,
+            0.1111111111111111,
+            0.3111111111111111,
+            0.15555555555555556,
+            0.17777777777777778,
+            0.26666666666666666,
+            0.2,
+            0.36666666666666664
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.23888888888888887,
+                "user_accuracies": [
+                    0.18888888888888888,
+                    0.2777777777777778,
+                    0.28888888888888886,
+                    0.1111111111111111,
+                    0.17777777777777778,
+                    0.34444444444444444,
+                    0.26666666666666666,
+                    0.25555555555555554
+                ]
+            },
+            {
+                "avg_accuracy": 0.21944444444444444,
+                "user_accuracies": [
+                    0.14444444444444443,
+                    0.32222222222222224,
+                    0.2111111111111111,
+                    0.15555555555555556,
+                    0.15555555555555556,
+                    0.2111111111111111,
+                    0.3111111111111111,
+                    0.24444444444444444
+                ]
+            },
+            {
+                "avg_accuracy": 0.24027777777777776,
+                "user_accuracies": [
+                    0.3333333333333333,
+                    0.1111111111111111,
+                    0.3111111111111111,
+                    0.15555555555555556,
+                    0.17777777777777778,
+                    0.26666666666666666,
+                    0.2,
+                    0.36666666666666664
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0001,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": false,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 3,
+            "pooling_layers": [
+                true,
+                true,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 12,
+            "lstm_dropout": 0.8,
+            "lr_scheduler_gamma": 1.0,
+            "log_each_pid_results": false,
+            "learning_rate": 0.0001,
+            "ft_weight_decay": 0.0,
+            "ft_learning_rate": 0.001,
+            "ft_batch_size": 10,
+            "finetune_strategy": "freeze_cnn_lstm",
+            "fc_layers": [
+                128,
+                64
+            ],
+            "fc_dropout": 0.3,
+            "dense_cnnlstm_dropout": 0.3,
+            "conv_layers": [
+                [
+                    16,
+                    7,
+                    2
+                ],
+                [
+                    32,
+                    5,
+                    2
+                ]
+            ],
+            "cnn_dropout": 0.3,
+            "batch_size": 32,
+            "added_dense_ft_hidden_size": 128
+        },
+        "overall_avg_accuracy": 0.22870370370370371,
+        "overall_user_accuracies": [
+            0.2,
+            0.08888888888888889,
+            0.43333333333333335,
+            0.23333333333333334,
+            0.2,
+            0.2111111111111111,
+            0.23333333333333334,
+            0.14444444444444443,
+            0.2111111111111111,
+            0.17777777777777778,
+            0.2777777777777778,
+            0.15555555555555556,
+            0.18888888888888888,
+            0.15555555555555556,
+            0.3333333333333333,
+            0.2111111111111111,
+            0.34444444444444444,
+            0.14444444444444443,
+            0.17777777777777778,
+            0.36666666666666664,
+            0.24444444444444444,
+            0.26666666666666666,
+            0.3333333333333333,
+            0.15555555555555556
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.21805555555555556,
+                "user_accuracies": [
+                    0.2,
+                    0.08888888888888889,
+                    0.43333333333333335,
+                    0.23333333333333334,
+                    0.2,
+                    0.2111111111111111,
+                    0.23333333333333334,
+                    0.14444444444444443
+                ]
+            },
+            {
+                "avg_accuracy": 0.21388888888888885,
+                "user_accuracies": [
+                    0.2111111111111111,
+                    0.17777777777777778,
+                    0.2777777777777778,
+                    0.15555555555555556,
+                    0.18888888888888888,
+                    0.15555555555555556,
+                    0.3333333333333333,
+                    0.2111111111111111
+                ]
+            },
+            {
+                "avg_accuracy": 0.25416666666666665,
+                "user_accuracies": [
+                    0.34444444444444444,
+                    0.14444444444444443,
+                    0.17777777777777778,
+                    0.36666666666666664,
+                    0.24444444444444444,
+                    0.26666666666666666,
+                    0.3333333333333333,
+                    0.15555555555555556
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": false,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 1,
+            "pooling_layers": [
+                true,
+                false,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "sgd",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 8,
+            "lstm_dropout": 0.5,
+            "lr_scheduler_gamma": 1.0,
+            "log_each_pid_results": false,
+            "learning_rate": 0.01,
+            "ft_weight_decay": 0.0001,
+            "ft_learning_rate": 0.001,
+            "ft_batch_size": 10,
+            "finetune_strategy": "full",
+            "fc_layers": [
+                32
+            ],
+            "fc_dropout": 0.3,
+            "dense_cnnlstm_dropout": 0.5,
+            "conv_layers": [
+                [
+                    64,
+                    3,
+                    1
+                ],
+                [
+                    128,
+                    3,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.3,
+            "batch_size": 32,
+            "added_dense_ft_hidden_size": 64
+        },
+        "overall_avg_accuracy": 0.22175925925925924,
+        "overall_user_accuracies": [
+            0.18888888888888888,
+            0.1,
+            0.14444444444444443,
+            0.36666666666666664,
+            0.2111111111111111,
+            0.15555555555555556,
+            0.4222222222222222,
+            0.2111111111111111,
+            0.14444444444444443,
+            0.17777777777777778,
+            0.1111111111111111,
+            0.12222222222222222,
+            0.3111111111111111,
+            0.1,
+            0.2111111111111111,
+            0.37777777777777777,
+            0.18888888888888888,
+            0.17777777777777778,
+            0.17777777777777778,
+            0.3333333333333333,
+            0.07777777777777778,
+            0.2,
+            0.4222222222222222,
+            0.3888888888888889
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.22499999999999998,
+                "user_accuracies": [
+                    0.18888888888888888,
+                    0.1,
+                    0.14444444444444443,
+                    0.36666666666666664,
+                    0.2111111111111111,
+                    0.15555555555555556,
+                    0.4222222222222222,
+                    0.2111111111111111
+                ]
+            },
+            {
+                "avg_accuracy": 0.19444444444444442,
+                "user_accuracies": [
+                    0.14444444444444443,
+                    0.17777777777777778,
+                    0.1111111111111111,
+                    0.12222222222222222,
+                    0.3111111111111111,
+                    0.1,
+                    0.2111111111111111,
+                    0.37777777777777777
+                ]
+            },
+            {
+                "avg_accuracy": 0.24583333333333332,
+                "user_accuracies": [
+                    0.18888888888888888,
+                    0.17777777777777778,
+                    0.17777777777777778,
+                    0.3333333333333333,
+                    0.07777777777777778,
+                    0.2,
+                    0.4222222222222222,
+                    0.3888888888888889
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": false,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 1,
+            "pooling_layers": [
+                true,
+                false,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 12,
+            "lstm_dropout": 0.8,
+            "lr_scheduler_gamma": 1.0,
+            "log_each_pid_results": false,
+            "learning_rate": 0.01,
+            "ft_weight_decay": 0.0,
+            "ft_learning_rate": 0.01,
+            "ft_batch_size": 4,
+            "finetune_strategy": "freeze_cnn_lstm",
+            "fc_layers": [
+                32
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.5,
+            "conv_layers": [
+                [
+                    32,
+                    5,
+                    1
+                ],
+                [
+                    64,
+                    3,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.5,
+            "batch_size": 16,
+            "added_dense_ft_hidden_size": 128
+        },
+        "overall_avg_accuracy": 0.21064814814814814,
+        "overall_user_accuracies": [
+            0.24444444444444444,
+            0.16666666666666666,
+            0.2111111111111111,
+            0.23333333333333334,
+            0.2222222222222222,
+            0.13333333333333333,
+            0.2,
+            0.2,
+            0.3333333333333333,
+            0.15555555555555556,
+            0.1,
+            0.1,
+            0.25555555555555554,
+            0.12222222222222222,
+            0.24444444444444444,
+            0.13333333333333333,
+            0.2777777777777778,
+            0.2777777777777778,
+            0.12222222222222222,
+            0.3,
+            0.1111111111111111,
+            0.18888888888888888,
+            0.4777777777777778,
+            0.24444444444444444
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.2013888888888889,
+                "user_accuracies": [
+                    0.24444444444444444,
+                    0.16666666666666666,
+                    0.2111111111111111,
+                    0.23333333333333334,
+                    0.2222222222222222,
+                    0.13333333333333333,
+                    0.2,
+                    0.2
+                ]
+            },
+            {
+                "avg_accuracy": 0.18055555555555555,
+                "user_accuracies": [
+                    0.3333333333333333,
+                    0.15555555555555556,
+                    0.1,
+                    0.1,
+                    0.25555555555555554,
+                    0.12222222222222222,
+                    0.24444444444444444,
+                    0.13333333333333333
+                ]
+            },
+            {
+                "avg_accuracy": 0.25,
+                "user_accuracies": [
+                    0.2777777777777778,
+                    0.2777777777777778,
+                    0.12222222222222222,
+                    0.3,
+                    0.1111111111111111,
+                    0.18888888888888888,
+                    0.4777777777777778,
+                    0.24444444444444444
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0001,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": false,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 1,
+            "pooling_layers": [
+                true,
+                false,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 8,
+            "lstm_dropout": 0.5,
+            "lr_scheduler_gamma": 1.0,
+            "log_each_pid_results": false,
+            "learning_rate": 0.0001,
+            "ft_weight_decay": 0.0,
+            "ft_learning_rate": 0.0001,
+            "ft_batch_size": 10,
+            "finetune_strategy": "freeze_cnn_lstm",
+            "fc_layers": [
+                32
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.5,
+            "conv_layers": [
+                [
+                    32,
+                    5,
+                    1
+                ],
+                [
+                    64,
+                    3,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.3,
+            "batch_size": 4,
+            "added_dense_ft_hidden_size": 128
+        },
+        "overall_avg_accuracy": 0.18796296296296297,
+        "overall_user_accuracies": [
+            0.1111111111111111,
+            0.25555555555555554,
+            0.23333333333333334,
+            0.15555555555555556,
+            0.12222222222222222,
+            0.35555555555555557,
+            0.25555555555555554,
+            0.25555555555555554,
+            0.18888888888888888,
+            0.5444444444444444,
+            0.2,
+            0.044444444444444446,
+            0.13333333333333333,
+            0.14444444444444443,
+            0.24444444444444444,
+            0.12222222222222222,
+            0.25555555555555554,
+            0.1111111111111111,
+            0.1,
+            0.1,
+            0.1111111111111111,
+            0.2222222222222222,
+            0.05555555555555555,
+            0.18888888888888888
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.21805555555555556,
+                "user_accuracies": [
+                    0.1111111111111111,
+                    0.25555555555555554,
+                    0.23333333333333334,
+                    0.15555555555555556,
+                    0.12222222222222222,
+                    0.35555555555555557,
+                    0.25555555555555554,
+                    0.25555555555555554
+                ]
+            },
+            {
+                "avg_accuracy": 0.20277777777777778,
+                "user_accuracies": [
+                    0.18888888888888888,
+                    0.5444444444444444,
+                    0.2,
+                    0.044444444444444446,
+                    0.13333333333333333,
+                    0.14444444444444443,
+                    0.24444444444444444,
+                    0.12222222222222222
+                ]
+            },
+            {
+                "avg_accuracy": 0.14305555555555555,
+                "user_accuracies": [
+                    0.25555555555555554,
+                    0.1111111111111111,
+                    0.1,
+                    0.1,
+                    0.1111111111111111,
+                    0.2222222222222222,
+                    0.05555555555555555,
+                    0.18888888888888888
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0001,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": true,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 1,
+            "pooling_layers": [
+                true,
+                true,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "sgd",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 12,
+            "lstm_dropout": 0.8,
+            "lr_scheduler_gamma": 0.9,
+            "log_each_pid_results": false,
+            "learning_rate": 0.001,
+            "ft_weight_decay": 0.0,
+            "ft_learning_rate": 0.01,
+            "ft_batch_size": 1,
+            "finetune_strategy": "full",
+            "fc_layers": [
+                32,
+                16
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.5,
+            "conv_layers": [
+                [
+                    16,
+                    7,
+                    2
+                ],
+                [
+                    32,
+                    5,
+                    2
+                ]
+            ],
+            "cnn_dropout": 0.5,
+            "batch_size": 8,
+            "added_dense_ft_hidden_size": 64
+        },
+        "overall_avg_accuracy": 0.13703703703703704,
+        "overall_user_accuracies": [
+            0.16666666666666666,
+            0.12222222222222222,
+            0.24444444444444444,
+            0.12222222222222222,
+            0.1111111111111111,
+            0.16666666666666666,
+            0.16666666666666666,
+            0.1,
+            0.1111111111111111,
+            0.26666666666666666,
+            0.08888888888888889,
+            0.1,
+            0.1,
+            0.2,
+            0.12222222222222222,
+            0.05555555555555555,
+            0.12222222222222222,
+            0.1,
+            0.14444444444444443,
+            0.2,
+            0.18888888888888888,
+            0.08888888888888889,
+            0.1,
+            0.1
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.15,
+                "user_accuracies": [
+                    0.16666666666666666,
+                    0.12222222222222222,
+                    0.24444444444444444,
+                    0.12222222222222222,
+                    0.1111111111111111,
+                    0.16666666666666666,
+                    0.16666666666666666,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.13055555555555556,
+                "user_accuracies": [
+                    0.1111111111111111,
+                    0.26666666666666666,
+                    0.08888888888888889,
+                    0.1,
+                    0.1,
+                    0.2,
+                    0.12222222222222222,
+                    0.05555555555555555
+                ]
+            },
+            {
+                "avg_accuracy": 0.13055555555555556,
+                "user_accuracies": [
+                    0.12222222222222222,
+                    0.1,
+                    0.14444444444444443,
+                    0.2,
+                    0.18888888888888888,
+                    0.08888888888888889,
+                    0.1,
+                    0.1
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": true,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 5,
+            "pooling_layers": [
+                true,
+                true,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 4,
+            "lstm_dropout": 0.5,
+            "lr_scheduler_gamma": 0.95,
+            "log_each_pid_results": false,
+            "learning_rate": 0.001,
+            "ft_weight_decay": 0.0,
+            "ft_learning_rate": 0.001,
+            "ft_batch_size": 4,
+            "finetune_strategy": "freeze_cnn",
+            "fc_layers": [
+                32,
+                16
+            ],
+            "fc_dropout": 0.3,
+            "dense_cnnlstm_dropout": 0.3,
+            "conv_layers": [
+                [
+                    32,
+                    5,
+                    1
+                ],
+                [
+                    64,
+                    3,
+                    1
+                ],
+                [
+                    128,
+                    2,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.5,
+            "batch_size": 8,
+            "added_dense_ft_hidden_size": 64
+        },
+        "overall_avg_accuracy": 0.13472222222222222,
+        "overall_user_accuracies": [
+            0.14444444444444443,
+            0.12222222222222222,
+            0.044444444444444446,
+            0.14444444444444443,
+            0.13333333333333333,
+            0.17777777777777778,
+            0.13333333333333333,
+            0.2,
+            0.16666666666666666,
+            0.26666666666666666,
+            0.08888888888888889,
+            0.07777777777777778,
+            0.26666666666666666,
+            0.1,
+            0.16666666666666666,
+            0.12222222222222222,
+            0.14444444444444443,
+            0.044444444444444446,
+            0.17777777777777778,
+            0.1111111111111111,
+            0.06666666666666667,
+            0.16666666666666666,
+            0.1111111111111111,
+            0.05555555555555555
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.1375,
+                "user_accuracies": [
+                    0.14444444444444443,
+                    0.12222222222222222,
+                    0.044444444444444446,
+                    0.14444444444444443,
+                    0.13333333333333333,
+                    0.17777777777777778,
+                    0.13333333333333333,
+                    0.2
+                ]
+            },
+            {
+                "avg_accuracy": 0.15694444444444444,
+                "user_accuracies": [
+                    0.16666666666666666,
+                    0.26666666666666666,
+                    0.08888888888888889,
+                    0.07777777777777778,
+                    0.26666666666666666,
+                    0.1,
+                    0.16666666666666666,
+                    0.12222222222222222
+                ]
+            },
+            {
+                "avg_accuracy": 0.10972222222222222,
+                "user_accuracies": [
+                    0.14444444444444443,
+                    0.044444444444444446,
+                    0.17777777777777778,
+                    0.1111111111111111,
+                    0.06666666666666667,
+                    0.16666666666666666,
+                    0.1111111111111111,
+                    0.05555555555555555
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0001,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": false,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 7,
+            "pooling_layers": [
+                true,
+                false,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 12,
+            "lstm_dropout": 0.8,
+            "lr_scheduler_gamma": 1.0,
+            "log_each_pid_results": false,
+            "learning_rate": 0.01,
+            "ft_weight_decay": 0.0,
+            "ft_learning_rate": 0.001,
+            "ft_batch_size": 4,
+            "finetune_strategy": "freeze_cnn",
+            "fc_layers": [
+                128,
+                64
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.5,
+            "conv_layers": [
+                [
+                    64,
+                    3,
+                    1
+                ],
+                [
+                    128,
+                    3,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.5,
+            "batch_size": 32,
+            "added_dense_ft_hidden_size": 64
+        },
+        "overall_avg_accuracy": 0.12824074074074074,
+        "overall_user_accuracies": [
+            0.17777777777777778,
+            0.1,
+            0.1,
+            0.1,
+            0.011111111111111112,
+            0.12222222222222222,
+            0.0,
+            0.1,
+            0.1,
+            0.24444444444444444,
+            0.2111111111111111,
+            0.07777777777777778,
+            0.1,
+            0.2,
+            0.08888888888888889,
+            0.28888888888888886,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.2222222222222222,
+            0.2111111111111111,
+            0.12222222222222222
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.08888888888888888,
+                "user_accuracies": [
+                    0.17777777777777778,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.011111111111111112,
+                    0.12222222222222222,
+                    0.0,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.16388888888888886,
+                "user_accuracies": [
+                    0.1,
+                    0.24444444444444444,
+                    0.2111111111111111,
+                    0.07777777777777778,
+                    0.1,
+                    0.2,
+                    0.08888888888888889,
+                    0.28888888888888886
+                ]
+            },
+            {
+                "avg_accuracy": 0.13194444444444445,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.2222222222222222,
+                    0.2111111111111111,
+                    0.12222222222222222
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": false,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 5,
+            "pooling_layers": [
+                true,
+                false,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 8,
+            "lstm_dropout": 0.8,
+            "lr_scheduler_gamma": 0.9,
+            "log_each_pid_results": false,
+            "learning_rate": 0.0001,
+            "ft_weight_decay": 0.0001,
+            "ft_learning_rate": 0.0001,
+            "ft_batch_size": 10,
+            "finetune_strategy": "freeze_cnn",
+            "fc_layers": [
+                128,
+                64
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.5,
+            "conv_layers": [
+                [
+                    32,
+                    5,
+                    1
+                ],
+                [
+                    64,
+                    3,
+                    1
+                ],
+                [
+                    128,
+                    2,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.3,
+            "batch_size": 32,
+            "added_dense_ft_hidden_size": 64
+        },
+        "overall_avg_accuracy": 0.1277777777777778,
+        "overall_user_accuracies": [
+            0.12222222222222222,
+            0.06666666666666667,
+            0.1,
+            0.08888888888888889,
+            0.08888888888888889,
+            0.18888888888888888,
+            0.2,
+            0.1,
+            0.2222222222222222,
+            0.2,
+            0.1,
+            0.12222222222222222,
+            0.13333333333333333,
+            0.17777777777777778,
+            0.07777777777777778,
+            0.15555555555555556,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.2,
+            0.0,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.06666666666666667,
+            0.2111111111111111
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.11944444444444445,
+                "user_accuracies": [
+                    0.12222222222222222,
+                    0.06666666666666667,
+                    0.1,
+                    0.08888888888888889,
+                    0.08888888888888889,
+                    0.18888888888888888,
+                    0.2,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.14861111111111114,
+                "user_accuracies": [
+                    0.2222222222222222,
+                    0.2,
+                    0.1,
+                    0.12222222222222222,
+                    0.13333333333333333,
+                    0.17777777777777778,
+                    0.07777777777777778,
+                    0.15555555555555556
+                ]
+            },
+            {
+                "avg_accuracy": 0.11527777777777777,
+                "user_accuracies": [
+                    0.1111111111111111,
+                    0.1111111111111111,
+                    0.2,
+                    0.0,
+                    0.1111111111111111,
+                    0.1111111111111111,
+                    0.06666666666666667,
+                    0.2111111111111111
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": true,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 5,
+            "pooling_layers": [
+                true,
+                true,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 4,
+            "lstm_dropout": 0.5,
+            "lr_scheduler_gamma": 1.0,
+            "log_each_pid_results": false,
+            "learning_rate": 0.0001,
+            "ft_weight_decay": 0.0,
+            "ft_learning_rate": 0.0001,
+            "ft_batch_size": 10,
+            "finetune_strategy": "freeze_cnn_lstm",
+            "fc_layers": [
+                32,
+                16
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.3,
+            "conv_layers": [
+                [
+                    16,
+                    7,
+                    2
+                ],
+                [
+                    32,
+                    5,
+                    2
+                ]
+            ],
+            "cnn_dropout": 0.5,
+            "batch_size": 16,
+            "added_dense_ft_hidden_size": 128
+        },
+        "overall_avg_accuracy": 0.1273148148148148,
+        "overall_user_accuracies": [
+            0.15555555555555556,
+            0.17777777777777778,
+            0.2,
+            0.18888888888888888,
+            0.06666666666666667,
+            0.15555555555555556,
+            0.12222222222222222,
+            0.1111111111111111,
+            0.06666666666666667,
+            0.17777777777777778,
+            0.18888888888888888,
+            0.06666666666666667,
+            0.08888888888888889,
+            0.2111111111111111,
+            0.1111111111111111,
+            0.12222222222222222,
+            0.16666666666666666,
+            0.03333333333333333,
+            0.12222222222222222,
+            0.08888888888888889,
+            0.1111111111111111,
+            0.1,
+            0.1,
+            0.12222222222222222
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.14722222222222223,
+                "user_accuracies": [
+                    0.15555555555555556,
+                    0.17777777777777778,
+                    0.2,
+                    0.18888888888888888,
+                    0.06666666666666667,
+                    0.15555555555555556,
+                    0.12222222222222222,
+                    0.1111111111111111
+                ]
+            },
+            {
+                "avg_accuracy": 0.12916666666666668,
+                "user_accuracies": [
+                    0.06666666666666667,
+                    0.17777777777777778,
+                    0.18888888888888888,
+                    0.06666666666666667,
+                    0.08888888888888889,
+                    0.2111111111111111,
+                    0.1111111111111111,
+                    0.12222222222222222
+                ]
+            },
+            {
+                "avg_accuracy": 0.10555555555555554,
+                "user_accuracies": [
+                    0.16666666666666666,
+                    0.03333333333333333,
+                    0.12222222222222222,
+                    0.08888888888888889,
+                    0.1111111111111111,
+                    0.1,
+                    0.1,
+                    0.12222222222222222
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": true,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 1,
+            "pooling_layers": [
+                true,
+                true,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "sgd",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 12,
+            "lstm_dropout": 0.5,
+            "lr_scheduler_gamma": 0.9,
+            "log_each_pid_results": false,
+            "learning_rate": 0.001,
+            "ft_weight_decay": 0.0001,
+            "ft_learning_rate": 0.0001,
+            "ft_batch_size": 4,
+            "finetune_strategy": "full",
+            "fc_layers": [
+                128,
+                64
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.3,
+            "conv_layers": [
+                [
+                    16,
+                    7,
+                    2
+                ],
+                [
+                    32,
+                    5,
+                    2
+                ]
+            ],
+            "cnn_dropout": 0.5,
+            "batch_size": 4,
+            "added_dense_ft_hidden_size": 128
+        },
+        "overall_avg_accuracy": 0.12314814814814816,
+        "overall_user_accuracies": [
+            0.05555555555555555,
+            0.06666666666666667,
+            0.06666666666666667,
+            0.06666666666666667,
+            0.1111111111111111,
+            0.08888888888888889,
+            0.13333333333333333,
+            0.18888888888888888,
+            0.08888888888888889,
+            0.18888888888888888,
+            0.07777777777777778,
+            0.13333333333333333,
+            0.08888888888888889,
+            0.12222222222222222,
+            0.16666666666666666,
+            0.08888888888888889,
+            0.2111111111111111,
+            0.12222222222222222,
+            0.18888888888888888,
+            0.18888888888888888,
+            0.1111111111111111,
+            0.13333333333333333,
+            0.12222222222222222,
+            0.14444444444444443
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.09722222222222222,
+                "user_accuracies": [
+                    0.05555555555555555,
+                    0.06666666666666667,
+                    0.06666666666666667,
+                    0.06666666666666667,
+                    0.1111111111111111,
+                    0.08888888888888889,
+                    0.13333333333333333,
+                    0.18888888888888888
+                ]
+            },
+            {
+                "avg_accuracy": 0.11944444444444445,
+                "user_accuracies": [
+                    0.08888888888888889,
+                    0.18888888888888888,
+                    0.07777777777777778,
+                    0.13333333333333333,
+                    0.08888888888888889,
+                    0.12222222222222222,
+                    0.16666666666666666,
+                    0.08888888888888889
+                ]
+            },
+            {
+                "avg_accuracy": 0.15277777777777776,
+                "user_accuracies": [
+                    0.2111111111111111,
+                    0.12222222222222222,
+                    0.18888888888888888,
+                    0.18888888888888888,
+                    0.1111111111111111,
+                    0.13333333333333333,
+                    0.12222222222222222,
+                    0.14444444444444443
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": false,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 7,
+            "pooling_layers": [
+                true,
+                true,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 4,
+            "lstm_dropout": 0.8,
+            "lr_scheduler_gamma": 0.9,
+            "log_each_pid_results": false,
+            "learning_rate": 0.001,
+            "ft_weight_decay": 0.0,
+            "ft_learning_rate": 0.001,
+            "ft_batch_size": 10,
+            "finetune_strategy": "freeze_cnn",
+            "fc_layers": [
+                32
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.5,
+            "conv_layers": [
+                [
+                    16,
+                    7,
+                    2
+                ],
+                [
+                    32,
+                    5,
+                    2
+                ]
+            ],
+            "cnn_dropout": 0.5,
+            "batch_size": 4,
+            "added_dense_ft_hidden_size": 64
+        },
+        "overall_avg_accuracy": 0.12037037037037035,
+        "overall_user_accuracies": [
+            0.08888888888888889,
+            0.12222222222222222,
+            0.06666666666666667,
+            0.08888888888888889,
+            0.12222222222222222,
+            0.1,
+            0.06666666666666667,
+            0.14444444444444443,
+            0.16666666666666666,
+            0.3111111111111111,
+            0.13333333333333333,
+            0.08888888888888889,
+            0.13333333333333333,
+            0.07777777777777778,
+            0.25555555555555554,
+            0.1111111111111111,
+            0.05555555555555555,
+            0.07777777777777778,
+            0.12222222222222222,
+            0.06666666666666667,
+            0.03333333333333333,
+            0.13333333333333333,
+            0.2111111111111111,
+            0.1111111111111111
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.1,
+                "user_accuracies": [
+                    0.08888888888888889,
+                    0.12222222222222222,
+                    0.06666666666666667,
+                    0.08888888888888889,
+                    0.12222222222222222,
+                    0.1,
+                    0.06666666666666667,
+                    0.14444444444444443
+                ]
+            },
+            {
+                "avg_accuracy": 0.1597222222222222,
+                "user_accuracies": [
+                    0.16666666666666666,
+                    0.3111111111111111,
+                    0.13333333333333333,
+                    0.08888888888888889,
+                    0.13333333333333333,
+                    0.07777777777777778,
+                    0.25555555555555554,
+                    0.1111111111111111
+                ]
+            },
+            {
+                "avg_accuracy": 0.10138888888888889,
+                "user_accuracies": [
+                    0.05555555555555555,
+                    0.07777777777777778,
+                    0.12222222222222222,
+                    0.06666666666666667,
+                    0.03333333333333333,
+                    0.13333333333333333,
+                    0.2111111111111111,
+                    0.1111111111111111
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": true,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 3,
+            "pooling_layers": [
+                true,
+                true,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "sgd",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 12,
+            "lstm_dropout": 0.5,
+            "lr_scheduler_gamma": 0.95,
+            "log_each_pid_results": false,
+            "learning_rate": 0.0001,
+            "ft_weight_decay": 0.0001,
+            "ft_learning_rate": 0.0001,
+            "ft_batch_size": 4,
+            "finetune_strategy": "freeze_cnn",
+            "fc_layers": [
+                32,
+                16
+            ],
+            "fc_dropout": 0.3,
+            "dense_cnnlstm_dropout": 0.5,
+            "conv_layers": [
+                [
+                    32,
+                    5,
+                    1
+                ],
+                [
+                    64,
+                    3,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.5,
+            "batch_size": 4,
+            "added_dense_ft_hidden_size": 128
+        },
+        "overall_avg_accuracy": 0.11018518518518516,
+        "overall_user_accuracies": [
+            0.12222222222222222,
+            0.1111111111111111,
+            0.06666666666666667,
+            0.1,
+            0.03333333333333333,
+            0.1,
+            0.1111111111111111,
+            0.1,
+            0.044444444444444446,
+            0.2222222222222222,
+            0.08888888888888889,
+            0.06666666666666667,
+            0.14444444444444443,
+            0.08888888888888889,
+            0.13333333333333333,
+            0.06666666666666667,
+            0.16666666666666666,
+            0.18888888888888888,
+            0.07777777777777778,
+            0.14444444444444443,
+            0.1,
+            0.16666666666666666,
+            0.1,
+            0.1
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.09305555555555554,
+                "user_accuracies": [
+                    0.12222222222222222,
+                    0.1111111111111111,
+                    0.06666666666666667,
+                    0.1,
+                    0.03333333333333333,
+                    0.1,
+                    0.1111111111111111,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.10694444444444444,
+                "user_accuracies": [
+                    0.044444444444444446,
+                    0.2222222222222222,
+                    0.08888888888888889,
+                    0.06666666666666667,
+                    0.14444444444444443,
+                    0.08888888888888889,
+                    0.13333333333333333,
+                    0.06666666666666667
+                ]
+            },
+            {
+                "avg_accuracy": 0.13055555555555554,
+                "user_accuracies": [
+                    0.16666666666666666,
+                    0.18888888888888888,
+                    0.07777777777777778,
+                    0.14444444444444443,
+                    0.1,
+                    0.16666666666666666,
+                    0.1,
+                    0.1
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0001,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": true,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 5,
+            "pooling_layers": [
+                true,
+                false,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 12,
+            "lstm_dropout": 0.5,
+            "lr_scheduler_gamma": 0.95,
+            "log_each_pid_results": false,
+            "learning_rate": 0.01,
+            "ft_weight_decay": 0.0001,
+            "ft_learning_rate": 0.0001,
+            "ft_batch_size": 4,
+            "finetune_strategy": "progressive_unfreeze",
+            "fc_layers": [
+                128,
+                64
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.5,
+            "conv_layers": [
+                [
+                    32,
+                    5,
+                    1
+                ],
+                [
+                    64,
+                    3,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.5,
+            "batch_size": 16,
+            "added_dense_ft_hidden_size": 128
+        },
+        "overall_avg_accuracy": 0.10555555555555556,
+        "overall_user_accuracies": [
+            0.12222222222222222,
+            0.1,
+            0.1,
+            0.1,
+            0.12222222222222222,
+            0.1111111111111111,
+            0.17777777777777778,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.11666666666666665,
+                "user_accuracies": [
+                    0.12222222222222222,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.12222222222222222,
+                    0.1111111111111111,
+                    0.17777777777777778,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": true,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 7,
+            "pooling_layers": [
+                true,
+                true,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "sgd",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 4,
+            "lstm_dropout": 0.5,
+            "lr_scheduler_gamma": 0.95,
+            "log_each_pid_results": false,
+            "learning_rate": 0.001,
+            "ft_weight_decay": 0.0,
+            "ft_learning_rate": 0.0001,
+            "ft_batch_size": 4,
+            "finetune_strategy": "freeze_cnn_lstm",
+            "fc_layers": [
+                128,
+                64
+            ],
+            "fc_dropout": 0.3,
+            "dense_cnnlstm_dropout": 0.3,
+            "conv_layers": [
+                [
+                    16,
+                    7,
+                    2
+                ],
+                [
+                    32,
+                    5,
+                    2
+                ]
+            ],
+            "cnn_dropout": 0.3,
+            "batch_size": 32,
+            "added_dense_ft_hidden_size": 64
+        },
+        "overall_avg_accuracy": 0.10185185185185186,
+        "overall_user_accuracies": [
+            0.17777777777777778,
+            0.14444444444444443,
+            0.06666666666666667,
+            0.15555555555555556,
+            0.03333333333333333,
+            0.07777777777777778,
+            0.011111111111111112,
+            0.14444444444444443,
+            0.022222222222222223,
+            0.1111111111111111,
+            0.08888888888888889,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.1111111111111111,
+            0.05555555555555555,
+            0.1,
+            0.18888888888888888,
+            0.12222222222222222,
+            0.15555555555555556,
+            0.07777777777777778,
+            0.12222222222222222,
+            0.07777777777777778,
+            0.08888888888888889,
+            0.08888888888888889
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.10138888888888886,
+                "user_accuracies": [
+                    0.17777777777777778,
+                    0.14444444444444443,
+                    0.06666666666666667,
+                    0.15555555555555556,
+                    0.03333333333333333,
+                    0.07777777777777778,
+                    0.011111111111111112,
+                    0.14444444444444443
+                ]
+            },
+            {
+                "avg_accuracy": 0.08888888888888889,
+                "user_accuracies": [
+                    0.022222222222222223,
+                    0.1111111111111111,
+                    0.08888888888888889,
+                    0.1111111111111111,
+                    0.1111111111111111,
+                    0.1111111111111111,
+                    0.05555555555555555,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.11527777777777778,
+                "user_accuracies": [
+                    0.18888888888888888,
+                    0.12222222222222222,
+                    0.15555555555555556,
+                    0.07777777777777778,
+                    0.12222222222222222,
+                    0.07777777777777778,
+                    0.08888888888888889,
+                    0.08888888888888889
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0001,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": false,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 5,
+            "pooling_layers": [
+                true,
+                true,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 8,
+            "lstm_dropout": 0.8,
+            "lr_scheduler_gamma": 0.95,
+            "log_each_pid_results": false,
+            "learning_rate": 0.01,
+            "ft_weight_decay": 0.0,
+            "ft_learning_rate": 0.01,
+            "ft_batch_size": 1,
+            "finetune_strategy": "progressive_unfreeze",
+            "fc_layers": [
+                32,
+                16
+            ],
+            "fc_dropout": 0.3,
+            "dense_cnnlstm_dropout": 0.3,
+            "conv_layers": [
+                [
+                    32,
+                    7,
+                    1
+                ],
+                [
+                    64,
+                    5,
+                    1
+                ],
+                [
+                    128,
+                    3,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.5,
+            "batch_size": 8,
+            "added_dense_ft_hidden_size": 128
+        },
+        "overall_avg_accuracy": 0.10092592592592592,
+        "overall_user_accuracies": [
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.08888888888888889,
+            0.13333333333333333,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.10277777777777776,
+                "user_accuracies": [
+                    0.08888888888888889,
+                    0.13333333333333333,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0001,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": true,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 7,
+            "pooling_layers": [
+                true,
+                true,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 8,
+            "lstm_dropout": 0.5,
+            "lr_scheduler_gamma": 0.9,
+            "log_each_pid_results": false,
+            "learning_rate": 0.001,
+            "ft_weight_decay": 0.0001,
+            "ft_learning_rate": 0.01,
+            "ft_batch_size": 4,
+            "finetune_strategy": "freeze_cnn",
+            "fc_layers": [
+                32,
+                16
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.3,
+            "conv_layers": [
+                [
+                    32,
+                    5,
+                    1
+                ],
+                [
+                    64,
+                    3,
+                    1
+                ],
+                [
+                    128,
+                    2,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.5,
+            "batch_size": 4,
+            "added_dense_ft_hidden_size": 64
+        },
+        "overall_avg_accuracy": 0.10046296296296296,
+        "overall_user_accuracies": [
+            0.1111111111111111,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.10138888888888888,
+                "user_accuracies": [
+                    0.1111111111111111,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0001,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": false,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 7,
+            "pooling_layers": [
+                true,
+                false,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 8,
+            "lstm_dropout": 0.8,
+            "lr_scheduler_gamma": 0.9,
+            "log_each_pid_results": false,
+            "learning_rate": 0.01,
+            "ft_weight_decay": 0.0001,
+            "ft_learning_rate": 0.001,
+            "ft_batch_size": 4,
+            "finetune_strategy": "freeze_cnn",
+            "fc_layers": [
+                128,
+                64
+            ],
+            "fc_dropout": 0.3,
+            "dense_cnnlstm_dropout": 0.5,
+            "conv_layers": [
+                [
+                    16,
+                    7,
+                    2
+                ],
+                [
+                    32,
+                    5,
+                    2
+                ]
+            ],
+            "cnn_dropout": 0.3,
+            "batch_size": 4,
+            "added_dense_ft_hidden_size": 64
+        },
+        "overall_avg_accuracy": 0.09999999999999999,
+        "overall_user_accuracies": [
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": false,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 5,
+            "pooling_layers": [
+                true,
+                true,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "sgd",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 4,
+            "lstm_dropout": 0.5,
+            "lr_scheduler_gamma": 1.0,
+            "log_each_pid_results": false,
+            "learning_rate": 0.001,
+            "ft_weight_decay": 0.0001,
+            "ft_learning_rate": 0.01,
+            "ft_batch_size": 10,
+            "finetune_strategy": "progressive_unfreeze",
+            "fc_layers": [
+                32
+            ],
+            "fc_dropout": 0.3,
+            "dense_cnnlstm_dropout": 0.5,
+            "conv_layers": [
+                [
+                    32,
+                    5,
+                    1
+                ],
+                [
+                    64,
+                    3,
+                    1
+                ],
+                [
+                    128,
+                    2,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.3,
+            "batch_size": 32,
+            "added_dense_ft_hidden_size": 64
+        },
+        "overall_avg_accuracy": 0.09999999999999999,
+        "overall_user_accuracies": [
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": true,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 5,
+            "pooling_layers": [
+                true,
+                false,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 4,
+            "lstm_dropout": 0.5,
+            "lr_scheduler_gamma": 0.95,
+            "log_each_pid_results": false,
+            "learning_rate": 0.01,
+            "ft_weight_decay": 0.0001,
+            "ft_learning_rate": 0.0001,
+            "ft_batch_size": 10,
+            "finetune_strategy": "full",
+            "fc_layers": [
+                128,
+                64
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.3,
+            "conv_layers": [
+                [
+                    64,
+                    3,
+                    1
+                ],
+                [
+                    128,
+                    3,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.3,
+            "batch_size": 16,
+            "added_dense_ft_hidden_size": 128
+        },
+        "overall_avg_accuracy": 0.09999999999999999,
+        "overall_user_accuracies": [
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0001,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": false,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 3,
+            "pooling_layers": [
+                true,
+                false,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "sgd",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 12,
+            "lstm_dropout": 0.8,
+            "lr_scheduler_gamma": 1.0,
+            "log_each_pid_results": false,
+            "learning_rate": 0.001,
+            "ft_weight_decay": 0.0001,
+            "ft_learning_rate": 0.0001,
+            "ft_batch_size": 10,
+            "finetune_strategy": "freeze_cnn",
+            "fc_layers": [
+                32
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.3,
+            "conv_layers": [
+                [
+                    32,
+                    5,
+                    1
+                ],
+                [
+                    64,
+                    3,
+                    1
+                ],
+                [
+                    128,
+                    2,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.3,
+            "batch_size": 8,
+            "added_dense_ft_hidden_size": 128
+        },
+        "overall_avg_accuracy": 0.09999999999999999,
+        "overall_user_accuracies": [
+            0.044444444444444446,
+            0.12222222222222222,
+            0.05555555555555555,
+            0.05555555555555555,
+            0.12222222222222222,
+            0.1111111111111111,
+            0.03333333333333333,
+            0.1111111111111111,
+            0.15555555555555556,
+            0.18888888888888888,
+            0.14444444444444443,
+            0.07777777777777778,
+            0.1111111111111111,
+            0.2222222222222222,
+            0.1,
+            0.1111111111111111,
+            0.12222222222222222,
+            0.03333333333333333,
+            0.044444444444444446,
+            0.05555555555555555,
+            0.06666666666666667,
+            0.07777777777777778,
+            0.12222222222222222,
+            0.1111111111111111
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.08194444444444443,
+                "user_accuracies": [
+                    0.044444444444444446,
+                    0.12222222222222222,
+                    0.05555555555555555,
+                    0.05555555555555555,
+                    0.12222222222222222,
+                    0.1111111111111111,
+                    0.03333333333333333,
+                    0.1111111111111111
+                ]
+            },
+            {
+                "avg_accuracy": 0.1388888888888889,
+                "user_accuracies": [
+                    0.15555555555555556,
+                    0.18888888888888888,
+                    0.14444444444444443,
+                    0.07777777777777778,
+                    0.1111111111111111,
+                    0.2222222222222222,
+                    0.1,
+                    0.1111111111111111
+                ]
+            },
+            {
+                "avg_accuracy": 0.07916666666666666,
+                "user_accuracies": [
+                    0.12222222222222222,
+                    0.03333333333333333,
+                    0.044444444444444446,
+                    0.05555555555555555,
+                    0.06666666666666667,
+                    0.07777777777777778,
+                    0.12222222222222222,
+                    0.1111111111111111
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": false,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 3,
+            "pooling_layers": [
+                true,
+                true,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "adam",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 12,
+            "lstm_dropout": 0.8,
+            "lr_scheduler_gamma": 1.0,
+            "log_each_pid_results": false,
+            "learning_rate": 0.001,
+            "ft_weight_decay": 0.0001,
+            "ft_learning_rate": 0.01,
+            "ft_batch_size": 10,
+            "finetune_strategy": "freeze_cnn_lstm",
+            "fc_layers": [
+                32
+            ],
+            "fc_dropout": 0.5,
+            "dense_cnnlstm_dropout": 0.3,
+            "conv_layers": [
+                [
+                    16,
+                    7,
+                    2
+                ],
+                [
+                    32,
+                    5,
+                    2
+                ]
+            ],
+            "cnn_dropout": 0.5,
+            "batch_size": 4,
+            "added_dense_ft_hidden_size": 128
+        },
+        "overall_avg_accuracy": 0.09814814814814814,
+        "overall_user_accuracies": [
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.05555555555555555,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1,
+            0.1
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.09444444444444443,
+                "user_accuracies": [
+                    0.05555555555555555,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.09999999999999999,
+                "user_accuracies": [
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1,
+                    0.1
+                ]
+            }
+        ]
+    },
+    {
+        "config": {
+            "weight_decay": 0.0,
+            "verbose": false,
+            "use_earlystopping": true,
+            "use_dense_cnn_lstm": true,
+            "timestamp": "20250205_2159",
+            "time_steps": null,
+            "sequence_length": 64,
+            "save_ft_models": false,
+            "results_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\20250205_2159",
+            "progressive_unfreezing_schedule": 7,
+            "pooling_layers": [
+                true,
+                false,
+                false,
+                false
+            ],
+            "perf_log_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\hyperparam_tuning\\performance_logs",
+            "optimizer": "sgd",
+            "num_ft_epochs": 100,
+            "num_epochs": 100,
+            "num_classes": 10,
+            "num_channels": 16,
+            "models_save_dir": "C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\hyperparam_tuning\\20250205_2159",
+            "lstm_num_layers": 1,
+            "lstm_hidden_size": 4,
+            "lstm_dropout": 0.8,
+            "lr_scheduler_gamma": 0.95,
+            "log_each_pid_results": false,
+            "learning_rate": 0.001,
+            "ft_weight_decay": 0.0001,
+            "ft_learning_rate": 0.0001,
+            "ft_batch_size": 10,
+            "finetune_strategy": "progressive_unfreeze",
+            "fc_layers": [
+                128,
+                64
+            ],
+            "fc_dropout": 0.3,
+            "dense_cnnlstm_dropout": 0.3,
+            "conv_layers": [
+                [
+                    32,
+                    5,
+                    1
+                ],
+                [
+                    64,
+                    3,
+                    1
+                ],
+                [
+                    128,
+                    2,
+                    1
+                ]
+            ],
+            "cnn_dropout": 0.5,
+            "batch_size": 8,
+            "added_dense_ft_hidden_size": 64
+        },
+        "overall_avg_accuracy": 0.08564814814814814,
+        "overall_user_accuracies": [
+            0.12222222222222222,
+            0.1,
+            0.011111111111111112,
+            0.1,
+            0.1,
+            0.07777777777777778,
+            0.08888888888888889,
+            0.08888888888888889,
+            0.07777777777777778,
+            0.022222222222222223,
+            0.15555555555555556,
+            0.1,
+            0.16666666666666666,
+            0.08888888888888889,
+            0.06666666666666667,
+            0.1,
+            0.044444444444444446,
+            0.07777777777777778,
+            0.03333333333333333,
+            0.05555555555555555,
+            0.13333333333333333,
+            0.14444444444444443,
+            0.03333333333333333,
+            0.06666666666666667
+        ],
+        "split_results": [
+            {
+                "avg_accuracy": 0.08611111111111111,
+                "user_accuracies": [
+                    0.12222222222222222,
+                    0.1,
+                    0.011111111111111112,
+                    0.1,
+                    0.1,
+                    0.07777777777777778,
+                    0.08888888888888889,
+                    0.08888888888888889
+                ]
+            },
+            {
+                "avg_accuracy": 0.09722222222222221,
+                "user_accuracies": [
+                    0.07777777777777778,
+                    0.022222222222222223,
+                    0.15555555555555556,
+                    0.1,
+                    0.16666666666666666,
+                    0.08888888888888889,
+                    0.06666666666666667,
+                    0.1
+                ]
+            },
+            {
+                "avg_accuracy": 0.07361111111111111,
+                "user_accuracies": [
+                    0.044444444444444446,
+                    0.07777777777777778,
+                    0.03333333333333333,
+                    0.05555555555555555,
+                    0.13333333333333333,
+                    0.14444444444444443,
+                    0.03333333333333333,
+                    0.06666666666666667
+                ]
+            }
+        ]
+    }
+]
