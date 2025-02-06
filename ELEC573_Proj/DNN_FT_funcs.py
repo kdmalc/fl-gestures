@@ -543,7 +543,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         cross_test_loader = DataLoader(cross_test_dataset, batch_size=bs, shuffle=False) #, drop_last=True)
 
     # Select model
-    model = select_model(model_type, config, device=device, input_dim=input_dim, num_classes=num_classes)
+    model = select_model(model_type, config) #, device=device, input_dim=input_dim, num_classes=num_classes)
     # Loss and optimizer
     optimizer = set_optimizer(model, lr=lr, use_weight_decay=weight_decay>0, weight_decay=weight_decay)
     # Annealing the learning rate if applicable

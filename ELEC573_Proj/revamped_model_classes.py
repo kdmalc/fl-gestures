@@ -36,16 +36,13 @@ class EarlyStopping:
         return False
     
 
-def select_model(model_type, config, device="cpu", input_dim=16, num_classes=10):
+def select_model(model_type, config):  #, device="cpu", input_dim=16, num_classes=10):
     if isinstance(model_type, str):
         if model_type == 'CNN':  # 2D
-            if config is None:
-                model = CNNModel(input_dim, num_classes).to(device)
-            else:
-                #model = CNNModel_3layer(config, input_dim=80, num_classes=10)
-                model = DynamicCNNModel(config, input_dim=80, num_classes=10)
-        elif model_type == 'RNN':  # 3D
-            model = RNNModel(input_dim, num_classes).to(device)
+            # Not sure if this is working, not really using this one anymore
+            model = DynamicCNNModel(config, input_dim=80, num_classes=10)
+        elif model_type == 'ELEC573Net':  # 2D:
+            model = ELEC573Net(config)
         elif model_type == 'HybridCNNLSTM':  # 3D
             model = HybridCNNLSTM()  # TODO: This needs to be modified to take input sizes smh
         elif model_type == 'CRNN':  # 3D
@@ -71,7 +68,7 @@ def select_model(model_type, config, device="cpu", input_dim=16, num_classes=10)
 
 
 def select_dataset_class(model_str):
-    if model_str in ["CNN",  "MomonaNet", "DynamicMomonaNet"]:
+    if model_str in ["CNN",  "MomonaNet", "DynamicMomonaNet", "ELEC573Net"]:
         return GestureDataset  # This is 2D
     elif model_str in ["RNN", "HybridCNNLSTM", "CRNN"]:
         return GestureDataset_3D
@@ -102,64 +99,168 @@ def calculate_flattened_size(input_dim, layers):
 
 
 ######################################
-# BASIC MODELS
+# FIXED MODELS
 ######################################
 
-class RNNModel(nn.Module):
-    def __init__(self, input_dim, num_classes, rnn_type="LSTM", hidden_size=64, num_layers=2, use_batch_norm=False, dropout_rate=0.5):
+
+class ELEC573Net(nn.Module):
+    def __init__(self, config):
+        super(ELEC573Net, self).__init__()
+        self.input_dim = config["num_channels"]
+        self.num_classes = config["num_classes"]
+        self.config = config
+
+        # Activation and Pooling
+        self.relu = nn.ReLU()
+        self.maxpool = nn.MaxPool1d(config["maxpool"])
+        self.softmax = nn.Softmax(dim=1)
+        
+        # Convolutional Layers
+        self.conv1 = nn.Conv1d(1, config["conv_layers"][0][0], 
+                            kernel_size=config["conv_layers"][0][1], 
+                            stride=config["conv_layers"][0][2], 
+                            padding=config["padding"])
+        self.bn1 = nn.BatchNorm1d(config["conv_layers"][0][0]) if config["use_batchnorm"] else nn.Identity()
+        
+        self.conv2 = nn.Conv1d(config["conv_layers"][0][0], config["conv_layers"][1][0], 
+                            kernel_size=config["conv_layers"][1][1], 
+                            stride=config["conv_layers"][1][2],
+                            padding=config["padding"])
+        self.bn2 = nn.BatchNorm1d(config["conv_layers"][1][0]) if config["use_batchnorm"] else nn.Identity()
+        
+        self.conv3 = nn.Conv1d(config["conv_layers"][1][0], config["conv_layers"][2][0], 
+                            kernel_size=config["conv_layers"][2][1], 
+                            stride=config["conv_layers"][2][2], 
+                            padding=config["padding"])
+        self.bn3 = nn.BatchNorm1d(config["conv_layers"][2][0]) if config["use_batchnorm"] else nn.Identity()
+        
+        # Dynamically calculate flattened size
+        ## Why does this exist...
+        ## This has got to be fixed/deterministic
+        test_input = torch.randn(1, 1, self.input_dim)
+        # Run through conv layers to calculate final size
+        with torch.no_grad():
+            test_x = self.conv1(test_input)
+            test_x = self.maxpool(test_x)
+            test_x = self.conv2(test_x)
+            test_x = self.maxpool(test_x)
+            test_x = self.conv3(test_x)
+            if test_x.shape[-1]>1:
+                test_x = self.maxpool(test_x)
+            flattened_size = test_x.view(1, -1).size(1)
+            #print(f"flattened_size of test input: {flattened_size}")
+        
+        # Fully Connected Layers
+        self.fc1 = nn.Linear(flattened_size, config["fc_layers"][0])
+        self.dropout = nn.Dropout(config["fc_dropout"])
+        self.fc2 = nn.Linear(config["fc_layers"][0], self.num_classes)
+
+    def forward(self, x):
+        #print(f"Input x shape: {x.shape}")
+        # Ensure input is the right shape
+        x = x.unsqueeze(1)  # Reshape input to (batch_size, 1, sequence_length)
+        #print(f"After unsqueeze: {x.shape}")
+        
+        # Conv Block 1
+        x = self.conv1(x)
+        #print(f"After conv1: {x.shape}")
+        x = self.bn1(x)
+        #print(f"After bn1: {x.shape}")
+        x = self.relu(x)
+        #print(f"After relu: {x.shape}")
+        x = self.maxpool(x)
+        #print(f"After maxpool: {x.shape}")
+        
+        # Conv Block 2
+        x = self.conv2(x)
+        #print(f"After conv2: {x.shape}")
+        x = self.bn2(x)
+        #print(f"After bn2: {x.shape}")
+        x = self.relu(x)
+        #print(f"After relu: {x.shape}")
+        x = self.maxpool(x)
+        #print(f"After maxpool: {x.shape}")
+        
+        # Conv Block 3
+        x = self.conv3(x)
+        #print(f"After conv3: {x.shape}")
+        x = self.bn3(x)
+        #print(f"After bn3: {x.shape}")
+        x = self.relu(x)
+        #print(f"After relu: {x.shape}")
+        if x.shape[-1]>1:
+            x = self.maxpool(x)
+        #print(f"After maxpool: {x.shape}")
+        
+        # Flatten and Fully Connected Layers
+        x = x.view(x.size(0), -1)  # Flatten while preserving batch size
+        #print(f"After flattening for FC: {x.shape}")
+        x = self.fc1(x)
+        #print(f"After fc1: {x.shape}")
+        x = self.relu(x)
+        #print(f"After relu: {x.shape}")
+        x = self.dropout(x)
+        #print(f"After dropout: {x.shape}")
+        x = self.fc2(x)
+        #print(f"After fc2: {x.shape}")
+        # TODO: I wonder if I ought to turn softmax off? Since crossentropy already has it?
+        ## Original had it and was fine. Maybe this is an easy improvement for later?
+        x = self.softmax(x)
+        #print(f"After softmax: {x.shape}")
+        return x
+
+
+class MomonaNet(nn.Module):
+    #https://github.com/my-13/biosignals-gesture-analysis/blob/main/2024_UIST_CodeOcean/algorithms1.py
+    def __init__(self, config):
+        hidden_size = 12
+        tlen = 62  # TODO: Pass this in as a param? Or dynamically calc it?
         super().__init__()
-        self.rnn_type = rnn_type
-        self.rnn = {
-            "LSTM": nn.LSTM,
-            "GRU": nn.GRU
-        }.get(rnn_type, None)(input_size=1, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
-        
-        if self.rnn is None:
-            raise ValueError("Invalid rnn_type. Choose 'LSTM' or 'GRU'.")
-        
-        self.bn = nn.BatchNorm1d(hidden_size) if use_batch_norm else nn.Identity()
-        self.fc = nn.Sequential(
-            nn.Linear(hidden_size, 128),
+
+        #self.bs = config['batch_size']
+        self.nc = config['num_channels']
+        self.sl = config['sequence_length']
+
+        # Replacing 88 everywhere with 16 (88 is 72IMU + 16EMG)
+        #CNN
+        self.conv1 = nn.Conv1d(in_channels=16, out_channels=16, kernel_size=2, stride=1)
+        self.pool = nn.MaxPool1d(kernel_size=2, stride=1)
+        # Dense layer connecting CNN to LSTM
+        self.dense = nn.Linear(16,16)
+        self.relu = nn.ReLU()
+        # LSTM
+        self.lstm = nn.LSTM(input_size=16, hidden_size=hidden_size, num_layers=2, batch_first=True, dropout=0.8)
+        self.flatten = nn.Flatten()
+
+        # Fully connected layers for classification
+        self.linear_relu_stack = nn.Sequential( 
+            nn.Linear(int(hidden_size*tlen), hidden_size),
             nn.ReLU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(128, num_classes)
+            nn.Linear(hidden_size, 10),
         )
 
     def forward(self, x):
-        x = x.unsqueeze(-1)  # (batch_size, seq_length, 1)
-        _, hidden = self.rnn(x)
-        x = hidden[0][-1] if self.rnn_type == "LSTM" else hidden[-1]
-        x = self.bn(x)
-        return self.fc(x)
-
-
-class CNNModel(nn.Module):
-    def __init__(self, input_dim, num_classes, use_batch_norm=False, dropout_rate=0.5):
-        super().__init__()
-        self.conv_blocks = nn.Sequential(
-            get_conv_block(1, 32, kernel_size=3, stride=1, padding=1, maxpool=2, use_batch_norm=use_batch_norm),
-            get_conv_block(32, 64, kernel_size=3, stride=1, padding=1, maxpool=2, use_batch_norm=use_batch_norm),
-        )
-        flattened_size = calculate_flattened_size(input_dim, self.conv_blocks)
-        self.fc = nn.Sequential(
-            nn.Linear(flattened_size, 128),
-            nn.ReLU(),
-            nn.Dropout(dropout_rate),
-            nn.Linear(128, num_classes)
-        )
-
-    def forward(self, x):
-        x = x.unsqueeze(1)  # (batch_size, 1, seq_length)
-        x = self.conv_blocks(x)
-        x = x.view(x.size(0), -1)
-        return self.fc(x)
-
+        #x = x.view(self.bs, self.nc, self.sl)
+        # Dynamically infer batch size from input tensor
+        batch_size = x.size(0)  # Get the batch size from the input tensor
+        # Reshape input to (batch_size, num_channels, sequence_length)
+        x = x.view(batch_size, self.nc, self.sl)  # Use dynamic batch size
+        x = self.pool(self.conv1(x)) # CNN layer + pooling
+        x = torch.swapaxes(x, 1, 2)
+        x = self.relu(self.dense(x))
+        x, _ = self.lstm(x) # 2 LSTM layers
+        x = self.flatten(x) 
+        logits = self.linear_relu_stack(x) # FFNN/dense layer for classification
+        return logits
+    
 
 ######################################
 # DYNAMIC MODELS
 ######################################
 
 class DynamicCNNModel(nn.Module):
+    # THIS IS NOT UP TO DATE
+
     def __init__(self, config, input_dim, num_classes):
         super().__init__()
         self.conv_layers = nn.Sequential(*[
@@ -302,50 +403,11 @@ class DynamicMomonaNet(nn.Module):
         # Output layer
         logits = self.output_layer(x)
         return logits
+    
 
-
-class MomonaNet(nn.Module):
-    #https://github.com/my-13/biosignals-gesture-analysis/blob/main/2024_UIST_CodeOcean/algorithms1.py
-    def __init__(self, config):
-        hidden_size = 12
-        tlen = 62  # TODO: Pass this in as a param? Or dynamically calc it?
-        super().__init__()
-
-        #self.bs = config['batch_size']
-        self.nc = config['num_channels']
-        self.sl = config['sequence_length']
-
-        # Replacing 88 everywhere with 16 (88 is 72IMU + 16EMG)
-        #CNN
-        self.conv1 = nn.Conv1d(in_channels=16, out_channels=16, kernel_size=2, stride=1)
-        self.pool = nn.MaxPool1d(kernel_size=2, stride=1)
-        # Dense layer connecting CNN to LSTM
-        self.dense = nn.Linear(16,16)
-        self.relu = nn.ReLU()
-        # LSTM
-        self.lstm = nn.LSTM(input_size=16, hidden_size=hidden_size, num_layers=2, batch_first=True, dropout=0.8)
-        self.flatten = nn.Flatten()
-
-        # Fully connected layers for classification
-        self.linear_relu_stack = nn.Sequential( 
-            nn.Linear(int(hidden_size*tlen), hidden_size),
-            nn.ReLU(),
-            nn.Linear(hidden_size, 10),
-        )
-
-    def forward(self, x):
-        #x = x.view(self.bs, self.nc, self.sl)
-        # Dynamically infer batch size from input tensor
-        batch_size = x.size(0)  # Get the batch size from the input tensor
-        # Reshape input to (batch_size, num_channels, sequence_length)
-        x = x.view(batch_size, self.nc, self.sl)  # Use dynamic batch size
-        x = self.pool(self.conv1(x)) # CNN layer + pooling
-        x = torch.swapaxes(x, 1, 2)
-        x = self.relu(self.dense(x))
-        x, _ = self.lstm(x) # 2 LSTM layers
-        x = self.flatten(x) 
-        logits = self.linear_relu_stack(x) # FFNN/dense layer for classification
-        return logits
+######################################
+# NOT VALIDATED
+######################################
 
 
 class EMGHandNet(nn.Module):

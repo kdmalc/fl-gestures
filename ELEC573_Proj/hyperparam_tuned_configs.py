@@ -71,15 +71,11 @@ old_DynamicMomonaNet_config = {
     "num_ft_epochs": 500,
     "ft_weight_decay": 1e-4, 
     "ft_batch_size": 1, 
-    "use_earlystopping": True,  # Always use this to save time, in ft and earlier training
+    "use_earlystopping": False,  # Always use this to save time, in ft and earlier training
     # METADATA
-    #"results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
-    #"models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
-    #"perf_log_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs", 
-    # I did not need to change this actually... the below is for the BRC Desktop
-    "results_save_dir": f"C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
-    "models_save_dir": f"C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
-    "perf_log_dir": f"C:\\Users\\YamagamiLab\\Desktop\\Dev\\fl-gestures\\ELEC573_Proj\\results\\performance_logs", 
+    "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
+    "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
+    "perf_log_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs", 
     "timestamp": timestamp,
     "verbose": False,
     "log_each_pid_results": False, 
@@ -96,36 +92,24 @@ ELEC573Net_config = {
     "sequence_length": 64,  # Not used for this one AFAIK
     "time_steps": None,  # Not used for this one AFAIK
     "num_classes": 10, #(int): Number of output classes.
-    "ft_learning_rate": 0.001,
-    "ft_weight_decay": 1e-4, 
-
-    # Pretty sure this wasn't integrated? Maybe it was... maybe I should integrate it everywhere...
-    "use_batchnorm": True,
-
-    # Original vs New that need to be resolved
-    "dropout_rate": 0.3,  # Was this even incorporated?
-    "cnn_dropout": 0.0,
-    "fc_dropout": 0.0, 
-
     "num_epochs": 50,  # To use earlystopping or not... I guess I can check both...
-    "num_ft_epochs": 50,
-    "use_earlystopping": True,  # Always use this to save time, in ft and earlier training
-
-    "ft_batch_size": 32,  # How was this using 32 as its batch_size... try 1...
-
-    "conv_layers": [(32, 5, 1), (64, 5, 1), (128, 5, 1)], 
-    "num_conv_layers": 3,  # Keep this or use the new version of the code? ...
-    "conv_layer_sizes": [32, 64, 128],  # Keep this or use the new version of the code? ...
-    "kernel_size": 5,  # Keep this or use the new version of the code? ...
-    "stride": 2,  # Was I really using stride 2??
+    "use_earlystopping": False,  # Always use this to save time, in ft and earlier training
+    "conv_layers": [(32, 5, 2), (64, 5, 2), (128, 5, 2)], 
+    "fc_layers": [128],  #(list of int): List of integers specifying the sizes of fully connected layers.
+    # I think I can just pass these in and it'll be fine
+    "use_batchnorm": True,
     "padding": 1,  # I don't even think this appears in the new version...
-
-    "pooling_layers": [True, False, False, False],  # Max pooling only after the first conv layer
-    "maxpool": 1,  # What does this do? If maxpool is 1 that means it doesn't change the size?
-
-    # This was different and hardcoded, check what it was
-    "fc_layers": [128, 64],  #(list of int): List of integers specifying the sizes of fully connected layers.
-
+    "pooling_layers": [None],  # In ELEC573Net pooling is on by default, see below
+    "maxpool": 1,  # Just adding/passing this through 
+    "cnn_dropout": 0.0,
+    "fc_dropout": 0.3, 
+    "lr_scheduler_gamma": 1.0, 
+    # DEFAULT PARAMS FROM fine_tune_model() IN OLD CODE: num_epochs=20, lr=0.00001, use_weight_decay=True, weight_decay=0.05)
+    "ft_learning_rate": 0.00001,
+    "ft_weight_decay": 0.05,  # This is really high...
+    "num_ft_epochs": 20,
+    # UNSURE ABOUT HOW THIS WORKS
+    "ft_batch_size": 32,  # How was this using 32 as its batch_size if there's only 30 total finetuning gestures...
     # METADATA
     "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
     "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
