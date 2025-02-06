@@ -217,8 +217,9 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
             "overall_user_accuracies": overall_user_accuracies,
             "split_results": split_results
         })
-        print(f"Overall accuracies: {overall_avg_accuracy}")
-        print(f"Completed in {time.time() - start_time}s\n")
+        print(f"Overall accuracies: {overall_avg_accuracy:.4f}")
+        total_time = time.time() - start_time
+        print(f"Completed in {total_time:.2f}s\n")
 
     # Save the results
     ## This is the aggregated and sorted JSON file. This always needs to be saved

@@ -1,8 +1,7 @@
-#import torch
-#from torch.utils.data import DataLoader
-#import copy
-#import pandas as pd
-#import pickle
+# NOTE: Hyperparam tuning is VERY slow bc"
+## 1: must train a pretrained model from scratch every time
+## 2: we do multiple datasplits for cross validation to ensure generalizability
+
 import random
 random.seed(42)
 from datetime import datetime
@@ -14,7 +13,9 @@ from DNN_FT_funcs import *
 from revamped_model_classes import *
 
 
-NUM_CONFIGS = 80
+NUM_CONFIGS = 25
+NUM_TRAIN_TRIALS = 8
+NUM_FT_TRIALS = 1
 MODEL_STR = "DynamicMomonaNet"
 expdef_df = load_expdef_gestures(apply_hc_feateng=False, filepath_pkl="D:\\Kai_MetaGestureClustering_24\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl")
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
@@ -29,9 +30,9 @@ DynamicMomonaNet_architecture_space = {
     "conv_layers": [ #(list of tuples): List of tuples specifying convolutional layers. Each tuple should contain (out_channels, kernel_size, stride).
         ### ONE LAYER CNN ###
         # Basic starter
-        [(16, 5, 2)],
+        #[(16, 5, 2)],
         # Larger receptive field
-        [(32, 10, 3)],
+        #[(32, 10, 3)],
         ### TWO LAYER CNN ###
         # Standard progression
         [(32, 5, 1), (64, 3, 1)],
@@ -43,20 +44,20 @@ DynamicMomonaNet_architecture_space = {
         # Moderate complexity
         [(32, 5, 1), (64, 3, 1), (128, 2, 1)],
         # Progressive downsampling
-        [(16, 7, 2), (32, 5, 2), (64, 3, 1)],
+        #[(16, 7, 2), (32, 5, 2), (64, 3, 1)],
         # Larger Filters for Broader Features
         [(32, 7, 1), (64, 5, 1), (128, 3, 1)]
         ], 
     # Is this gonna work with just 1-2 layer networks? I think it should be fine...
     "pooling_layers": [[True, False, False, False], 
-                       [True, True, True, True], 
-                       [False, False, False, False], 
-                       [True, True, False, False]
+                       #[True, True, True, True], 
+                       #[False, False, False, False], 
+                       [True, True, False, False]  # This is basically all true since I'm only testing 2-3 conv layers
                        ],  # Max pooling only after the first conv layer
     "use_dense_cnn_lstm": [True, False],  # Use dense layer between CNN and LSTM
-    "lstm_hidden_size": [8, 16, 32],  #(int): Hidden size for LSTM layers.
-    "lstm_num_layers": [1, 2],  #(int): Number of LSTM layers.
-    "fc_layers": [[32], [64], [32, 16], [64, 32], [128, 64]],  #(list of int): List of integers specifying the sizes of fully connected layers.
+    "lstm_hidden_size": [4, 8, 12],  #(int): Hidden size for LSTM layers.
+    "lstm_num_layers": [1],  #(int): Number of LSTM layers.
+    "fc_layers": [[32], [32, 16], [128, 64]],  #(list of int): List of integers specifying the sizes of fully connected layers.
     "num_classes": [10] #(int): Number of output classes.
     # Not added yet, might not help? If my batch size (esp in finetuning) is too small...
     #"use_CNN_batchnorm": [True, False],   # This is not added yet
@@ -65,19 +66,19 @@ DynamicMomonaNet_architecture_space = {
 }
 
 DynamicMomonaNet_hyperparameter_space = {
-    "batch_size": [16, 32, 64],  #SHARED_BS #(int): Batch size.
-    "lstm_dropout": [0.0, 0.5, 0.8],  #(float): Dropout probability for LSTM layers.
+    "batch_size": [4, 8, 16, 32],  #SHARED_BS #(int): Batch size.
+    "lstm_dropout": [0.5, 0.8],  #(float): Dropout probability for LSTM layers.
     "learning_rate": [0.0001, 0.001, 0.01],
     "num_epochs": [100], #[30, 50, 70],
     "optimizer": ["adam", "sgd"],
     "weight_decay": [0.0, 1e-4],
-    "cnn_dropout": [0.0, 0.3],
-    "dense_cnnlstm_dropout": [0.0, 0.3], 
-    "fc_dropout": [0.0, 0.3], 
+    "cnn_dropout": [0.3, 0.5],
+    "dense_cnnlstm_dropout": [0.3, 0.5], 
+    "fc_dropout": [0.3, 0.5], 
     "ft_learning_rate": [0.0001, 0.001, 0.01],
     "num_ft_epochs": [100], #[10, 30, 50],
     "ft_weight_decay": [0.0, 1e-4], 
-    "ft_batch_size": [1, 10], 
+    "ft_batch_size": [1, 4, 10], 
     "use_earlystopping": [True],  # Always use this to save time, in ft and earlier training
     "finetune_strategy": ["full", "freeze_cnn", "freeze_cnn_lstm", "progressive_unfreeze"],
     #["full", "freeze_cnn", "freeze_cnn_lstm", "freeze_all_add_dense", "progressive_unfreeze"],
@@ -87,8 +88,8 @@ DynamicMomonaNet_hyperparameter_space = {
     #    - "freeze_cnn_lstm": Freeze CNN + LSTM, train only dense layers.
     #    - "freeze_all_add_dense": Freeze entire model, add a new dense layer.
     #    - "progressive_unfreeze": Start with frozen CNN/LSTM, progressively unfreeze.
-    "progressive_unfreezing_schedule": [2, 5], 
-    "added_dense_ft_hidden_size": [64, 128], 
+    "progressive_unfreezing_schedule": [1, 3, 5, 7], 
+    "added_dense_ft_hidden_size": [64, 128], # Not working yet
     "lr_scheduler_gamma": [0.9, 0.95, 1.0]
 }
 
@@ -108,4 +109,4 @@ metadata_config = {
 
 # Run the main function
 results = hyperparam_tuning_for_ft(MODEL_STR, expdef_df, DynamicMomonaNet_hyperparameter_space, DynamicMomonaNet_architecture_space, metadata_config, 
-                             num_configs_to_test=NUM_CONFIGS, num_datasplits_to_test=2, num_train_trials=8, num_ft_trials=3)
+                             num_configs_to_test=NUM_CONFIGS, num_datasplits_to_test=3, num_train_trials=NUM_TRAIN_TRIALS, num_ft_trials=NUM_FT_TRIALS)
