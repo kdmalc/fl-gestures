@@ -6,18 +6,19 @@ from moments_engr import *
 from DNN_FT_funcs import *
 np.random.seed(42) 
 import os
-cwd = os.getcwd()
-print("Current Working Directory: ", cwd)
+#cwd = os.getcwd()
+#print("Current Working Directory: ", cwd)
 
 from datetime import datetime
-NUM_CHANNELS = 80  # 16  # Hopefully changing this between 16 and 80 doesn't break things later
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-FINETUNE = False
-LOG_AND_VISUALIZE = False
+
+NUM_CHANNELS = 80  # 16  # Hopefully changing this between 16 and 80 doesn't break things later
 if NUM_CHANNELS == 80:
     APPLY_FEATENG = True
 else:
     APPLY_FEATENG = False
+FINETUNE = False
+LOG_AND_VISUALIZE = False
 
 MODEL_STR = "ELEC573Net"
 config = {
