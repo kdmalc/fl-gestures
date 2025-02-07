@@ -13,7 +13,6 @@ DynamicMomonaNet_config =  {
     "time_steps": None,
     "sequence_length": 64,
     "save_ft_models": False,
-    "progressive_unfreezing_schedule": 5,
     "pooling_layers": [True, True, True, True],
     "optimizer": "sgd",
     "num_ft_epochs": 100,
@@ -33,6 +32,7 @@ DynamicMomonaNet_config =  {
     "ft_learning_rate": 0.01,
     "ft_batch_size": 10,
     "finetune_strategy": "progressive_unfreeze",
+    "progressive_unfreezing_schedule": 5,
     "fc_layers": [128, 64],
     "fc_dropout": 0.3,
     "dense_cnnlstm_dropout": 0.3,
@@ -98,7 +98,7 @@ ELEC573Net_config = {
     "fc_layers": [128],  #(list of int): List of integers specifying the sizes of fully connected layers.
     # I think I can just pass these in and it'll be fine
     "use_batchnorm": True,
-    "padding": 1,  # I don't even think this appears in the new version...
+    "padding": 1,
     "pooling_layers": [None],  # In ELEC573Net pooling is on by default, see below
     "maxpool": 1,  # Just adding/passing this through 
     "cnn_dropout": 0.0,
@@ -108,6 +108,8 @@ ELEC573Net_config = {
     "ft_learning_rate": 0.00001,
     "ft_weight_decay": 0.05,  # This is really high...
     "num_ft_epochs": 20,
+    "finetune_strategy": "progressive_unfreeze",
+    "progressive_unfreezing_schedule": 5,
     # UNSURE ABOUT HOW THIS WORKS
     "ft_batch_size": 32,  # How was this using 32 as its batch_size if there's only 30 total finetuning gestures...
     # METADATA
