@@ -134,106 +134,33 @@ class ELEC573Net(nn.Module):
                                padding=config["padding"])
         self.bn3 = nn.BatchNorm1d(config["conv_layers"][2][0]) if config["use_batchnorm"] else nn.Identity()
         
-        # Automatically compute the flattened size
-        self.feature_extractor = nn.Sequential(
-            self.conv1, self.bn1, self.relu, self.maxpool,
-            self.conv2, self.bn2, self.relu, self.maxpool,
-            self.conv3, self.bn3, self.relu
-        )
-        self.flattened_size = self.compute_flattened_size()
+        self.flattened_size = self.config["conv_layers"][2][0] * self.compute_final_length()
 
         # Fully Connected Layers
         self.fc1 = nn.Linear(self.flattened_size, config["fc_layers"][0])
         self.dropout = nn.Dropout(config["fc_dropout"])
         self.fc2 = nn.Linear(config["fc_layers"][0], self.num_classes)
 
-    def compute_flattened_size(self):
-        """Compute the flattened feature size dynamically."""
-        test_input = torch.randn(1, 1, self.input_dim)
-        with torch.no_grad():
-            test_x = self.feature_extractor(test_input)
-            if test_x.shape[-1] > 1:  # Apply last maxpool conditionally
-                test_x = self.maxpool(test_x)
-        return test_x.numel()
+    def compute_final_length(self):
+            pool = self.config["maxpool"]
+            P = self.config["padding"]
+            L = self.input_dim  # Needs to be seq len, but for this model we have 1 input channel and treat the 80 features as our seq len...
+            
+            # Conv1 + MaxPool1
+            L = ((L - self.config["conv_layers"][0][1] + 2*P) // self.config["conv_layers"][0][2]) + 1
+            L = L // pool
+            # Conv2 + MaxPool2
+            L = ((L - self.config["conv_layers"][1][1] + 2*P) // self.config["conv_layers"][1][2]) + 1
+            L = L // pool
+            # Conv3 (no final maxpool)
+            L = ((L - self.config["conv_layers"][2][1] + 2*P) // self.config["conv_layers"][2][2]) + 1
+            return L
 
     def forward(self, x):
+        #print(f"x start shape: {x.shape}")
         x = x.unsqueeze(1)  # Reshape input to (batch_size, 1, sequence_length)
-        x = self.feature_extractor(x)
-        if x.shape[-1] > 1:
-            x = self.maxpool(x)
+        #print(f"x after unsqueezing: {x.shape}")
 
-        # Flatten and Fully Connected Layers
-        x = x.view(x.size(0), -1)  # Flatten while preserving batch size
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.dropout(x)
-        x = self.fc2(x)
-
-        # Softmax (consider removing if using CrossEntropyLoss)
-        x = self.softmax(x)
-        return x
-
-
-'''
-class ELEC573Net(nn.Module):
-    def __init__(self, config):
-        super(ELEC573Net, self).__init__()
-        self.input_dim = config["num_channels"]
-        self.num_classes = config["num_classes"]
-        self.config = config
-
-        # Activation and Pooling
-        self.relu = nn.ReLU()
-        self.maxpool = nn.MaxPool1d(config["maxpool"])
-        self.softmax = nn.Softmax(dim=1)
-        
-        # Convolutional Layers
-        self.conv1 = nn.Conv1d(1, config["conv_layers"][0][0], 
-                            kernel_size=config["conv_layers"][0][1], 
-                            stride=config["conv_layers"][0][2], 
-                            padding=config["padding"])
-        self.bn1 = nn.BatchNorm1d(config["conv_layers"][0][0]) if config["use_batchnorm"] else nn.Identity()
-        
-        self.conv2 = nn.Conv1d(config["conv_layers"][0][0], config["conv_layers"][1][0], 
-                            kernel_size=config["conv_layers"][1][1], 
-                            stride=config["conv_layers"][1][2],
-                            padding=config["padding"])
-        self.bn2 = nn.BatchNorm1d(config["conv_layers"][1][0]) if config["use_batchnorm"] else nn.Identity()
-        
-        self.conv3 = nn.Conv1d(config["conv_layers"][1][0], config["conv_layers"][2][0], 
-                            kernel_size=config["conv_layers"][2][1], 
-                            stride=config["conv_layers"][2][2], 
-                            padding=config["padding"])
-        self.bn3 = nn.BatchNorm1d(config["conv_layers"][2][0]) if config["use_batchnorm"] else nn.Identity()
-        
-        # Dynamically calculate flattened size
-        ## Why does this exist...
-        ## This has got to be fixed/deterministic
-        test_input = torch.randn(1, 1, self.input_dim)
-        # Run through conv layers to calculate final size
-        with torch.no_grad():
-            test_x = self.conv1(test_input)
-            test_x = self.maxpool(test_x)
-            test_x = self.conv2(test_x)
-            test_x = self.maxpool(test_x)
-            test_x = self.conv3(test_x)
-            if test_x.shape[-1]>1:
-                test_x = self.maxpool(test_x)
-            flattened_size = test_x.view(1, -1).size(1)
-            #print(f"flattened_size of test input: {flattened_size}")
-        
-        # Fully Connected Layers
-        self.fc1 = nn.Linear(flattened_size, config["fc_layers"][0])
-        self.dropout = nn.Dropout(config["fc_dropout"])
-        self.fc2 = nn.Linear(config["fc_layers"][0], self.num_classes)
-
-    def forward(self, x):
-        #print(f"Input x shape: {x.shape}")
-        # Ensure input is the right shape
-        x = x.unsqueeze(1)  # Reshape input to (batch_size, 1, sequence_length)
-        #print(f"After unsqueeze: {x.shape}")
-        
-        # Conv Block 1
         x = self.conv1(x)
         #print(f"After conv1: {x.shape}")
         x = self.bn1(x)
@@ -242,8 +169,7 @@ class ELEC573Net(nn.Module):
         #print(f"After relu: {x.shape}")
         x = self.maxpool(x)
         #print(f"After maxpool: {x.shape}")
-        
-        # Conv Block 2
+
         x = self.conv2(x)
         #print(f"After conv2: {x.shape}")
         x = self.bn2(x)
@@ -252,18 +178,15 @@ class ELEC573Net(nn.Module):
         #print(f"After relu: {x.shape}")
         x = self.maxpool(x)
         #print(f"After maxpool: {x.shape}")
-        
-        # Conv Block 3
+
         x = self.conv3(x)
         #print(f"After conv3: {x.shape}")
         x = self.bn3(x)
         #print(f"After bn3: {x.shape}")
         x = self.relu(x)
         #print(f"After relu: {x.shape}")
-        if x.shape[-1]>1:
-            x = self.maxpool(x)
-        #print(f"After maxpool: {x.shape}")
-        
+        #x = self.maxpool(x)  # This shrinks it down too much so turn it off
+
         # Flatten and Fully Connected Layers
         x = x.view(x.size(0), -1)  # Flatten while preserving batch size
         #print(f"After flattening for FC: {x.shape}")
@@ -275,12 +198,10 @@ class ELEC573Net(nn.Module):
         #print(f"After dropout: {x.shape}")
         x = self.fc2(x)
         #print(f"After fc2: {x.shape}")
-        # TODO: I wonder if I ought to turn softmax off? Since crossentropy already has it?
-        ## Original had it and was fine. Maybe this is an easy improvement for later?
+        # TODO: ought to remove softmax, but original version had it so keep it for now...
         x = self.softmax(x)
         #print(f"After softmax: {x.shape}")
         return x
-'''
 
 
 class MomonaNet(nn.Module):
