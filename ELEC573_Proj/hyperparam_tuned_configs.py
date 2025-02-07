@@ -1,7 +1,6 @@
 from datetime import datetime
-
-NUM_CHANNELS = 16
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+NUM_CHANNELS = 16  # NOT USED WITH ELEC573Net rn
 
 
 DynamicMomonaNet_config =  {
@@ -88,7 +87,7 @@ ELEC573Net_config = {
     "batch_size": 32,
     "optimizer": "adam",
     "weight_decay": 1e-4,
-    "num_channels": NUM_CHANNELS,  #(int): Number of input channels.
+    "num_channels": 80,  #(int): Number of input channels.
     "sequence_length": 64,  # Not used for this one AFAIK
     "time_steps": None,  # Not used for this one AFAIK
     "num_classes": 10, #(int): Number of output classes.
