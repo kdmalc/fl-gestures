@@ -185,7 +185,8 @@ def DNN_agglo_merge_procedure(data_dfs_dict, model_type, config, n_splits=2):
         ## I don't think I need this? I don't think it matters that much
         # This prevents memory bloat and ensures we only keep relevant models
         #clus_model_dict = {k: v for k in clus_model_dict if k in current_cluster_set}  # Also an error saying v isn't defined...
-        
+        clus_model_dict = {k: v for k, v in clus_model_dict.items() if k in current_cluster_set}
+
         # Log current state of models
         nested_clus_model_dict[f"Iter{iterations}"] = copy.deepcopy(clus_model_dict)
 
