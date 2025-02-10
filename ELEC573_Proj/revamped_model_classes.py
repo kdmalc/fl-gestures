@@ -190,7 +190,7 @@ class ELEC573Net(nn.Module):
 
         # Flatten and Fully Connected Layers
         x = x.view(x.size(0), -1)  # Flatten while preserving batch size
-        print(f"After flattening for FC: {x.shape}")
+        #print(f"After flattening for FC: {x.shape}")
         x = self.fc1(x)
         #print(f"After fc1: {x.shape}")
         x = self.relu(x)
