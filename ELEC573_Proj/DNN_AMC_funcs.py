@@ -1,20 +1,17 @@
 import pandas as pd
 import numpy as np
-from sklearn.cross_decomposition import CCA
-from sklearn.decomposition import PCA
-from sklearn.metrics import accuracy_score
+#from sklearn.cross_decomposition import CCA
+#from sklearn.decomposition import PCA
 import copy
+from torch.utils.data import DataLoader, TensorDataset
+from sklearn.model_selection import StratifiedKFold
+import torch
 
 np.random.seed(42) 
 
 from moments_engr import *
 from agglo_model_clust import *
 from DNN_FT_funcs import *
-
-from torch.utils.data import DataLoader, TensorDataset
-from sklearn.model_selection import StratifiedKFold
-import torch
-from sklearn.metrics import accuracy_score
 
 
 def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, config, 
@@ -89,8 +86,6 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, config,
             ######################################################################################
             ######################################################################################
             # Now train your fold_model
-            #fold_model.train()  # Ensure the model is in training mode
-            # ^ Double check that that is handled in train_model()...
             epoch = 0
             done = False
             earlystopping = EarlyStopping()
