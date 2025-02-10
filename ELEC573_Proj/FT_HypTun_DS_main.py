@@ -13,9 +13,10 @@ from DNN_FT_funcs import *
 from revamped_model_classes import *
 
 
-NUM_CONFIGS = 25
+NUM_CONFIGS = 100
 NUM_TRAIN_TRIALS = 8
 NUM_FT_TRIALS = 1
+NUM_DATASPLITS = 4
 MODEL_STR = "DynamicMomonaNet"
 expdef_df = load_expdef_gestures(apply_hc_feateng=False, filepath_pkl="D:\\Kai_MetaGestureClustering_24\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl")
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
@@ -109,4 +110,4 @@ metadata_config = {
 
 # Run the main function
 results = hyperparam_tuning_for_ft(MODEL_STR, expdef_df, DynamicMomonaNet_hyperparameter_space, DynamicMomonaNet_architecture_space, metadata_config, 
-                             num_configs_to_test=NUM_CONFIGS, num_datasplits_to_test=3, num_train_trials=NUM_TRAIN_TRIALS, num_ft_trials=NUM_FT_TRIALS)
+                             num_configs_to_test=NUM_CONFIGS, num_datasplits_to_test=NUM_DATASPLITS, num_train_trials=NUM_TRAIN_TRIALS, num_ft_trials=NUM_FT_TRIALS)
