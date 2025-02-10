@@ -1,7 +1,7 @@
 import pandas as pd
 #import numpy as np
 #np.random.seed(42) 
-import random
+#import random
 from sklearn.preprocessing import LabelEncoder
 #from sklearn.model_selection import KFold
 #from sklearn.cross_decomposition import CCA
@@ -14,10 +14,9 @@ from DNN_AMC_funcs import *
 from hyperparam_tuned_configs import *
 
 
-
-MODEL_STR = "DynamicMomonaNet"
-MY_CONFIG = DynamicMomonaNet_config
-expdef_df = load_expdef_gestures(apply_hc_feateng=False)
+MODEL_STR = "ELEC573Net"  #"DynamicMomonaNet"
+MY_CONFIG = ELEC573Net_config  #DynamicMomonaNet_config
+expdef_df = load_expdef_gestures(apply_hc_feateng=True)
 
 data_splits = make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3)
 
@@ -54,15 +53,13 @@ cross_test_df['Cluster_ID'] = label_encoder.fit_transform(cross_test_df['partici
 
 # Only clustering wrt intra_test results, not cross_test results, for now...
 data_dfs_dict = {'train':train_df, 'test':intra_test_df}
-merge_log, intra_cluster_performance, cross_cluster_performance, nested_clus_model_dict = DNN_agglo_merge_procedure(data_dfs_dict, MODEL_STR, DynamicMomonaNet_config, n_splits=2)
+merge_log, intra_cluster_performance, cross_cluster_performance, nested_clus_model_dict = DNN_agglo_merge_procedure(data_dfs_dict, MODEL_STR, MY_CONFIG, n_splits=2)
 
 # Save the data to a file
-# This saving code hasn't been validated here yet
-## TODO: Ensure this is saving to the correct place
-print(f'{MY_CONFIG["results_save_dir"]}\\{MY_CONFIG["timestamp"]}')
-# Might need to make this dir...
-print()
-# Include timestamp in file name?
+print(f'{MY_CONFIG["results_save_dir"]}')
+# Create log directory if it doesn't exist
+os.makedirs(MY_CONFIG["results_save_dir"], exist_ok=True)
+# Include timestamp in file name? I think it is already included in results_save_dir?
 with open(f'{MY_CONFIG["results_save_dir"]}\\{MY_CONFIG["timestamp"]}_{MODEL_STR}_agglo_merge_res.pkl', 'wb') as f:
     pickle.dump(merge_log, f)
     pickle.dump(intra_cluster_performance, f)

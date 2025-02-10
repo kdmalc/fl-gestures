@@ -156,7 +156,7 @@ class ELEC573Net(nn.Module):
             L = ((L - self.config["conv_layers"][2][1] + 2*P) // self.config["conv_layers"][2][2]) + 1
             return L
 
-    def forward(self, x):
+    def forward(self, x):        
         #print(f"x start shape: {x.shape}")
         x = x.unsqueeze(1)  # Reshape input to (batch_size, 1, sequence_length)
         #print(f"x after unsqueezing: {x.shape}")
@@ -168,7 +168,7 @@ class ELEC573Net(nn.Module):
         x = self.relu(x)
         #print(f"After relu: {x.shape}")
         x = self.maxpool(x)
-        #print(f"After maxpool: {x.shape}")
+        #rint(f"After maxpool: {x.shape}")
 
         x = self.conv2(x)
         #print(f"After conv2: {x.shape}")
@@ -185,7 +185,8 @@ class ELEC573Net(nn.Module):
         #print(f"After bn3: {x.shape}")
         x = self.relu(x)
         #print(f"After relu: {x.shape}")
-        #x = self.maxpool(x)  # This shrinks it down too much so turn it off
+        # This last maxpool shrinks it down too much so turn it off
+        #x = self.maxpool(x)  
 
         # Flatten and Fully Connected Layers
         x = x.view(x.size(0), -1)  # Flatten while preserving batch size

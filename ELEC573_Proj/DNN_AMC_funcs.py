@@ -44,7 +44,7 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, config,
     num_classes = len(unique_gestures)
     input_dim = len(train_df[feature_column].iloc[0])
     
-    model = select_model(model_type, config, device="cpu", input_dim=input_dim, num_classes=num_classes)
+    model = select_model(model_type, config)  #, device="cpu", input_dim=input_dim, num_classes=num_classes)
     initial_state = copy.deepcopy(model.state_dict())
 
     total_val_accuracy = 0
