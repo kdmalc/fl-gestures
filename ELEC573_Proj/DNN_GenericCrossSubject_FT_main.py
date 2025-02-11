@@ -12,7 +12,7 @@ print("Current Working Directory: ", cwd)
 from datetime import datetime
 NUM_CHANNELS = 16
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-FINETUNE = False
+FINETUNE = True
 LOG_AND_VISUALIZE = False
 
 MODEL_STR = "DynamicMomonaNet"
@@ -24,7 +24,6 @@ config = {
     "feature_engr": None, 
     "weight_decay": 0.0,
     "verbose": False,
-    "use_earlystopping": True,
     "use_dense_cnn_lstm": True,
     "timestamp": timestamp,
     "time_steps": None,
@@ -42,7 +41,6 @@ config = {
     "lstm_num_layers": 1,
     "lstm_hidden_size": 8,
     "lstm_dropout": 0.8,
-    "lr_scheduler_gamma": 1.0,
     "log_each_pid_results": False,
     "learning_rate": 0.001,
     "ft_weight_decay": 0.0,
@@ -58,7 +56,12 @@ config = {
         [128, 3, 1]],
     "cnn_dropout": 0.3,
     "batch_size": 16,
-    "added_dense_ft_hidden_size": 64
+    #"use_earlystopping": True,
+    #"lr_scheduler_gamma": 1.0,
+    "added_dense_ft_hidden_size": 64, 
+    "lr_scheduler_patience": 5, 
+    "lr_scheduler_factor": 0.1, 
+    "earlystopping_patience": 10
 }
 
 expdef_df = load_expdef_gestures(feateng_method=config["feature_engr"])
@@ -88,7 +91,7 @@ results = main_training_pipeline(
 full_path = config['models_save_dir']
 os.makedirs(os.path.dirname(full_path), exist_ok=True)  # Ensure the directory exists
 print("Full Path:", full_path)
-# TODO: pretty sure I have a save_model function...
+# TODO: Could just use my existing save_model() func here...
 torch.save(results["model"].state_dict(), f"{full_path}\\pretrained_{MODEL_STR}_model.pth")
 
 # TODO: This only finetunes on one person lol should at least finetune over a couple

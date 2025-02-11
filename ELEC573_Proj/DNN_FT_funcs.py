@@ -93,13 +93,11 @@ def evaluate_configuration_on_ft(datasplit, pretrained_model, config, model_str,
         finetuned_model, _, _, _ = fine_tune_model(
             pretrained_model, fine_tune_loader, config, timestamp, 
             test_loader=cross_test_loader,
-            pid=pid, use_earlystopping=config["use_earlystopping"]
-        )
+            pid=pid)#, use_earlystopping=config["use_earlystopping"])
         metrics = evaluate_model(finetuned_model, cross_test_loader)
         user_accuracies.append(metrics["accuracy"])
         if config["save_ft_models"]:
             save_model(finetuned_model, model_str, config["models_save_dir"], f"{pid}_pretrainedFT", verbose=config["verbose"])
-
 
     return user_accuracies
 
@@ -480,7 +478,8 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     sequence_length = config["sequence_length"]
     time_steps = config["time_steps"]
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # Not used right not (we are only using CPU anyways...)
+    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     # Unique gestures and number of classes
     ## TODO: Why is train_pids an unshuffled list of 1920 entries? Shouldn't it at least be shuffled?
@@ -501,18 +500,19 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         #if len(train_intra_cross_loaders)==4:
         #    ft_loader = train_intra_cross_loaders[3]  # Not used at all...
 
+        unique_gestures = np.unique(data_splits['train']['labels'])
+        # Old, these used to get used as inputs to the model but have been subsumed
         # Here we can assume that data_splits is None
-        #unique_gestures = np.unique(data_splits['train']['labels'])
-        num_classes = 10
-        input_dim = next(iter(train_loader))[0].shape
+        #num_classes = 10
+        #input_dim = next(iter(train_loader))[0].shape
 
         train_pids = [pid for pid in all_participants if pid not in test_participants]
         intra_pids = train_pids
         cross_pids = test_participants
     else:
         unique_gestures = np.unique(data_splits['train']['labels'])
-        num_classes = len(unique_gestures)
-        input_dim = data_splits['train']['feature'].shape[1]
+        #num_classes = len(unique_gestures)
+        #input_dim = data_splits['train']['feature'].shape[1]
 
         train_pids = data_splits['train']['participant_ids']  # THIS IS IN ORDER! NOT SHUFFLED!!
         intra_pids = data_splits['intra_subject_test']['participant_ids']
@@ -552,9 +552,10 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     # Loss and optimizer
     optimizer = set_optimizer(model, lr=lr, use_weight_decay=weight_decay>0, weight_decay=weight_decay)
     # Annealing the learning rate if applicable
-    if config["lr_scheduler_gamma"]<1.0:
-        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config["lr_scheduler_gamma"])
-    
+    #if config["lr_scheduler_gamma"]<1.0:
+    #    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config["lr_scheduler_gamma"])
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=config["lr_scheduler_patience"], factor=config["lr_scheduler_factor"], verbose=True)
+
     # Training
     train_loss_log = []
     intra_test_loss_log = []
@@ -563,8 +564,8 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     max_epochs = config["num_epochs"]
     epoch = 0
     done = False
-    if config['use_earlystopping']:
-        earlystopping = EarlyStopping()
+    #if config['use_earlystopping']:
+    #    earlystopping = EarlyStopping()
     
     # Is this by participant? Or just once per config?
     if save_loss_here:
@@ -583,22 +584,27 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         cross_test_loss_log.append(cross_test_loss)
 
         # Anneal the learning rate (advance scheduler) if applicable
-        if config["lr_scheduler_gamma"]<1.0:
-            scheduler.step()
+        #if config["lr_scheduler_gamma"]<1.0:
+        #    scheduler.step()
+        # Reduce LR if validation loss plateaus
+        scheduler.step(intra_test_loss)
 
         # Early stopping check
-        if config['use_earlystopping'] and earlystopping(model, intra_test_loss):
+        #if config['use_earlystopping'] and earlystopping(model, intra_test_loss):
+        #    done = True
+        #    earlystopping_status = earlystopping.status
+        #else:
+        #    earlystopping_status = ""
+        if scheduler.num_bad_epochs >= config["earlystopping_patience"]:  # Custom stopping condition
             done = True
-            earlystopping_status = earlystopping.status
-        else:
-            earlystopping_status = ""
+
         # Log metrics to the console and the text file
         log_message = (
             f"Epoch {epoch}/{max_epochs}, "
             f"Train Loss: {train_loss:.4f}, "
             f"Intra Testing Loss: {intra_test_loss:.4f}, "
-            f"Cross Testing Loss: {cross_test_loss:.4f}, "
-            f"{earlystopping_status}\n")
+            f"Cross Testing Loss: {cross_test_loss:.4f}\n")
+            #f"{earlystopping_status}\n")
         if config["verbose"]:
             print(log_message, end="")  # Print to console
         if save_loss_here:
@@ -657,7 +663,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     }
 
 
-def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_loader=None, pid=None, use_earlystopping=None, num_epochs=50):
+def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_loader=None, pid=None, num_epochs=None):  #use_earlystopping=None,
     """
     Fine-tune the base model on a small subset of data
     
@@ -685,12 +691,15 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     else:
         pid = pid + "_"
 
-    if use_earlystopping is None:
-        use_earlystopping = config["use_earlystopping"]
-        # Assume num_epochs is an integer (ideally 50) and use that
-        max_epochs = num_epochs
-    else:
+    #if use_earlystopping is None:
+    #    use_earlystopping = config["use_earlystopping"]
+    #    # Assume num_epochs is an integer (ideally 50) and use that
+    #    max_epochs = num_epochs
+    #else:
+    if num_epochs is None:
         max_epochs = config["num_ft_epochs"]
+    else:
+        max_epochs = num_epochs
     
     # Make a copy of the original (pretrained) model
     frozen_original_model = copy.deepcopy(finetuned_model)
@@ -748,16 +757,17 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     # Loss and optimizer (with different learning rate for fine-tuning)
     optimizer = set_optimizer(finetuned_model, lr=config["ft_learning_rate"], use_weight_decay=config["ft_weight_decay"] > 0, weight_decay=config["ft_weight_decay"])
     # Set up learning rate scheduler if applicable
-    if config["lr_scheduler_gamma"]<1.0:
-        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config["lr_scheduler_gamma"])
+    #if config["lr_scheduler_gamma"]<1.0:
+    #    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config["lr_scheduler_gamma"])
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=config["lr_scheduler_patience"], factor=config["lr_scheduler_factor"], verbose=True)
 
     # Fine-tuning training loop
     train_loss_log = []
     test_loss_log = []
     epoch = 0
     done = False
-    if use_earlystopping:
-        earlystopping = EarlyStopping()
+    #if use_earlystopping:
+    #    earlystopping = EarlyStopping()
     # Open a text file for logging
     if config["log_each_pid_results"]:
         log_file = open(f"{timestamp}_{pid}ft_log.txt", "w")
@@ -781,15 +791,19 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         test_loss_log.append(novel_intra_test_loss)
 
         # Anneal the learning rate if applicable (advance the scheduler)
-        if config["lr_scheduler_gamma"]<1.0:
-            scheduler.step()
+        #if config["lr_scheduler_gamma"]<1.0:
+        #    scheduler.step()
+        # Reduce LR if validation loss plateaus
+        scheduler.step(novel_intra_test_loss)
 
         # Early stopping check
-        if use_earlystopping==True and earlystopping(finetuned_model, novel_intra_test_loss):
+        #if use_earlystopping==True and earlystopping(finetuned_model, novel_intra_test_loss):
+        #    done = True
+        #    earlystopping_status = earlystopping.status
+        #else:
+        #    earlystopping_status = ""
+        if scheduler.num_bad_epochs >= config["earlystopping_patience"]:  # Custom stopping condition
             done = True
-            earlystopping_status = earlystopping.status
-        else:
-            earlystopping_status = ""
 
     # Log metrics to the console and the text file, AFTER the while loop has finished
     log_message = (
@@ -797,8 +811,8 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         f"Epoch {epoch}/{max_epochs}, "
         # TODO: Why are these losses and not accuracies...
         f"FT Train Loss: {train_loss:.4f}, "
-        f"Novel Intra Subject Testing Loss: {novel_intra_test_loss:.4f}, "
-        f"{earlystopping_status}\n")
+        f"Novel Intra Subject Testing Loss: {novel_intra_test_loss:.4f}\n")
+        #f"{earlystopping_status}\n")
     if config["verbose"]:
             print(log_message, end="")  # Print to console
     if config["log_each_pid_results"]:
