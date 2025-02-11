@@ -16,9 +16,6 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
     
     os.makedirs(config['results_save_dir'], exist_ok=True)
 
-    #local_user_dict = prepare_data_for_local_models(finetuning_datasplits, model_str, config)
-    ## This wasn't working, said it couldnt find P006 key. Maybe it wasn't there? Couldnt debug in ipynb
-    
     train_pids = np.unique(finetuning_datasplits['train']['participant_ids'])
     novel_participant_ft_data = finetuning_datasplits['novel_trainFT']
     novel_participant_test_data = finetuning_datasplits['cross_subject_test']
@@ -31,8 +28,6 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         print(f"PID {pid}, {pid_count}/{len(novel_pids)}")
         novel_pid_res_dict[pid] = {}
 
-        # TODO: Confirm this is working as expected, it seems like this creates the subject specific dataloaders for me...
-        ## If that is true then I didnt need to do all the Local development (for this func at least, on its own is another story)
         # Create the testloader by segmenting out this specific pid
         # Filter based on participant_id
         indices = [i for i, datasplit_pid in enumerate(novel_participant_ft_data['participant_ids']) if datasplit_pid == pid]
@@ -62,21 +57,11 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         local_clus_res = evaluate_model(local_res["model"], intra_test_loader)
         novel_pid_res_dict[pid]["local_acc"] = local_clus_res["accuracy"]
 
-        # This code pairs with local_user_dict = prepare_data_for_local_models(finetuning_datasplits, model_str, config)
-        # Wait can I just pass finetuning datasplits in here? I dont think so since I'm using FT not train data?
-        #local_res = main_training_pipeline(data_splits=None, all_participants=list(set(novel_participant_test_data['participant_ids'])), 
-        #                                        test_participants=finetuning_datasplits['cross_subject_test']['participant_ids'], 
-        #                                        model_type=model_str, config=config, 
-        #                                        train_intra_cross_loaders=local_user_dict[pid])
-        #local_clus_res = evaluate_model(local_res["model"], intra_test_loader)
-        #novel_pid_res_dict[pid]["local_acc"] = local_clus_res["accuracy"]
-
         # 2) Test the full pretrained (centralized) model
         generic_clus_res = evaluate_model(pretrained_generic_model, intra_test_loader)
         novel_pid_res_dict[pid]["centralized_acc"] = generic_clus_res["accuracy"]
 
         # 3) Test finetuned pretrained (centralized) model
-        #def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_loader=None, pid=None, use_earlystopping=None):
         ft_centralized_model, _, _, _ = fine_tune_model(
             pretrained_generic_model, ft_loader, config, config['timestamp'], test_loader=intra_test_loader, pid=pid)
         ft_centralized_res = evaluate_model(ft_centralized_model, intra_test_loader)
@@ -107,8 +92,6 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         novel_pid_res_dict[pid]["pretrained_cluster_acc"] = pretrained_clus_res["accuracy"]
 
         # 5) FT the pretrained cluster model on the participant
-        # ft_model, original_cluster_model, train_loss_log, test_loss_log = fine_tune_model()
-        #def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_loader=None, pid=None, use_earlystopping=None):
         ft_cluster_model, original_cluster_model, _, _ = fine_tune_model(
             original_cluster_model, ft_loader, config, config['timestamp'], test_loader=intra_test_loader, pid=pid)
         ft_clus_res = evaluate_model(ft_cluster_model, intra_test_loader)

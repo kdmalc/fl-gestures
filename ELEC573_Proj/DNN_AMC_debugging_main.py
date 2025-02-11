@@ -11,12 +11,12 @@ from moments_engr import *
 from agglo_model_clust import *
 from DNN_FT_funcs import *
 from DNN_AMC_funcs import *
-from hyperparam_tuned_configs import *
+from hyperparam_tuned_configs import * 
 
 
-MODEL_STR = "ELEC573Net"  #"DynamicMomonaNet"
-MY_CONFIG = ELEC573Net_config  #DynamicMomonaNet_config
-expdef_df = load_expdef_gestures(apply_hc_feateng=True)
+MODEL_STR = "DynamicMomonaNet"  #"ELEC573Net"  #"DynamicMomonaNet"
+MY_CONFIG = DynamicMomonaNet_config  #ELEC573Net_config  #DynamicMomonaNet_config
+expdef_df = load_expdef_gestures(apply_hc_feateng=False)
 
 data_splits = make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3)
 

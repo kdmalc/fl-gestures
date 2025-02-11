@@ -37,15 +37,13 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, config,
     bs = config["batch_size"]
     lr = config["learning_rate"]
     
-    unique_gestures = np.unique(train_df[target_column])
-    num_classes = len(unique_gestures)
-    input_dim = len(train_df[feature_column].iloc[0])
-    
-    model = select_model(model_type, config)  #, device="cpu", input_dim=input_dim, num_classes=num_classes)
-    initial_state = copy.deepcopy(model.state_dict())
+    #unique_gestures = np.unique(train_df[target_column])
+    # These were used as inputs to the fold_model initialization but aren't used anymore (atm anyways)
+    #num_classes = len(unique_gestures)
+    #input_dim = len(train_df[feature_column].iloc[0])
 
-    total_val_accuracy = 0
-    num_folds_processed = 0
+    #total_val_accuracy = 0
+    #num_folds_processed = 0
     clus_model_dict = {}
     for cluster in cluster_ids:
         print(f"train_and_cv_DNN_cluster_model cluster {cluster}")
@@ -56,7 +54,6 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, config,
         y = np.array(cluster_data[target_column])
 
         # Stratified K-Fold for validation splits
-        ## IDK IF THIS WILL WORK WITH PYTORCH FORMATTED DATA...
         skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
         cluster_val_accuracy = 0
         for idx, (train_idx, val_idx) in enumerate(skf.split(X, y)):
@@ -77,14 +74,12 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, config,
             val_loader = DataLoader(val_dataset, batch_size=bs, shuffle=False)
             
             # Create a fresh instance 
-            fold_model = model.__class__(config)  # , input_dim, num_classes
+            #fold_model = model.__class__(config)  # , input_dim, num_classes
             # Load the saved initial weights from the variable
-            fold_model.load_state_dict(initial_state)
+            #fold_model.load_state_dict(initial_state)
+            fold_model = select_model(model_type, config)
             optimizer = set_optimizer(fold_model, lr=lr, use_weight_decay=config["weight_decay"]>0, weight_decay=config["weight_decay"])
             
-            ######################################################################################
-            ######################################################################################
-            ######################################################################################
             # Now train your fold_model
             epoch = 0
             done = False
@@ -95,18 +90,18 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, config,
             #log_file = open(f"{config['results_save_dir']}\\{timestamp}_{model_type}_pretrained_training_log.txt", "w")
             while not done and epoch < max_epochs:
                 epoch += 1
-                train_loss = train_model(model, train_loader, optimizer)
+                train_loss = train_model(fold_model, train_loader, optimizer)
                 #train_loss_log.append(train_loss)
 
                 # Validation
-                intra_test_res = evaluate_model(model, val_loader)
+                intra_test_res = evaluate_model(fold_model, val_loader)
                 intra_test_loss = intra_test_res['loss']
                 #intra_test_loss_log.append(intra_test_loss)
                 #cross_test_loss = evaluate_model(model, cross_test_loader)['loss']
                 #cross_test_loss_log.append(cross_test_loss)
 
                 # Early stopping check
-                if earlystopping(model, intra_test_loss):
+                if earlystopping(fold_model, intra_test_loss):
                     done = True
                 # Log metrics to the console and the text file
                 log_message = (
@@ -182,9 +177,6 @@ def DNN_agglo_merge_procedure(data_dfs_dict, model_type, config, n_splits=2):
             clus_model_dict.update(new_models)
 
         # Remove models for merged clusters (no longer exist)
-        ## I don't think I need this? I don't think it matters that much
-        # This prevents memory bloat and ensures we only keep relevant models
-        #clus_model_dict = {k: v for k in clus_model_dict if k in current_cluster_set}  # Also an error saying v isn't defined...
         clus_model_dict = {k: v for k, v in clus_model_dict.items() if k in current_cluster_set}
 
         # Log current state of models
