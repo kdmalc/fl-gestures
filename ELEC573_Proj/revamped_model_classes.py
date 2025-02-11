@@ -4,6 +4,29 @@ import torch.nn.functional as F
 from configs import *
 import copy
 from gesture_dataset_classes import *
+from collections import deque
+
+
+class SmoothedEarlyStopping:
+    def __init__(self, patience=10, min_delta=0.001, smoothing_window=5):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.smoothing_window = smoothing_window
+        self.best_loss = np.inf
+        self.num_bad_epochs = 0
+        self.loss_buffer = deque(maxlen=smoothing_window)
+
+    def __call__(self, current_loss):
+        self.loss_buffer.append(current_loss)
+        smoothed_loss = np.mean(self.loss_buffer)
+
+        if smoothed_loss < self.best_loss - self.min_delta:
+            self.best_loss = smoothed_loss
+            self.num_bad_epochs = 0  # Reset patience if improvement
+        else:
+            self.num_bad_epochs += 1  # Increment if no improvement
+
+        return self.num_bad_epochs >= self.patience  # Stop if patience exceeded
 
 
 class EarlyStopping:

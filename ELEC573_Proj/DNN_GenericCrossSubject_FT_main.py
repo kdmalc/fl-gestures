@@ -56,12 +56,13 @@ MY_CONFIG = {
         [128, 3, 1]],
     "cnn_dropout": 0.3,
     "batch_size": 16,
+    "added_dense_ft_hidden_size": 64, 
     #"use_earlystopping": True,
     #"lr_scheduler_gamma": 1.0,
-    "added_dense_ft_hidden_size": 64, 
-    "lr_scheduler_patience": 5, 
+    "lr_scheduler_patience": 4, 
     "lr_scheduler_factor": 0.1, 
-    "earlystopping_patience": 10
+    "earlystopping_patience": 6,
+    "earlystopping_min_delta": 0.01
 }
 
 expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])
@@ -118,7 +119,10 @@ if FINETUNE:
 
 if LOG_AND_VISUALIZE:
     # Does this visualize ONLY heatmaps, and not train/test loss curves? I only really care about the latter...
-    visualize_model_performance(results)
+    #visualize_model_acc_heatmap(results)
+
+    visualize_train_test_loss_curves(results, MY_CONFIG)
+    visualize_train_test_loss_curves(None, MY_CONFIG, train_loss_log, test_loss_log, my_title="1subj FT Train Test Curves", ft=True)
 
     log_file = log_performance(results, MY_CONFIG)
     print(f"Detailed performance log saved to: {log_file}")

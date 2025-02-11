@@ -490,8 +490,8 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
 
     if train_intra_cross_loaders is not None:  # This is used in the NB full study...
         # Hardcoding cause I don't wanna deal with dataloader extraction
-        #num_classes = 10
-        #unique_gestures = list(range(num_classes))
+        num_classes = 10
+        unique_gestures = list(range(num_classes))
         #input_dim = 80
 
         train_loader = train_intra_cross_loaders[0]
@@ -500,7 +500,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         #if len(train_intra_cross_loaders)==4:
         #    ft_loader = train_intra_cross_loaders[3]  # Not used at all...
 
-        unique_gestures = np.unique(data_splits['train']['labels'])
+        #unique_gestures = np.unique(data_splits['train']['labels'])  # DATASPLITS IS NONE IN THIS BRANCH!
         # Old, these used to get used as inputs to the model but have been subsumed
         # Here we can assume that data_splits is None
         #num_classes = 10
@@ -554,7 +554,8 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     # Annealing the learning rate if applicable
     #if config["lr_scheduler_gamma"]<1.0:
     #    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config["lr_scheduler_gamma"])
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=config["lr_scheduler_patience"], factor=config["lr_scheduler_factor"], verbose=True)
+    early_stopping = SmoothedEarlyStopping(patience=config["earlystopping_patience"], min_delta=config["earlystopping_min_delta"])
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=config["lr_scheduler_patience"], factor=config["lr_scheduler_factor"], verbose=False)
 
     # Training
     train_loss_log = []
@@ -595,7 +596,11 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         #    earlystopping_status = earlystopping.status
         #else:
         #    earlystopping_status = ""
-        if scheduler.num_bad_epochs >= config["earlystopping_patience"]:  # Custom stopping condition
+        # THIS IS VERY SENSITIVE TO NOISE AND WONT TRIGGER
+        #if scheduler.num_bad_epochs >= config["earlystopping_patience"]:  # Custom stopping condition
+        #    done = True
+        # Early stopping check
+        if early_stopping(intra_test_loss):
             done = True
 
         # Log metrics to the console and the text file
@@ -751,6 +756,7 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     # Set up learning rate scheduler if applicable
     #if config["lr_scheduler_gamma"]<1.0:
     #    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config["lr_scheduler_gamma"])
+    early_stopping = SmoothedEarlyStopping(patience=config["earlystopping_patience"], min_delta=config["earlystopping_min_delta"])
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=config["lr_scheduler_patience"], factor=config["lr_scheduler_factor"], verbose=True)
 
     # Fine-tuning training loop
@@ -795,7 +801,11 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         #    earlystopping_status = earlystopping.status
         #else:
         #    earlystopping_status = ""
-        if scheduler.num_bad_epochs >= config["earlystopping_patience"]:  # Custom stopping condition
+        # THIS IS VERY SENSITIVE TO NOISE AND WONT TRIGGER
+        #if scheduler.num_bad_epochs >= config["earlystopping_patience"]:  # Custom stopping condition
+        #    done = True
+        # Early stopping check
+        if early_stopping(novel_intra_test_loss):
             done = True
 
     # Log metrics to the console and the text file, AFTER the while loop has finished
@@ -919,7 +929,7 @@ def print_detailed_performance(performance_dict, set_type):
     print(f"Maximum Accuracy: {np.max(all_accuracies):.2%}")
 
 
-def visualize_model_performance(results, print_results=False):
+def visualize_model_acc_heatmap(results, print_results=False):
     """
     Comprehensive visualization and printing of model performance
     
@@ -958,6 +968,38 @@ def visualize_model_performance(results, print_results=False):
         print(f"Training Accuracy: {results['train_accuracy']:.2%}")
         print(f"Intra Testing Accuracy: {results['intra_test_accuracy']:.2%}")
         print(f"Cross Testing Accuracy: {results['cross_test_accuracy']:.2%}")
+
+
+def visualize_train_test_loss_curves(results, config, train_loss_log=None, test_loss_log=None, my_title=None, ft=False):
+    if my_title is None:
+        my_title = "Train-Test Loss Curves"
+    
+    if ft:
+        fig_filename = f"ft_train_test_loss_curves.png"
+    else:
+        fig_filename = f"train_test_loss_curves.png"
+
+    if results is not None:
+        plt.plot(results["train_loss_log"], label="Train")
+        plt.plot(results["intra_test_loss_log"], label="Intra Test")
+        plt.title("Train-Test Loss Curves")
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss")
+    elif results is None and train_loss_log is not None and test_loss_log is not None:
+        plt.plot(train_loss_log, label="Train")
+        plt.plot(test_loss_log, label="Intra Test")
+        plt.title(my_title)
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss")
+
+    plt.tight_layout()
+    # Generate unique filename with timestamp
+    fig_dir = config["results_save_dir"]
+    os.makedirs(fig_dir, exist_ok=True)
+    fig_save_path = os.path.join(fig_dir, fig_filename)
+    plt.savefig(fig_save_path)
+
+    plt.show()
 
 
 def log_performance(results, config, base_filename='model_performance'):

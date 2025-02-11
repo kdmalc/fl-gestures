@@ -1,0 +1,434 @@
+feature_engr: None
+
+weight_decay: 0.0
+
+verbose: False
+
+use_dense_cnn_lstm: True
+
+timestamp: 20250211_1305
+
+time_steps: None
+
+sequence_length: 64
+
+save_ft_models: False
+
+pooling_layers: True, True, True, True
+
+optimizer: sgd
+
+num_ft_epochs: 100
+
+num_epochs: 100
+
+num_classes: 10
+
+num_channels: 16
+
+results_save_dir: C:\Users\kdmen\Repos\fl-gestures\ELEC573_Proj\results\20250211_1305
+
+models_save_dir: C:\Users\kdmen\Repos\fl-gestures\ELEC573_Proj\models\20250211_1305
+
+perf_log_dir: C:\Users\kdmen\Repos\fl-gestures\ELEC573_Proj\results\performance_logs
+
+lstm_num_layers: 1
+
+lstm_hidden_size: 8
+
+lstm_dropout: 0.8
+
+log_each_pid_results: False
+
+learning_rate: 0.001
+
+ft_weight_decay: 0.0
+
+ft_learning_rate: 0.01
+
+ft_batch_size: 10
+
+finetune_strategy: progressive_unfreeze
+
+progressive_unfreezing_schedule: 5
+
+fc_layers: 128, 64
+
+fc_dropout: 0.3
+
+dense_cnnlstm_dropout: 0.3
+
+conv_layers: [64, 3, 1], [128, 3, 1]
+
+cnn_dropout: 0.3
+
+batch_size: 16
+
+added_dense_ft_hidden_size: 64
+
+lr_scheduler_patience: 5
+
+lr_scheduler_factor: 0.1
+
+earlystopping_patience: 10
+
+earlystopping_min_delta: 0.01
+
+Model Performance Analysis
+==============================
+
+--- Training Set Performance ---
+
+Training Set Summary:
+Mean Accuracy: 95.98%
+Accuracy Standard Deviation: 7.72%
+Minimum Accuracy: 50.00%
+Maximum Accuracy: 100.00%
+
+--- INTRA Testing Set Performance ---
+
+Participant P102:
+  Gesture 0: 100.00%
+  Gesture 1: 50.00%
+  Gesture 2: 50.00%
+  Gesture 3: 0.00%
+  Gesture 4: 50.00%
+  Gesture 5: 100.00%
+  Gesture 6: 50.00%
+  Gesture 7: 50.00%
+  Gesture 8: 100.00%
+  Gesture 9: 100.00%
+  Average Accuracy: 65.00%
+
+Participant P103:
+  Gesture 0: 100.00%
+  Gesture 1: 0.00%
+  Gesture 2: 100.00%
+  Gesture 3: 100.00%
+  Gesture 4: 100.00%
+  Gesture 5: 100.00%
+  Gesture 6: 50.00%
+  Gesture 7: 100.00%
+  Gesture 8: 100.00%
+  Gesture 9: 100.00%
+  Average Accuracy: 85.00%
+
+Participant P104:
+  Gesture 0: 50.00%
+  Gesture 1: 50.00%
+  Gesture 2: 50.00%
+  Gesture 3: 100.00%
+  Gesture 4: 50.00%
+  Gesture 5: 50.00%
+  Gesture 6: 50.00%
+  Gesture 7: 0.00%
+  Gesture 8: 100.00%
+  Gesture 9: 100.00%
+  Average Accuracy: 60.00%
+
+Participant P105:
+  Gesture 0: 50.00%
+  Gesture 1: 100.00%
+  Gesture 2: 0.00%
+  Gesture 3: 100.00%
+  Gesture 4: 0.00%
+  Gesture 5: 100.00%
+  Gesture 6: 0.00%
+  Gesture 7: 100.00%
+  Gesture 8: 50.00%
+  Gesture 9: 50.00%
+  Average Accuracy: 55.00%
+
+Participant P106:
+  Gesture 0: 50.00%
+  Gesture 1: 100.00%
+  Gesture 2: 50.00%
+  Gesture 3: 0.00%
+  Gesture 4: 100.00%
+  Gesture 5: 0.00%
+  Gesture 6: 100.00%
+  Gesture 7: 100.00%
+  Gesture 8: 100.00%
+  Gesture 9: 0.00%
+  Average Accuracy: 60.00%
+
+Participant P107:
+  Gesture 0: 50.00%
+  Gesture 1: 50.00%
+  Gesture 2: 0.00%
+  Gesture 3: 50.00%
+  Gesture 4: 0.00%
+  Gesture 5: 50.00%
+  Gesture 6: 100.00%
+  Gesture 7: 50.00%
+  Gesture 8: 0.00%
+  Gesture 9: 100.00%
+  Average Accuracy: 45.00%
+
+Participant P108:
+  Gesture 0: 0.00%
+  Gesture 1: 50.00%
+  Gesture 2: 50.00%
+  Gesture 3: 50.00%
+  Gesture 4: 50.00%
+  Gesture 5: 50.00%
+  Gesture 6: 50.00%
+  Gesture 7: 50.00%
+  Gesture 8: 50.00%
+  Gesture 9: 0.00%
+  Average Accuracy: 40.00%
+
+Participant P109:
+  Gesture 0: 50.00%
+  Gesture 1: 100.00%
+  Gesture 2: 0.00%
+  Gesture 3: 100.00%
+  Gesture 4: 50.00%
+  Gesture 5: 100.00%
+  Gesture 6: 100.00%
+  Gesture 7: 100.00%
+  Gesture 8: 0.00%
+  Gesture 9: 50.00%
+  Average Accuracy: 65.00%
+
+Participant P110:
+  Gesture 0: 0.00%
+  Gesture 1: 50.00%
+  Gesture 2: 100.00%
+  Gesture 3: 100.00%
+  Gesture 4: 50.00%
+  Gesture 5: 50.00%
+  Gesture 6: 100.00%
+  Gesture 7: 0.00%
+  Gesture 8: 50.00%
+  Gesture 9: 50.00%
+  Average Accuracy: 55.00%
+
+Participant P111:
+  Gesture 0: 50.00%
+  Gesture 1: 50.00%
+  Gesture 2: 0.00%
+  Gesture 3: 50.00%
+  Gesture 4: 0.00%
+  Gesture 5: 0.00%
+  Gesture 6: 50.00%
+  Gesture 7: 0.00%
+  Gesture 8: 100.00%
+  Gesture 9: 50.00%
+  Average Accuracy: 35.00%
+
+Participant P112:
+  Gesture 0: 50.00%
+  Gesture 1: 50.00%
+  Gesture 2: 0.00%
+  Gesture 3: 50.00%
+  Gesture 4: 0.00%
+  Gesture 5: 0.00%
+  Gesture 6: 50.00%
+  Gesture 7: 0.00%
+  Gesture 8: 0.00%
+  Gesture 9: 0.00%
+  Average Accuracy: 20.00%
+
+Participant P114:
+  Gesture 0: 100.00%
+  Gesture 1: 100.00%
+  Gesture 2: 50.00%
+  Gesture 3: 50.00%
+  Gesture 4: 50.00%
+  Gesture 5: 50.00%
+  Gesture 6: 100.00%
+  Gesture 7: 100.00%
+  Gesture 8: 100.00%
+  Gesture 9: 100.00%
+  Average Accuracy: 80.00%
+
+Participant P115:
+  Gesture 0: 50.00%
+  Gesture 1: 50.00%
+  Gesture 2: 0.00%
+  Gesture 3: 50.00%
+  Gesture 4: 0.00%
+  Gesture 5: 0.00%
+  Gesture 6: 50.00%
+  Gesture 7: 50.00%
+  Gesture 8: 100.00%
+  Gesture 9: 50.00%
+  Average Accuracy: 40.00%
+
+Participant P116:
+  Gesture 0: 100.00%
+  Gesture 1: 50.00%
+  Gesture 2: 100.00%
+  Gesture 3: 100.00%
+  Gesture 4: 100.00%
+  Gesture 5: 100.00%
+  Gesture 6: 100.00%
+  Gesture 7: 100.00%
+  Gesture 8: 100.00%
+  Gesture 9: 50.00%
+  Average Accuracy: 90.00%
+
+Participant P118:
+  Gesture 0: 0.00%
+  Gesture 1: 0.00%
+  Gesture 2: 0.00%
+  Gesture 3: 50.00%
+  Gesture 4: 50.00%
+  Gesture 5: 50.00%
+  Gesture 6: 0.00%
+  Gesture 7: 50.00%
+  Gesture 8: 100.00%
+  Gesture 9: 100.00%
+  Average Accuracy: 40.00%
+
+Participant P119:
+  Gesture 0: 50.00%
+  Gesture 1: 100.00%
+  Gesture 2: 100.00%
+  Gesture 3: 100.00%
+  Gesture 4: 50.00%
+  Gesture 5: 0.00%
+  Gesture 6: 100.00%
+  Gesture 7: 100.00%
+  Gesture 8: 100.00%
+  Gesture 9: 100.00%
+  Average Accuracy: 80.00%
+
+Participant P121:
+  Gesture 0: 100.00%
+  Gesture 1: 50.00%
+  Gesture 2: 100.00%
+  Gesture 3: 0.00%
+  Gesture 4: 50.00%
+  Gesture 5: 50.00%
+  Gesture 6: 50.00%
+  Gesture 7: 0.00%
+  Gesture 8: 0.00%
+  Gesture 9: 0.00%
+  Average Accuracy: 40.00%
+
+Participant P122:
+  Gesture 0: 0.00%
+  Gesture 1: 50.00%
+  Gesture 2: 50.00%
+  Gesture 3: 100.00%
+  Gesture 4: 100.00%
+  Gesture 5: 50.00%
+  Gesture 6: 100.00%
+  Gesture 7: 50.00%
+  Gesture 8: 50.00%
+  Gesture 9: 0.00%
+  Average Accuracy: 55.00%
+
+Participant P123:
+  Gesture 0: 50.00%
+  Gesture 1: 0.00%
+  Gesture 2: 50.00%
+  Gesture 3: 50.00%
+  Gesture 4: 100.00%
+  Gesture 5: 50.00%
+  Gesture 6: 100.00%
+  Gesture 7: 100.00%
+  Gesture 8: 0.00%
+  Gesture 9: 100.00%
+  Average Accuracy: 60.00%
+
+Participant P124:
+  Gesture 0: 100.00%
+  Gesture 1: 50.00%
+  Gesture 2: 0.00%
+  Gesture 3: 50.00%
+  Gesture 4: 50.00%
+  Gesture 5: 0.00%
+  Gesture 6: 100.00%
+  Gesture 7: 50.00%
+  Gesture 8: 50.00%
+  Gesture 9: 50.00%
+  Average Accuracy: 50.00%
+
+Participant P125:
+  Gesture 0: 0.00%
+  Gesture 1: 100.00%
+  Gesture 2: 100.00%
+  Gesture 3: 50.00%
+  Gesture 4: 100.00%
+  Gesture 5: 50.00%
+  Gesture 6: 100.00%
+  Gesture 7: 100.00%
+  Gesture 8: 100.00%
+  Gesture 9: 100.00%
+  Average Accuracy: 80.00%
+
+Participant P126:
+  Gesture 0: 0.00%
+  Gesture 1: 100.00%
+  Gesture 2: 50.00%
+  Gesture 3: 50.00%
+  Gesture 4: 50.00%
+  Gesture 5: 50.00%
+  Gesture 6: 50.00%
+  Gesture 7: 50.00%
+  Gesture 8: 100.00%
+  Gesture 9: 0.00%
+  Average Accuracy: 50.00%
+
+Participant P127:
+  Gesture 0: 100.00%
+  Gesture 1: 0.00%
+  Gesture 2: 50.00%
+  Gesture 3: 50.00%
+  Gesture 4: 100.00%
+  Gesture 5: 50.00%
+  Gesture 6: 100.00%
+  Gesture 7: 100.00%
+  Gesture 8: 100.00%
+  Gesture 9: 50.00%
+  Average Accuracy: 70.00%
+
+Participant P128:
+  Gesture 0: 0.00%
+  Gesture 1: 0.00%
+  Gesture 2: 50.00%
+  Gesture 3: 50.00%
+  Gesture 4: 0.00%
+  Gesture 5: 100.00%
+  Gesture 6: 100.00%
+  Gesture 7: 50.00%
+  Gesture 8: 100.00%
+  Gesture 9: 0.00%
+  Average Accuracy: 45.00%
+
+Participant P131:
+  Average Accuracy: nan%
+
+Participant P132:
+  Average Accuracy: nan%
+
+Participant P004:
+  Average Accuracy: nan%
+
+Participant P005:
+  Average Accuracy: nan%
+
+Participant P006:
+  Average Accuracy: nan%
+
+Participant P008:
+  Average Accuracy: nan%
+
+Participant P010:
+  Average Accuracy: nan%
+
+Participant P011:
+  Average Accuracy: nan%
+
+Intra Testing Set Summary:
+Mean Accuracy: 56.88%
+Accuracy Standard Deviation: 37.70%
+Minimum Accuracy: 0.00%
+Maximum Accuracy: 100.00%
+
+Overall Model Performance:
+Training Accuracy: 96.25%
+Intra Testing Accuracy: 56.88%

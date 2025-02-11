@@ -7,7 +7,6 @@ DynamicMomonaNet_config = {
     "feature_engr": None, 
     "weight_decay": 0.0,
     "verbose": False,
-    "use_earlystopping": True,
     "use_dense_cnn_lstm": True,
     "timestamp": timestamp,
     "time_steps": None,
@@ -25,7 +24,6 @@ DynamicMomonaNet_config = {
     "lstm_num_layers": 1,
     "lstm_hidden_size": 8,
     "lstm_dropout": 0.8,
-    "lr_scheduler_gamma": 1.0,
     "log_each_pid_results": False,
     "learning_rate": 0.001,
     "ft_weight_decay": 0.0,
@@ -41,7 +39,13 @@ DynamicMomonaNet_config = {
         [128, 3, 1]],
     "cnn_dropout": 0.3,
     "batch_size": 16,
-    "added_dense_ft_hidden_size": 64
+    "added_dense_ft_hidden_size": 64,
+    #"use_earlystopping": True,
+    #"lr_scheduler_gamma": 1.0,
+    "lr_scheduler_patience": 4, 
+    "lr_scheduler_factor": 0.1, 
+    "earlystopping_patience": 6,
+    "earlystopping_min_delta": 0.01
 }
 
 
