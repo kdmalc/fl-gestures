@@ -97,17 +97,14 @@ ELEC573Net_config = {
     "time_steps": None,  # Not used for this one AFAIK
     "num_classes": 10, #(int): Number of output classes.
     "num_epochs": 50,  # To use earlystopping or not... I guess I can check both...
-    "use_earlystopping": False,  # Always use this to save time, in ft and earlier training
     "conv_layers": [(32, 5, 2), (64, 5, 2), (128, 5, 2)], 
     "fc_layers": [128],  #(list of int): List of integers specifying the sizes of fully connected layers.
-    # I think I can just pass these in and it'll be fine
     "use_batchnorm": True,
     "padding": 1,
     "pooling_layers": [None],  # In ELEC573Net pooling is on by default, see below
     "maxpool": 1,  # Just adding/passing this through 
     "cnn_dropout": 0.0,
     "fc_dropout": 0.3, 
-    "lr_scheduler_gamma": 1.0, 
     # DEFAULT PARAMS FROM fine_tune_model() IN OLD CODE: num_epochs=20, lr=0.00001, use_weight_decay=True, weight_decay=0.05)
     "ft_learning_rate": 0.00001,
     "ft_weight_decay": 0.05,  # This is really high...
@@ -119,9 +116,14 @@ ELEC573Net_config = {
     # METADATA
     "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
     "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
-    "perf_log_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs", 
     "timestamp": timestamp,
     "verbose": False,
     "log_each_pid_results": False, 
-    "save_ft_models": False  # Not even applicable here
+    "save_ft_models": False,  # Not even applicable here
+    #"use_earlystopping": True,
+    #"lr_scheduler_gamma": 1.0,
+    "lr_scheduler_patience": 4, 
+    "lr_scheduler_factor": 0.1, 
+    "earlystopping_patience": 6,
+    "earlystopping_min_delta": 0.01
 }

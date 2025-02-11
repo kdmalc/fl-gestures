@@ -222,9 +222,6 @@ class ELEC573Net(nn.Module):
         #print(f"After dropout: {x.shape}")
         x = self.fc2(x)
         #print(f"After fc2: {x.shape}")
-        # TODO: ought to remove softmax, but original version had it so keep it for now...
-        x = self.softmax(x)
-        #print(f"After softmax: {x.shape}")
         return x
 
 
@@ -487,7 +484,7 @@ class EMGHandNet(nn.Module):
         x = x.view(batch_size, SL, -1)
         x = x.mean(dim=1)  # Average over sequence length SL
         
-        # TODO: Swap from softmax to ReLU if we are using CrossEntropyLoss?
+        # TODO: Swap from softmax to ReLU if we are using CrossEntropyLoss? Or just drop entirely...
         return F.softmax(x, dim=-1) 
 
 
@@ -552,7 +549,7 @@ class CRNN(nn.Module):
         x = self.fc2(x)
         
         # Apply softmax for classification
-        ## TODO: Switch from softmax to ReLU?
+        ## TODO: Switch from softmax to ReLU? Or just drop
         return F.softmax(x, dim=-1)
     
     def clip_gradients(self):
