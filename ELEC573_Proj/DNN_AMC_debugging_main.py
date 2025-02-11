@@ -16,7 +16,7 @@ from hyperparam_tuned_configs import *
 
 MODEL_STR = "DynamicMomonaNet"  #"ELEC573Net"  #"DynamicMomonaNet"
 MY_CONFIG = DynamicMomonaNet_config  #ELEC573Net_config  #DynamicMomonaNet_config
-expdef_df = load_expdef_gestures(apply_hc_feateng=False)
+expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])
 
 data_splits = make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3)
 

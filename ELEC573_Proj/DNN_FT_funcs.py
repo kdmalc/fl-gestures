@@ -228,14 +228,11 @@ def hyperparam_tuning_for_ft(model_str, expdef_df, hyperparameter_space, archite
     return results
 
 
-def load_expdef_gestures(apply_hc_feateng=True, filepath_pkl='C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'):
+def load_expdef_gestures(feateng_method, filepath_pkl='C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'):
     with open(filepath_pkl, 'rb') as file:
         raw_expdef_data_df = pickle.load(file)  # (204800, 19)
 
-    if apply_hc_feateng:
-        expdef_df = raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_khushaba_spectralmomentsFE_vectors)
-        expdef_df = expdef_df.reset_index(drop=True)
-    else:
+    if feateng_method is None:
         # Group by metadata columns and combine data into a matrix
         condensed_df = (
             raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num'], as_index=False)
@@ -246,6 +243,14 @@ def load_expdef_gestures(apply_hc_feateng=True, filepath_pkl='C:\\Users\\kdmen\\
         )
         # Combine metadata columns with the new data column
         expdef_df = pd.concat([raw_expdef_data_df[['Participant', 'Gesture_ID', 'Gesture_Num']].drop_duplicates().reset_index(drop=True), condensed_df['feature']], axis=1)
+    elif feateng_method=="moments":
+        expdef_df = raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_khushaba_spectralmomentsFE_vectors)
+        expdef_df = expdef_df.reset_index(drop=True)
+    elif feateng_method=="FS":
+        expdef_df = raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_abbaspour_FS_vectors)
+        expdef_df = expdef_df.reset_index(drop=True)
+    else:
+        raise ValueError(f"feateng_method {feateng_method} not recognized")
     
     #convert Gesture_ID to numerical with new Gesture_Encoded column
     label_encoder = LabelEncoder()

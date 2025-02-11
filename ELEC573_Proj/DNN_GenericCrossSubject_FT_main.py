@@ -17,79 +17,51 @@ LOG_AND_VISUALIZE = False
 
 MODEL_STR = "DynamicMomonaNet"
 
-from hyperparam_tuned_configs import *
-config = DynamicMomonaNet_config
+#from hyperparam_tuned_configs import *
+#config = DynamicMomonaNet_config
 
-needs_to_be_updated_config = {
-    "num_channels": NUM_CHANNELS,  #(int): Number of input channels.
-    "sequence_length": 64,  #(int): Length of the input sequence.
-    # ^ 32 wasn't working, it doesn't support time_steps to do multiple sequence batches for each slice
-    "time_steps": None,  # Required so that reused code doesn't break. Not used in DynamicMomonaNet
-    "conv_layers": [(32, 5, 1), (64, 3, 1), (128, 2, 1)], 
-    "pooling_layers": [True, False, False, False],  # Max pooling only after the first conv layer
-    "use_dense_cnn_lstm": True,  # Use dense layer between CNN and LSTM
-    "lstm_hidden_size": 16,  #(int): Hidden size for LSTM layers.
-    "lstm_num_layers": 1,  #(int): Number of LSTM layers.
-    "fc_layers": [128, 64],  #(list of int): List of integers specifying the sizes of fully connected layers.
-    "num_classes": 10, #(int): Number of output classes.
-    # HYPERPARAMS
-    "batch_size": 16,  #SHARED_BS #(int): Batch size.
-    "lstm_dropout": 0.8,  #(float): Dropout probability for LSTM layers.
-    "cnn_dropout": 0.0,
-    "dense_cnnlstm_dropout": 0.0, 
-    "fc_dropout": 0.0, 
-    "learning_rate": 0.001,
-    "num_epochs": 500,
-    "optimizer": "adam",
-    "weight_decay": 1e-4,
-    "ft_learning_rate": 0.01,
-    "num_ft_epochs": 500,
-    "ft_weight_decay": 1e-4, 
-    "ft_batch_size": 1, 
-    "use_earlystopping": True,  # Always use this to save time, in ft and earlier training
-    # METADATA
+config = {
+    "feature_engr": None, 
+    "weight_decay": 0.0,
+    "verbose": False,
+    "use_earlystopping": True,
+    "use_dense_cnn_lstm": True,
+    "timestamp": timestamp,
+    "time_steps": None,
+    "sequence_length": 64,
+    "save_ft_models": False,
+    "pooling_layers": [True, True, True, True],
+    "optimizer": "sgd",
+    "num_ft_epochs": 100,
+    "num_epochs": 100,
+    "num_classes": 10,
+    "num_channels": NUM_CHANNELS,
     "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
     "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
     "perf_log_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs", 
-    "timestamp": timestamp,
-    "verbose": False,
-    "log_each_pid_results": False, 
-    "save_ft_models": False,
+    "lstm_num_layers": 1,
+    "lstm_hidden_size": 8,
+    "lstm_dropout": 0.8,
+    "lr_scheduler_gamma": 1.0,
+    "log_each_pid_results": False,
+    "learning_rate": 0.001,
+    "ft_weight_decay": 0.0,
+    "ft_learning_rate": 0.01,
+    "ft_batch_size": 10,
     "finetune_strategy": "progressive_unfreeze",
-    #finetune_strategy: The fine-tuning method to use. Options:
-    #    - "full": Train the entire model.
-    #    - "freeze_cnn": Freeze CNN, train LSTM and dense layers.
-    #    - "freeze_cnn_lstm": Freeze CNN + LSTM, train only dense layers.
-    #    - "freeze_all_add_dense": Freeze entire model, add a new dense layer.
-    #    - "progressive_unfreeze": Start with frozen CNN/LSTM, progressively unfreeze.
-    "progressive_unfreezing_schedule": 5, 
-    "added_dense_ft_hidden_size": 128
+    "progressive_unfreezing_schedule": 5,
+    "fc_layers": [128, 64],
+    "fc_dropout": 0.3,
+    "dense_cnnlstm_dropout": 0.3,
+    "conv_layers": [
+        [64, 3, 1],
+        [128, 3, 1]],
+    "cnn_dropout": 0.3,
+    "batch_size": 16,
+    "added_dense_ft_hidden_size": 64
 }
 
-##################################################
-"""
-path1 = 'C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'
-with open(path1, 'rb') as file:
-    raw_expdef_data_df = pickle.load(file)  # (204800, 19)
-
-expdef_df = raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_khushaba_spectralmomentsFE_vectors)
-expdef_df = expdef_df.reset_index(drop=True)
-
-all_participants = expdef_df['Participant'].unique()
-# Shuffle the participants
-np.random.shuffle(all_participants)
-# Split into two groups
-#train_participants = all_participants[:24]  # First 24 participants
-test_participants = all_participants[24:]  # Remaining 8 participants
-
-#convert Gesture_ID to numerical with new Gesture_Encoded column
-label_encoder = LabelEncoder()
-expdef_df['Gesture_Encoded'] = label_encoder.fit_transform(expdef_df['Gesture_ID'])
-label_encoder2 = LabelEncoder()
-expdef_df['Cluster_ID'] = label_encoder2.fit_transform(expdef_df['Participant'])
-"""
-
-expdef_df = load_expdef_gestures(apply_hc_feateng=False)
+expdef_df = load_expdef_gestures(feateng_method=config["feature_engr"])
 all_participants = list(expdef_df['Participant'].unique())
 # Shuffle the participants
 #np.random.shuffle(all_participants)

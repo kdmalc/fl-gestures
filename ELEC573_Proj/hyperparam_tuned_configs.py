@@ -3,7 +3,8 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 NUM_CHANNELS = 16  # NOT USED WITH ELEC573Net rn
 
 
-DynamicMomonaNet_config =  {
+DynamicMomonaNet_config = {
+    "feature_engr": None, 
     "weight_decay": 0.0,
     "verbose": False,
     "use_earlystopping": True,
@@ -83,6 +84,7 @@ old_DynamicMomonaNet_config = {
 
 # BEST PARAMS FOR GENERIC MODEL
 ELEC573Net_config = {
+    "feature_engr": "moments", 
     "learning_rate": 0.0001,
     "batch_size": 32,
     "optimizer": "adam",
