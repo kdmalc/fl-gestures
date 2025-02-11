@@ -20,7 +20,6 @@ DynamicMomonaNet_config = {
     "num_channels": NUM_CHANNELS,
     "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
     "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
-    "perf_log_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\performance_logs", 
     "lstm_num_layers": 1,
     "lstm_hidden_size": 8,
     "lstm_dropout": 0.8,

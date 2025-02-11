@@ -1019,9 +1019,10 @@ def log_performance(results, config, base_filename='model_performance'):
     os.makedirs(config["perf_log_dir"], exist_ok=True)
     
     # Generate unique filename with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    # timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    timestamp = config["timestamp"]
     log_filename = f"{timestamp}_{base_filename}.txt"
-    log_path = os.path.join(config["perf_log_dir"], log_filename)
+    log_path = os.path.join(config["results_save_dir"], log_filename)
     
     # Capture console output and log to file
     class Logger:
@@ -1123,5 +1124,5 @@ def log_performance(results, config, base_filename='model_performance'):
         # Restore stdout
         sys.stdout = sys.stdout.terminal
     
-    return log_path
+    #return log_path
 

@@ -14,8 +14,8 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
 FINETUNE = True
 LOG_AND_VISUALIZE = True
-MODEL_STR = "ELEC573Net" #"DynamicMomonaNet"
-FEATENG = "moments"  # "moments" "FS" None
+MODEL_STR = "DynamicMomonaNet" #"DynamicMomonaNet"
+FEATENG = None  # "moments" "FS" None
 if FEATENG is not None and MODEL_STR=="DynamicMomonaNet":
     NUM_CHANNELS = 1
     SEQ_LEN = 80
@@ -29,8 +29,8 @@ elif FEATENG is None and MODEL_STR=="ELEC573Net":
     NUM_CHANNELS = 16
     SEQ_LEN = 64  # I think this will break with ELEC573Net... not integrated AFAIK
 
-# BEST PARAMS FOR GENERIC MODEL
-MY_CONFIG = {
+# # ELEC573Net Config:
+_ = {
     "feature_engr": FEATENG, 
     "learning_rate": 0.0001,
     "batch_size": 32,
@@ -75,7 +75,7 @@ MY_CONFIG = {
 
 #from hyperparam_tuned_configs import *
 #config = DynamicMomonaNet_config
-_ = {
+MY_CONFIG = {
     "feature_engr": FEATENG, 
     "weight_decay": 0.0,
     "verbose": False,
@@ -179,5 +179,4 @@ if LOG_AND_VISUALIZE:
     visualize_train_test_loss_curves(results, MY_CONFIG)
     visualize_train_test_loss_curves(None, MY_CONFIG, train_loss_log, test_loss_log, my_title="1subj FT Train Test Curves", ft=True)
 
-    #log_file = log_performance(results, MY_CONFIG)
-    #print(f"Detailed performance log saved to: {log_file}")
+    log_performance(results, MY_CONFIG)
