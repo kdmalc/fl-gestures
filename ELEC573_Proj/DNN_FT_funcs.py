@@ -233,7 +233,7 @@ def load_expdef_gestures(apply_hc_feateng=True, filepath_pkl='C:\\Users\\kdmen\\
         raw_expdef_data_df = pickle.load(file)  # (204800, 19)
 
     if apply_hc_feateng:
-        expdef_df = raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_feature_vectors)
+        expdef_df = raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_khushaba_spectralmomentsFE_vectors)
         expdef_df = expdef_df.reset_index(drop=True)
     else:
         # Group by metadata columns and combine data into a matrix

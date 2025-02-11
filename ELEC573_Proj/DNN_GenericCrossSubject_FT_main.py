@@ -72,7 +72,7 @@ path1 = 'C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_data
 with open(path1, 'rb') as file:
     raw_expdef_data_df = pickle.load(file)  # (204800, 19)
 
-expdef_df = raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_feature_vectors)
+expdef_df = raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_khushaba_spectralmomentsFE_vectors)
 expdef_df = expdef_df.reset_index(drop=True)
 
 all_participants = expdef_df['Participant'].unique()
