@@ -13,14 +13,14 @@ from datetime import datetime
 NUM_CHANNELS = 16
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 FINETUNE = True
-LOG_AND_VISUALIZE = False
+LOG_AND_VISUALIZE = True
 
 MODEL_STR = "DynamicMomonaNet"
 
 #from hyperparam_tuned_configs import *
 #config = DynamicMomonaNet_config
 
-config = {
+MY_CONFIG = {
     "feature_engr": None, 
     "weight_decay": 0.0,
     "verbose": False,
@@ -64,7 +64,7 @@ config = {
     "earlystopping_patience": 10
 }
 
-expdef_df = load_expdef_gestures(feateng_method=config["feature_engr"])
+expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])
 all_participants = list(expdef_df['Participant'].unique())
 # Shuffle the participants
 #np.random.shuffle(all_participants)
@@ -85,11 +85,11 @@ results = main_training_pipeline(
     all_participants=all_participants, 
     test_participants=test_participants,
     model_type=MODEL_STR,
-    config=config)
+    config=MY_CONFIG)
 
 #full_path = os.path.join(cwd, 'ELEC573_Proj', 'models', 'generic_CNN_model.pth')
-full_path = config['models_save_dir']
-os.makedirs(os.path.dirname(full_path), exist_ok=True)  # Ensure the directory exists
+full_path = MY_CONFIG['models_save_dir']
+os.makedirs(full_path, exist_ok=True)  # Ensure the directory exists
 print("Full Path:", full_path)
 # TODO: Could just use my existing save_model() func here...
 torch.save(results["model"].state_dict(), f"{full_path}\\pretrained_{MODEL_STR}_model.pth")
@@ -105,21 +105,20 @@ if FINETUNE:
     # Filter based on participant_id
     indices = [i for i, pid in enumerate(first_test_participant_data['participant_ids']) if pid == participant_id]
     ft_dataset = GestureDataset([first_test_participant_data['feature'][i] for i in indices], [first_test_participant_data['labels'][i] for i in indices])
-    ft_loader = DataLoader(ft_dataset, batch_size=config["batch_size"], shuffle=True)
+    ft_loader = DataLoader(ft_dataset, batch_size=MY_CONFIG["batch_size"], shuffle=True)
 
     indices = [i for i, datasplit_pid in enumerate(first_test_participant_data['participant_ids']) if datasplit_pid == participant_id]
     # ^ These indices should be the same as the above indices I think...
     intra_test_dataset = GestureDataset([first_test_participant_data['feature'][i] for i in indices], [first_test_participant_data['labels'][i] for i in indices])
-    intra_test_loader = DataLoader(intra_test_dataset, batch_size=config["batch_size"], shuffle=True)
+    intra_test_loader = DataLoader(intra_test_dataset, batch_size=MY_CONFIG["batch_size"], shuffle=True)
 
     finetuned_model, frozen_original_model, train_loss_log, test_loss_log = fine_tune_model(
-        results['model'], ft_loader, config, config["timestamp"], test_loader=intra_test_loader, pid=participant_id
+        results['model'], ft_loader, MY_CONFIG, MY_CONFIG["timestamp"], test_loader=intra_test_loader, pid=participant_id
     )
 
 if LOG_AND_VISUALIZE:
-    # Example usage in main script
+    # Does this visualize ONLY heatmaps, and not train/test loss curves? I only really care about the latter...
     visualize_model_performance(results)
 
-    # Example usage in main script
-    log_file = log_performance(results)
+    log_file = log_performance(results, MY_CONFIG)
     print(f"Detailed performance log saved to: {log_file}")

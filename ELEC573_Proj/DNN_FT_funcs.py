@@ -681,8 +681,7 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     - finetune_strategy: The fine-tuning method to use. Options:
         - "full": Train the entire model.
         - "freeze_cnn": Freeze CNN, train LSTM and dense layers.
-        - "freeze_cnn_lstm": Freeze CNN + LSTM, train only dense layers.
-        - "freeze_all_add_dense": Freeze entire model, add a new dense layer.
+        - "freeze_all_but_final_dense": Freeze CNN + LSTM, train only dense layers.
         - "progressive_unfreeze": Start with frozen CNN/LSTM, progressively unfreeze.
     '''
 
@@ -709,37 +708,30 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     # Apply fine-tuning strategy
     if finetune_strategy == "full":
         # We don't need to do any layer freezing
+        ## Eg we will just start retraining the entire model
         pass
     elif finetune_strategy == "freeze_cnn":
         for param in finetuned_model.conv_layers.parameters():
             param.requires_grad = False
-    elif finetune_strategy == "freeze_cnn_lstm":
-        for param in finetuned_model.conv_layers.parameters():
-            param.requires_grad = False
-        for param in finetuned_model.lstm.parameters():
-            param.requires_grad = False
-    elif finetune_strategy == "freeze_all_add_dense":
+    elif finetune_strategy == "freeze_all_but_final_dense":
+        # Freeze everything first
         for param in finetuned_model.parameters():
-            param.requires_grad = False  # Freeze entire model
-        # Add a new dense layer
-        ## Actually assumed the last output has 10 (num_classes) nodes 
-        #finetuned_model.fc.in_features --> Attempting to programatically get the final size
-        ## I think the last layer is not named fc tho?
-        num_features = config["num_classes"] 
-        ## Add a new dense layer and train it
-        #new_dense = nn.Linear(128, 64)  # Adjust size based on your architecture
-        #finetuned_model.fc_layers.add_module("new_dense", new_dense)
-        # How to verify that this actually got added and is in the right place...
-        finetuned_model.fc = nn.Sequential(
-            nn.Linear(num_features, config["added_dense_ft_hidden_size"]),
-            nn.ReLU(),
-            nn.Linear(config["added_dense_ft_hidden_size"], config["num_classes"])
-        )
+            param.requires_grad = False
+        
+        # Now unfreeze last layer at start so it doesn't immediately break
+        # Get all named layers in reverse order (last layer first)
+        layers = list(finetuned_model.named_parameters())[::-1]  
+        # Unfreeze only the last dense layer at the beginning
+        last_layer_name, last_layer_param = layers[0]
+        last_layer_param.requires_grad = True
+        # TODO: Should I augment this so it can leave multiple final dense layers unfrozen?
+        ## It seems more common to just use 1 unfrozen dense layer (or add one dense layer)
     elif finetune_strategy == "progressive_unfreeze":
         # Freeze everything first
         for param in finetuned_model.parameters():
             param.requires_grad = False
         
+        # Now unfreeze last layer at start so it doesn't immediately break
         # Get all named layers in reverse order (last layer first)
         layers = list(finetuned_model.named_parameters())[::-1]  
         # Unfreeze only the last dense layer at the beginning
@@ -778,6 +770,7 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         if (finetune_strategy == "progressive_unfreeze" and 
             num_unfrozen < total_layers and 
             epoch % config["progressive_unfreezing_schedule"] == 0):
+
             # Unfreeze one additional layer
             num_unfreeze = min(num_unfrozen + unfreeze_step, total_layers)
             for name, param in layers[num_unfrozen:num_unfreeze]:
@@ -968,9 +961,6 @@ def visualize_model_performance(results, print_results=False):
 
 
 def log_performance(results, config, base_filename='model_performance'):
-    # THIS IS NOT GETTING USED IN MY CURRENT CODE???
-    print("LOG_PERFORMANCE CALLED! FIGURE OUT WHERE!")
-
     """
     Comprehensive logging of model performance
     
@@ -1059,23 +1049,24 @@ def log_performance(results, config, base_filename='model_performance'):
         print(f"Maximum Accuracy: {np.max(test_accuracies):.2%}")
 
         ######################################################################
+        # Idrc about this right now
 
         # Repeat for Testing Set
-        print("\n--- CROSS Testing Set Performance ---")
-        for participant, gesture_performance in results['cross_test_performance'].items():
-            print(f"\nParticipant {participant}:")
-            participant_accuracies = []
-            for gesture, accuracy in sorted(gesture_performance.items()):
-                print(f"  Gesture {gesture}: {accuracy:.2%}")
-                participant_accuracies.append(accuracy)
-            print(f"  Average Accuracy: {np.mean(participant_accuracies):.2%}")
-        # Testing Set Summary
-        test_accuracies = [acc for participant in results['cross_test_performance'].values() for acc in participant.values()]
-        print("\nCross Testing Set Summary:")
-        print(f"Mean Accuracy: {np.mean(test_accuracies):.2%}")
-        print(f"Accuracy Standard Deviation: {np.std(test_accuracies):.2%}")
-        print(f"Minimum Accuracy: {np.min(test_accuracies):.2%}")
-        print(f"Maximum Accuracy: {np.max(test_accuracies):.2%}")
+        #print("\n--- CROSS Testing Set Performance ---")
+        #for participant, gesture_performance in results['cross_test_performance'].items():
+        #    print(f"\nParticipant {participant}:")
+        #    participant_accuracies = []
+        #    for gesture, accuracy in sorted(gesture_performance.items()):
+        #        print(f"  Gesture {gesture}: {accuracy:.2%}")
+        #        participant_accuracies.append(accuracy)
+        #    print(f"  Average Accuracy: {np.mean(participant_accuracies):.2%}")
+        ## Testing Set Summary
+        #test_accuracies = [acc for participant in results['cross_test_performance'].values() for acc in participant.values()]
+        #print("\nCross Testing Set Summary:")
+        #print(f"Mean Accuracy: {np.mean(test_accuracies):.2%}")
+        #print(f"Accuracy Standard Deviation: {np.std(test_accuracies):.2%}")
+        #print(f"Minimum Accuracy: {np.min(test_accuracies):.2%}")
+        #print(f"Maximum Accuracy: {np.max(test_accuracies):.2%}")
 
         ######################################################################
         
@@ -1083,7 +1074,7 @@ def log_performance(results, config, base_filename='model_performance'):
         print("\nOverall Model Performance:")
         print(f"Training Accuracy: {results['train_accuracy']:.2%}")
         print(f"Intra Testing Accuracy: {results['intra_test_accuracy']:.2%}")
-        print(f"Cross Testing Accuracy: {results['cross_test_accuracy']:.2%}")
+        #print(f"Cross Testing Accuracy: {results['cross_test_accuracy']:.2%}")
     
     finally:
         # Restore stdout
