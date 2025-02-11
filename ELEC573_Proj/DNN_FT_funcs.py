@@ -992,6 +992,7 @@ def visualize_train_test_loss_curves(results, config, train_loss_log=None, test_
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
 
+    plt.legend()
     plt.tight_layout()
     # Generate unique filename with timestamp
     fig_dir = config["results_save_dir"]

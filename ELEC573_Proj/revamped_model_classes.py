@@ -371,7 +371,10 @@ class DynamicMomonaNet(nn.Module):
         )
 
         # Calculate the sequence length after convolutions and pooling
-        tlen = self.sl
+        if self.sl==1:
+            tlen = self.nc
+        else:
+            tlen = self.sl
         for i, (_, kernel_size, stride) in enumerate(config['conv_layers']):
             tlen = (tlen - kernel_size) // stride + 1
             if self.pooling_layers[i]:
