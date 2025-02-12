@@ -1003,7 +1003,7 @@ def visualize_train_test_loss_curves(results, config, train_loss_log=None, test_
     plt.show()
 
 
-def log_performance(results, config, base_filename='model_performance'):
+def log_performance(results, config, base_filename='model_performance_and_config'):
     """
     Comprehensive logging of model performance
     
@@ -1016,7 +1016,7 @@ def log_performance(results, config, base_filename='model_performance'):
     - Path to the created log file
     """
     # Create log directory if it doesn't exist
-    os.makedirs(config["perf_log_dir"], exist_ok=True)
+    os.makedirs(config["results_save_dir"], exist_ok=True)
     
     # Generate unique filename with timestamp
     # timestamp = datetime.now().strftime("%Y%m%d_%H%M")
