@@ -3,7 +3,8 @@ import json
 from sklearn.model_selection import KFold
 
 
-SETUP_KFCV = False
+SETUP_KFCV = True
+K = 5  # Number of folds for cross-validation
 RANDOM_SEED = 101
 np.random.seed(RANDOM_SEED)
 
@@ -26,7 +27,6 @@ if SETUP_KFCV==False:
 
     print("User splits saved to user_splits.json")
 else:
-    K = 5  # Number of folds for cross-validation
     kf = KFold(n_splits=K, shuffle=True, random_state=RANDOM_SEED)
 
     # Store folds

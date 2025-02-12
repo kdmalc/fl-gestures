@@ -667,6 +667,19 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     }
 
 
+def process_split(data_splits, split_key, label_encoder):
+        features_df = pd.DataFrame(data_splits[split_key]['feature'])
+        features_df['feature'] = features_df.apply(lambda row: row.tolist(), axis=1)
+        features_df = features_df[['feature']]
+        df = pd.concat([
+            features_df, 
+            pd.Series(data_splits[split_key]['labels'], name='Gesture_Encoded'), 
+            pd.Series(data_splits[split_key]['participant_ids'], name='participant_ids')
+        ], axis=1)
+        df['Cluster_ID'] = label_encoder.transform(df['participant_ids'])
+        return df
+
+
 def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_loader=None, pid=None, num_epochs=None):  #use_earlystopping=None,
     """
     Fine-tune the base model on a small subset of data
