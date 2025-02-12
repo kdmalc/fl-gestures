@@ -1,6 +1,7 @@
 from torch.utils.data import DataLoader
 import numpy as np
 import matplotlib.pyplot as plt
+#import seaborn as sns
 
 from moments_engr import *
 from agglo_model_clust import *
@@ -83,7 +84,7 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         cluster_lst = list(nested_clus_model_dict[cluster_iter_str].keys())
         for clus_id in cluster_lst:
             clus_model = nested_clus_model_dict[cluster_iter_str][clus_id]
-            clus_res = evaluate_model(clus_model, clust_asgn_loader) 
+            clus_res = evaluate_model(clus_model, ft_loader)  # clust_asgn_loader) 
             clus_acc = clus_res["accuracy"]
             clus_model_res_dict[clus_id] = clus_acc
         # Assign participant to highest scoring cluster
@@ -123,6 +124,58 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
 
 
 def plot_model_acc_boxplots(data_dict, model_str=None, colors_lst=None, my_title=None, save_fig=False, plot_save_name=None, save_dir="C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results"):
+    # Default order (by performance)
+    data_keys = ['centralized_acc_data', 'pretrained_cluster_acc_data', 'ft_centralized_acc_data', 'local_acc_data', 'ft_cluster_acc_data']
+    labels = ['Generic Centralized', 'Pretrained Cluster', 'Fine-Tuned Centralized', 'Local', 'Fine-Tuned Cluster']
+    data = [data_dict[key] for key in data_keys]
+
+    # Generate default colors if not provided
+    if colors_lst is None:
+        colors_lst = ['lightgray'] * len(data_keys)  # Subtle box colors
+
+    # Assign unique colors and markers per user (assuming user index)
+    num_users = max(len(d) for d in data)
+    user_colors = plt.cm.get_cmap("tab10", num_users)  # Distinct colors
+    markers = ['o', 's', 'D', '^', 'v', 'P', '*', 'X', '<', '>']  # Unique markers
+
+    if my_title is None and model_str is not None:
+        my_title = f"{model_str} Per-User Accuracies"
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    
+    # Create boxplots
+    bp = ax.boxplot(data, patch_artist=True, labels=labels)
+
+    # Customize box colors
+    for patch, color in zip(bp['boxes'], colors_lst):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.7)  # Slight transparency
+
+    # Overlay scatter points per user with consistent colors and markers
+    for i, acc_list in enumerate(data):
+        for user_idx, acc in enumerate(acc_list):
+            marker = markers[user_idx % len(markers)]  # Cycle through markers
+            ax.scatter(i + 1, acc, color=user_colors(user_idx), edgecolor='black', s=50, marker=marker, alpha=0.8)
+
+    # Remove top and right borders
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    # Increase font sizes
+    ax.set_ylabel('Accuracy', fontsize=14)
+    ax.set_title(my_title, fontsize=20)
+    ax.tick_params(axis='both', labelsize=12)
+
+    plt.xticks(rotation=30, ha="right")
+    plt.tight_layout()
+
+    if save_fig:
+        plt.savefig(f"{save_dir}\\{plot_save_name}.png", dpi=500, bbox_inches='tight')
+
+    plt.show()
+
+
+def OLD_plot_model_acc_boxplots(data_dict, model_str=None, colors_lst=None, my_title=None, save_fig=False, plot_save_name=None, save_dir="C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results"):
     # Default order
     #data = [data_dict['local_acc_data'], data_dict['centralized_acc_data'], data_dict['ft_centralized_acc_data'], data_dict['pretrained_cluster_acc_data'], data_dict['ft_cluster_acc_data']] 
     # Ordering according to performance:
