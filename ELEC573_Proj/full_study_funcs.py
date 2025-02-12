@@ -16,38 +16,46 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
     
     os.makedirs(config['results_save_dir'], exist_ok=True)
 
+    # Wait who is this... are these the pretraining users?
     train_pids = np.unique(finetuning_datasplits['train']['participant_ids'])
+
     novel_participant_ft_data = finetuning_datasplits['novel_trainFT']
+    # novel "cross subject" is the same as novel intra (but needs to be separated according to PID first...)
     novel_participant_test_data = finetuning_datasplits['cross_subject_test']
     novel_pids = np.unique(finetuning_datasplits['novel_trainFT']['participant_ids'])
-    novel_pid_clus_asgn_data = cluster_assgnmt_data_splits['novel_trainFT']
+    #novel_pid_clus_asgn_data = cluster_assgnmt_data_splits['novel_trainFT']
 
     novel_pid_res_dict = {}
 
     for pid_count, pid in enumerate(novel_pids):
-        print(f"PID {pid}, {pid_count}/{len(novel_pids)}")
+        print(f"PID {pid}, {pid_count+1}/{len(novel_pids)}")
         novel_pid_res_dict[pid] = {}
 
         # Create the testloader by segmenting out this specific pid
-        # Filter based on participant_id
+        # Filter based on CURRENT participant ID: 
         indices = [i for i, datasplit_pid in enumerate(novel_participant_ft_data['participant_ids']) if datasplit_pid == pid]
+        #indices = [i for i, datasplit_pid in enumerate(novel_participant_test_data['participant_ids']) if datasplit_pid == pid]
+        # ^ These indices should be the same as the above indices I think...
+        
         ############## Novel Participant Finetuning Dataset ##############
         ft_dataset = GestureDataset([novel_participant_ft_data['feature'][i] for i in indices], [novel_participant_ft_data['labels'][i] for i in indices])
         ft_loader = DataLoader(ft_dataset, batch_size=config["batch_size"], shuffle=True)
         ############## Novel Participant Intra Testing Dataset ##############
-        indices = [i for i, datasplit_pid in enumerate(novel_participant_test_data['participant_ids']) if datasplit_pid == pid]
-        # ^ These indices should be the same as the above indices I think...
         intra_test_dataset = GestureDataset([novel_participant_test_data['feature'][i] for i in indices], [novel_participant_test_data['labels'][i] for i in indices])
         intra_test_loader = DataLoader(intra_test_dataset, batch_size=config["batch_size"], shuffle=True)
+        ############## Cluster Assignment Dataset ##############
+        ## This will just use ft_loader. No reason to have them separated really. 
+        ## Removing this will remove functionality where num cluster assgnt != num ft trials
+        #indices = [i for i, datasplit_pid in enumerate(novel_pid_clus_asgn_data['participant_ids']) if datasplit_pid == pid]
+        #clust_asgn_dataset = GestureDataset([novel_pid_clus_asgn_data['feature'][i] for i in indices], [novel_pid_clus_asgn_data['labels'][i] for i in indices])
+        #clust_asgn_loader = DataLoader(clust_asgn_dataset, batch_size=config["batch_size"], shuffle=True)
+
         ############## Novel Participant Cross Testing Dataset ##############
         # This code is testing on all the other novel participants... I don't think we care about that right now
+        ## Idc but this will allow us to check cross perf. No real reason to remove...
         indices = [i for i, datasplit_pid in enumerate(novel_participant_test_data['participant_ids']) if datasplit_pid != pid]
         cross_test_dataset = GestureDataset([novel_participant_test_data['feature'][i] for i in indices], [novel_participant_test_data['labels'][i] for i in indices])
         cross_test_loader = DataLoader(cross_test_dataset, batch_size=config["batch_size"], shuffle=True)
-        ############## One Trial Cluster Assignment Dataset ##############
-        indices = [i for i, datasplit_pid in enumerate(novel_pid_clus_asgn_data['participant_ids']) if datasplit_pid == pid]
-        clust_asgn_dataset = GestureDataset([novel_pid_clus_asgn_data['feature'][i] for i in indices], [novel_pid_clus_asgn_data['labels'][i] for i in indices])
-        clust_asgn_loader = DataLoader(clust_asgn_dataset, batch_size=config["batch_size"], shuffle=True)
 
         # 1) Train a local model
         ## MomonaNets do not need input_dim and num_classes, other models need to be updated to infer that or pull it from config
