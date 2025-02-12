@@ -65,16 +65,22 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         # ^ This stuff was subject specific... so I'm not sure why performance was the same (RC) unless all models are severely over/under-trained
         local_clus_res = evaluate_model(local_res["model"], intra_test_loader)
         novel_pid_res_dict[pid]["local_acc"] = local_clus_res["accuracy"]
+        # I do have the Local train/test curves in local_res! I will just save those as well!
+        novel_pid_res_dict[pid]["local_train_loss_log"] = local_res["train_loss_log"]
+        novel_pid_res_dict[pid]["local_intra_test_loss_log"] = local_res["intra_test_loss_log"]
+        #novel_pid_res_dict[pid]["local_cross_test_loss_log"] = local_res["cross_test_loss_log"]
 
         # 2) Test the full pretrained (centralized) model
         generic_clus_res = evaluate_model(pretrained_generic_model, intra_test_loader)
         novel_pid_res_dict[pid]["centralized_acc"] = generic_clus_res["accuracy"]
 
         # 3) Test finetuned pretrained (centralized) model
-        ft_centralized_model, _, _, _ = fine_tune_model(
+        ft_centralized_model, _, ft_centralized_train_loss_log, ft_centralized_test_loss_log = fine_tune_model(
             pretrained_generic_model, ft_loader, config, config['timestamp'], test_loader=intra_test_loader, pid=pid)
         ft_centralized_res = evaluate_model(ft_centralized_model, intra_test_loader)
         novel_pid_res_dict[pid]["ft_centralized_acc"] = ft_centralized_res["accuracy"]
+        novel_pid_res_dict[pid]["ft_centralized_train_loss_log"] = ft_centralized_train_loss_log
+        novel_pid_res_dict[pid]["ft_centralized_test_loss_log"] = ft_centralized_test_loss_log
 
         # 4) CLUSTER MODEL: Have the pretrained model from the best cluster do inference
         #   - Have all cluster models do inference and compare assign to whichever cluster gives best results
@@ -91,6 +97,7 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         # Find the key with the highest accuracy
         max_key = max(clus_model_res_dict, key=clus_model_res_dict.get)
         max_value = clus_model_res_dict[max_key]
+        # Is this saved anywhere or just printed? Presumably just printed...
         print(f"Cluster {max_key} had the highest accuracy ({max_value})")
         if config['verbose']:
             print("Full cluster assignment results dict:")
@@ -101,10 +108,12 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
         novel_pid_res_dict[pid]["pretrained_cluster_acc"] = pretrained_clus_res["accuracy"]
 
         # 5) FT the pretrained cluster model on the participant
-        ft_cluster_model, original_cluster_model, _, _ = fine_tune_model(
+        ft_cluster_model, original_cluster_model, ft_cluster_train_loss_log, ft_cluster_test_loss_log = fine_tune_model(
             original_cluster_model, ft_loader, config, config['timestamp'], test_loader=intra_test_loader, pid=pid)
         ft_clus_res = evaluate_model(ft_cluster_model, intra_test_loader)
         novel_pid_res_dict[pid]["ft_cluster_acc"] = ft_clus_res["accuracy"]
+        novel_pid_res_dict[pid]["ft_cluster_train_loss_log"] = ft_cluster_train_loss_log
+        novel_pid_res_dict[pid]["ft_cluster_test_loss_log"] = ft_cluster_test_loss_log
 
     local_acc_data = [] 
     centralized_acc_data = [] 
