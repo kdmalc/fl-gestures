@@ -105,12 +105,11 @@ def evaluate_configuration_on_ft(datasplit, pretrained_model, config, model_str,
 def make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3, num_train_users=24):
     """This is just a wrapper function around prepare_data(), downside is you can't access all_participants and test_participants"""
 
-    all_participants = expdef_df['Participant'].unique()
-    # Shuffle the participants
-    random.shuffle(all_participants)
-    # Split into two groups
-    #train_participants = all_participants[:num_train_users]  # First num_train_users participants
-    test_participants = all_participants[num_train_users:]  # Remaining 32-num_train_users participants
+    # Load the fixed user splits
+    with open("ELEC573_Proj\\24_8_user_splits.json", "r") as f:
+        splits = json.load(f)
+    all_participants = splits["all_users"]
+    test_participants = splits["test_users"]
 
     # Prepare data
     data_splits = prepare_data(
@@ -1046,9 +1045,10 @@ def log_performance(results, config, base_filename='model_performance_and_config
             for key, value in config.items():
                 # Handle list values separately for better formatting
                 if isinstance(value, list):
-                    print(f"{key}: {', '.join(map(str, value))}\n")
+                    print(f"{key}: {', '.join(map(str, value))}")
                 else:
-                    print(f"{key}: {value}\n")
+                    print(f"{key}: {value}")
+            print()
 
         # Perform visualization and logging
         print("Model Performance Analysis")

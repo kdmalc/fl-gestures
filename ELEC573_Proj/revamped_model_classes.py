@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from configs import *
+#from configs import *  # This is currently named old_configs
 import copy
 from gesture_dataset_classes import *
 from collections import deque
@@ -30,6 +30,8 @@ class SmoothedEarlyStopping:
 
 
 class EarlyStopping:
+    # This has been removed
+    ## This version actually has everything except the smoothing... 
     def __init__(self, patience=5, min_delta=0, restore_best_weights=True):
         self.patience = patience
         self.min_delta = min_delta
