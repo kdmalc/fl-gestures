@@ -167,19 +167,20 @@ class ELEC573Net(nn.Module):
         self.fc2 = nn.Linear(config["fc_layers"][0], self.num_classes)
 
     def compute_final_length(self):
-            pool = self.config["maxpool"]
-            P = self.config["padding"]
-            L = self.input_dim  # Needs to be seq len, but for this model we have 1 input channel and treat the 80 features as our seq len...
-            
-            # Conv1 + MaxPool1
-            L = ((L - self.config["conv_layers"][0][1] + 2*P) // self.config["conv_layers"][0][2]) + 1
-            L = L // pool
-            # Conv2 + MaxPool2
-            L = ((L - self.config["conv_layers"][1][1] + 2*P) // self.config["conv_layers"][1][2]) + 1
-            L = L // pool
-            # Conv3 (no final maxpool)
-            L = ((L - self.config["conv_layers"][2][1] + 2*P) // self.config["conv_layers"][2][2]) + 1
-            return L
+        pool = self.config["maxpool"]
+        P = self.config["padding"]
+        L = self.input_dim  # Needs to be seq len, but for this model we have 1 input channel and treat the 80 features as our seq len...
+        
+        # Conv1 + MaxPool1
+        L = ((L - self.config["conv_layers"][0][1] + 2*P) // self.config["conv_layers"][0][2]) + 1
+        L = L // pool
+        # Conv2 + MaxPool2
+        L = ((L - self.config["conv_layers"][1][1] + 2*P) // self.config["conv_layers"][1][2]) + 1
+        L = L // pool
+        # Conv3 (no final maxpool)
+        L = ((L - self.config["conv_layers"][2][1] + 2*P) // self.config["conv_layers"][2][2]) + 1
+        #print(f"COMPUTED LENGTH {L}")
+        return L
 
     def forward(self, x):        
         #print(f"x start shape: {x.shape}")
@@ -193,7 +194,7 @@ class ELEC573Net(nn.Module):
         x = self.relu(x)
         #print(f"After relu: {x.shape}")
         x = self.maxpool(x)
-        #rint(f"After maxpool: {x.shape}")
+        #print(f"After maxpool: {x.shape}")
 
         x = self.conv2(x)
         #print(f"After conv2: {x.shape}")
@@ -211,7 +212,7 @@ class ELEC573Net(nn.Module):
         x = self.relu(x)
         #print(f"After relu: {x.shape}")
         # This last maxpool shrinks it down too much so turn it off
-        #x = self.maxpool(x)  
+        x = self.maxpool(x)  
 
         # Flatten and Fully Connected Layers
         x = x.view(x.size(0), -1)  # Flatten while preserving batch size

@@ -14,42 +14,45 @@ from DNN_AMC_funcs import *
 from hyperparam_tuned_configs import * 
 
 
-MODEL_STR = "DynamicMomonaNet"  #"ELEC573Net"  #"DynamicMomonaNet"
-MY_CONFIG = DynamicMomonaNet_config  #ELEC573Net_config  #DynamicMomonaNet_config
+MODEL_STR = "ELEC573Net" #"DynamicMomonaNet"
+FEATENG = "FS"  # "moments" "FS" None
+if FEATENG is not None and MODEL_STR=="DynamicMomonaNet":
+    NUM_CHANNELS = 1
+    SEQ_LEN = 80
+    MY_CONFIG = DynamicMomonaNet_config
+elif FEATENG is None and MODEL_STR=="DynamicMomonaNet":
+    NUM_CHANNELS = 16
+    SEQ_LEN = 64
+    MY_CONFIG = DynamicMomonaNet_config
+elif FEATENG=="moments" and MODEL_STR=="ELEC573Net":
+    NUM_CHANNELS = 80
+    SEQ_LEN = 1 
+    MY_CONFIG = ELEC573Net_config
+elif FEATENG=="FS" and MODEL_STR=="ELEC573Net":
+    NUM_CHANNELS = 184
+    SEQ_LEN = 1 
+    MY_CONFIG = ELEC573Net_config
+elif FEATENG is None and MODEL_STR=="ELEC573Net":
+    NUM_CHANNELS = 16
+    SEQ_LEN = 64  # I think this will break with ELEC573Net... not integrated AFAIK
+    MY_CONFIG = ELEC573Net_config
+
+MY_CONFIG["feature_engr"] = FEATENG
+MY_CONFIG["num_channels"] = NUM_CHANNELS
+MY_CONFIG["sequence_length"] = SEQ_LEN
+
+
 expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])
-
 data_splits = make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3)
-
-# If I'm not using Pytorch, then I don't need dataloaders, need to revamp...
-features_df = pd.DataFrame(data_splits['train']['feature'])
-# Create a new column 'features' that contains all 80 columns as lists
-features_df['feature'] = features_df.apply(lambda row: row.tolist(), axis=1)
-# Keep only the new combined column
-features_df = features_df[['feature']]
-# Combine with labels and participant_ids into a single DataFrame
-train_df = pd.concat([features_df, pd.Series(data_splits['train']['labels'], name='Gesture_Encoded'), pd.Series(data_splits['train']['participant_ids'], name='participant_ids')], axis=1)
+# Fit LabelEncoder once on all participant IDs for consistency
+all_participant_ids = data_splits['train']['participant_ids'] + data_splits['intra_subject_test']['participant_ids'] + data_splits['cross_subject_test']['participant_ids']
 label_encoder = LabelEncoder()
-train_df['Cluster_ID'] = label_encoder.fit_transform(train_df['participant_ids'])
-
-features_df = pd.DataFrame(data_splits['intra_subject_test']['feature'])
-# Create a new column 'features' that contains all 80 columns as lists
-features_df['feature'] = features_df.apply(lambda row: row.tolist(), axis=1)
-# Keep only the new combined column
-features_df = features_df[['feature']]
-# Combine with labels and participant_ids into a single DataFrame
-intra_test_df = pd.concat([features_df, pd.Series(data_splits['intra_subject_test']['labels'], name='Gesture_Encoded'), pd.Series(data_splits['intra_subject_test']['participant_ids'], name='participant_ids')], axis=1)
-label_encoder = LabelEncoder()
-intra_test_df['Cluster_ID'] = label_encoder.fit_transform(intra_test_df['participant_ids'])
-
-features_df = pd.DataFrame(data_splits['cross_subject_test']['feature'])
-# Create a new column 'features' that contains all 80 columns as lists
-features_df['feature'] = features_df.apply(lambda row: row.tolist(), axis=1)
-# Keep only the new combined column
-features_df = features_df[['feature']]
-# Combine with labels and participant_ids into a single DataFrame
-cross_test_df = pd.concat([features_df, pd.Series(data_splits['cross_subject_test']['labels'], name='Gesture_Encoded'), pd.Series(data_splits['cross_subject_test']['participant_ids'], name='participant_ids')], axis=1)
-label_encoder = LabelEncoder()
-cross_test_df['Cluster_ID'] = label_encoder.fit_transform(cross_test_df['participant_ids'])
+label_encoder.fit(all_participant_ids)
+# Process train and test sets
+train_df = process_split(data_splits, 'train', label_encoder)
+intra_test_df = process_split(data_splits, 'intra_subject_test', label_encoder)
+cross_test_df = process_split(data_splits, 'cross_subject_test', label_encoder)
+data_dfs_dict = {'train':train_df, 'test':intra_test_df}
 
 # Only clustering wrt intra_test results, not cross_test results, for now...
 data_dfs_dict = {'train':train_df, 'test':intra_test_df}

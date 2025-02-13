@@ -13,23 +13,35 @@ print("Current Working Directory: ", cwd)
 from datetime import datetime
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
-MY_CONFIG = ELEC573Net_config
+
 FINETUNE = True
 LOG_AND_VISUALIZE = True
 MODEL_STR = "ELEC573Net" #"DynamicMomonaNet"
-FEATENG = "moments"  # "moments" "FS" None
+FEATENG = "FS"  # "moments" "FS" None
 if FEATENG is not None and MODEL_STR=="DynamicMomonaNet":
     NUM_CHANNELS = 1
     SEQ_LEN = 80
+    MY_CONFIG = DynamicMomonaNet_config
 elif FEATENG is None and MODEL_STR=="DynamicMomonaNet":
     NUM_CHANNELS = 16
     SEQ_LEN = 64
-elif FEATENG is not None and MODEL_STR=="ELEC573Net":
+    MY_CONFIG = DynamicMomonaNet_config
+elif FEATENG=="moments" and MODEL_STR=="ELEC573Net":
     NUM_CHANNELS = 80
     SEQ_LEN = 1 
+    MY_CONFIG = ELEC573Net_config
+elif FEATENG=="FS" and MODEL_STR=="ELEC573Net":
+    NUM_CHANNELS = 184
+    SEQ_LEN = 1 
+    MY_CONFIG = ELEC573Net_config
 elif FEATENG is None and MODEL_STR=="ELEC573Net":
     NUM_CHANNELS = 16
     SEQ_LEN = 64  # I think this will break with ELEC573Net... not integrated AFAIK
+    MY_CONFIG = ELEC573Net_config
+
+MY_CONFIG["feature_engr"] = FEATENG
+MY_CONFIG["num_channels"] = NUM_CHANNELS
+MY_CONFIG["sequence_length"] = SEQ_LEN
 
 
 expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])

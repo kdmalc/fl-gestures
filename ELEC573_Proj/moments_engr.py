@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+from itertools import combinations
 
 
 def zero_order(df_freq):
@@ -312,24 +313,21 @@ def HCom(s,fs=None):
 
 def create_abbaspour_FS_vectors(group):
     fs_vector = []
-    #can only run features on EMG columns
-    ## This is a bit hardcoded in...
-    emg_columns = [col for col in group.columns if col.startswith('EMG')]
     
-    for emg_col in emg_columns:
-        #run on EMG columns. convert to df with single column to run with all the features
-        ## KAI: I have no idea what this is doing, isn't it already being run on a single column?
-        data = group[[emg_col]] 
-        # variance
-        fs_vector.append(Var(data))
-        # wave length
-        fs_vector.append(WL(data))
-        # correlation
-        fs_vector.append(Cor(data))
-        # Hjorth 1
-        fs_vector.append(HMob(data))
-        # Hjorth 2
-        fs_vector.append(HCom(data))
+    # Extract EMG columns
+    emg_columns = [col for col in group.columns if col.startswith('EMG')]
+    # Compute features for individual channels
+    emg_data = {col: np.array(group[col]) for col in emg_columns}
+    
+    for emg_col, data in emg_data.items():
+        fs_vector.append(Var(data))  # variance
+        fs_vector.append(WL(data))  # wave length
+        fs_vector.append(HMob(data, fs=2048))  # Hjorth 1
+        fs_vector.append(HCom(data, fs=2048))  # Hjorth 2
+
+    # Compute correlation coefficient between each pair of EMG channels
+    for (col1, col2) in combinations(emg_columns, 2):
+        fs_vector.append(Cor(emg_data[col1], emg_data[col2]))
         
     return pd.DataFrame({
         'Participant': [group['Participant'].iloc[0]],
