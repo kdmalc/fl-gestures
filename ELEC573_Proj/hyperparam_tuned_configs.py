@@ -1,20 +1,33 @@
 from datetime import datetime
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 NUM_CHANNELS = 16  # NOT USED WITH ELEC573Net rn
+NUM_TRAIN_GESTURES = 8 
+NUM_FT_GESTURES = 1  # Oneshot
 
 
 DynamicMomonaNet_config = {
+    "num_train_gesture_trials": NUM_TRAIN_GESTURES, 
+    "num_ft_gesture_trials": NUM_FT_GESTURES,
+    "num_pretrain_users": 24, 
+    "num_testft_users": 8, 
     "feature_engr": None, 
     "weight_decay": 0.0,
+    "fc_layers": [128, 64],
+    "fc_dropout": 0.3,
+    "dense_cnnlstm_dropout": 0.3,
+    "conv_layers": [
+        [64, 3, 1],
+        [128, 3, 1]],
+    "cnn_dropout": 0.3,
+    "batch_size": 16,
+    "added_dense_ft_hidden_size": 64, 
     "verbose": False,
     "use_dense_cnn_lstm": True,
     "timestamp": timestamp,
     "time_steps": None,
     "sequence_length": 64,
-    "save_ft_models": False,
     "pooling_layers": [True, True, True, True],
     "optimizer": "sgd",
-    "num_ft_epochs": 100,
     "num_epochs": 100,
     "num_classes": 10,
     "num_channels": NUM_CHANNELS,
@@ -25,20 +38,13 @@ DynamicMomonaNet_config = {
     "lstm_dropout": 0.8,
     "log_each_pid_results": False,
     "learning_rate": 0.001,
-    "ft_weight_decay": 0.0,
-    "ft_learning_rate": 0.01,
-    "ft_batch_size": 10,
     "finetune_strategy": "progressive_unfreeze",
     "progressive_unfreezing_schedule": 5,
-    "fc_layers": [128, 64],
-    "fc_dropout": 0.3,
-    "dense_cnnlstm_dropout": 0.3,
-    "conv_layers": [
-        [64, 3, 1],
-        [128, 3, 1]],
-    "cnn_dropout": 0.3,
-    "batch_size": 16,
-    "added_dense_ft_hidden_size": 64,
+    "ft_weight_decay": 0.0,
+    "ft_learning_rate": 0.001,
+    "ft_batch_size": 10,
+    "num_ft_epochs": 100,
+    "save_ft_models": False,
     #"use_earlystopping": True,
     #"lr_scheduler_gamma": 1.0,
     "lr_scheduler_patience": 4, 
@@ -86,6 +92,8 @@ old_DynamicMomonaNet_config = {
 
 # BEST PARAMS FOR GENERIC MODEL
 ELEC573Net_config = {
+    "num_train_gesture_trials": NUM_TRAIN_GESTURES, 
+    "num_ft_gesture_trials": NUM_FT_GESTURES,
     "feature_engr": "moments", 
     "learning_rate": 0.0001,
     "batch_size": 32,

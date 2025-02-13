@@ -15,6 +15,9 @@ from revamped_model_classes import *
 def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, config, pretrained_generic_model,
                         nested_clus_model_dict, model_str, cluster_iter_str='Iter18'):
     
+    if finetuning_datasplits != cluster_assgnmt_data_splits:
+        print("Unique cluster_assgnmt_data_splits passed in. Not currently used in the code!")
+    
     os.makedirs(config['results_save_dir'], exist_ok=True)
 
     # Wait who is this... are these the pretraining users?
@@ -132,10 +135,11 @@ def full_comparison_run(finetuning_datasplits, cluster_assgnmt_data_splits, conf
     return data_dict
 
 
-def plot_model_acc_boxplots(data_dict, model_str=None, colors_lst=None, my_title=None, save_fig=False, plot_save_name=None, save_dir="C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results"):
-    # Default order (by performance)
-    data_keys = ['centralized_acc_data', 'pretrained_cluster_acc_data', 'ft_centralized_acc_data', 'local_acc_data', 'ft_cluster_acc_data']
-    labels = ['Generic Centralized', 'Pretrained Cluster', 'Fine-Tuned Centralized', 'Local', 'Fine-Tuned Cluster']
+def plot_model_acc_boxplots(data_dict, model_str=None, colors_lst=None, my_title=None, save_fig=False, plot_save_name=None, 
+                            save_dir="C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results",
+                            data_keys=['centralized_acc_data', 'pretrained_cluster_acc_data', 'ft_centralized_acc_data', 'local_acc_data', 'ft_cluster_acc_data'],
+                            labels=['Generic Centralized', 'Pretrained Cluster', 'Fine-Tuned Centralized', 'Local', 'Fine-Tuned Cluster']):
+    
     data = [data_dict[key] for key in data_keys]
 
     # Generate default colors if not provided
@@ -184,35 +188,6 @@ def plot_model_acc_boxplots(data_dict, model_str=None, colors_lst=None, my_title
     plt.show()
 
 
-def OLD_plot_model_acc_boxplots(data_dict, model_str=None, colors_lst=None, my_title=None, save_fig=False, plot_save_name=None, save_dir="C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results"):
-    # Default order
-    #data = [data_dict['local_acc_data'], data_dict['centralized_acc_data'], data_dict['ft_centralized_acc_data'], data_dict['pretrained_cluster_acc_data'], data_dict['ft_cluster_acc_data']] 
-    # Ordering according to performance:
-    data = [data_dict['centralized_acc_data'], data_dict['pretrained_cluster_acc_data'], data_dict['ft_centralized_acc_data'], data_dict['local_acc_data'], data_dict['ft_cluster_acc_data']] 
-
-    if colors_lst is None:
-        colors_lst = ['blue', 'purple', 'orange', 'green', 'yellow']
-    if my_title is None and model_str is not None:
-        my_title = f"{model_str} Accuracies Averaged Across Participants"
-
-    fig, ax = plt.subplots(figsize=(6, 6)) 
-    bp = ax.boxplot(data, patch_artist=True, labels=['Generic Centralized', 'Pretrained Cluster', 'Fine-Tuned Centralized', 'Local', 'Fine-Tuned Cluster']) 
-    # Customize boxplot colors 
-    for patch, color in zip(bp['boxes'], colors_lst): 
-        patch.set_facecolor(color) 
-    # Remove top and right borders 
-    ax.spines['top'].set_visible(False) 
-    ax.spines['right'].set_visible(False) 
-    # Increase font sizes 
-    ax.set_ylabel('Accuracy', fontsize=14) 
-    ax.set_title(my_title, fontsize=20) 
-    ax.tick_params(axis='both', labelsize=14) 
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    if save_fig:
-        plt.savefig(f"{save_dir}\\{plot_save_name}.png", dpi=500, bbox_inches='tight') 
-    plt.show()
-
 # FOR LOCAL
 def group_data_by_pid(features, labels, pids):
     """Group features and labels by unique participant IDs."""
@@ -225,6 +200,7 @@ def group_data_by_pid(features, labels, pids):
         pid_labels = labels[mask]
         pid_data[pid] = (pid_features, pid_labels)
     return pid_data
+
 
 def prepare_data_for_local_models(data_splits, model_str, config):
 
@@ -275,3 +251,150 @@ def prepare_data_for_local_models(data_splits, model_str, config):
         # USE THE SAME CROSS LOADER FOR ALL USERS. NO SUBJECT SPECIFC CROSS SUBJECT (BY DEFINITION)
         user_dict[pid] = (train_loader, intra_loader, cross_loader)
     return user_dict
+
+
+def finetuning_comparison_run(finetuning_datasplits, config, pretrained_generic_model,
+                        nested_clus_model_dict, cluster_iter_str='Iter18'):
+    
+    #os.makedirs(config['results_save_dir'], exist_ok=True)
+
+    novel_participant_ft_data = finetuning_datasplits['novel_trainFT']
+    # novel "cross subject" is the same as novel intra (but needs to be separated according to PID first...)
+    novel_participant_test_data = finetuning_datasplits['cross_subject_test']
+    novel_pids = np.unique(finetuning_datasplits['novel_trainFT']['participant_ids'])
+    #novel_pid_clus_asgn_data = cluster_assgnmt_data_splits['novel_trainFT']
+
+    novel_pid_res_dict = {}
+
+    for pid_count, pid in enumerate(novel_pids):
+        print(f"PID {pid}, {pid_count+1}/{len(novel_pids)}")
+        novel_pid_res_dict[pid] = {}
+
+        # Create the testloader by segmenting out this specific pid
+        # Filter based on CURRENT participant ID: 
+        indices = [i for i, datasplit_pid in enumerate(novel_participant_ft_data['participant_ids']) if datasplit_pid == pid]
+        #indices = [i for i, datasplit_pid in enumerate(novel_participant_test_data['participant_ids']) if datasplit_pid == pid]
+        # ^ These indices should be the same as the above indices I think...
+        
+        ############## Novel Participant Finetuning Dataset ##############
+        ft_dataset = GestureDataset([novel_participant_ft_data['feature'][i] for i in indices], [novel_participant_ft_data['labels'][i] for i in indices])
+        ft_loader = DataLoader(ft_dataset, batch_size=config["batch_size"], shuffle=True)
+        ############## Novel Participant Intra Testing Dataset ##############
+        intra_test_dataset = GestureDataset([novel_participant_test_data['feature'][i] for i in indices], [novel_participant_test_data['labels'][i] for i in indices])
+        intra_test_loader = DataLoader(intra_test_dataset, batch_size=config["batch_size"], shuffle=True)
+        ############## Cluster Assignment Dataset ##############
+        ## This will just use ft_loader. No reason to have them separated really. 
+        ## Removing this will remove functionality where num cluster assgnt != num ft trials
+        #indices = [i for i, datasplit_pid in enumerate(novel_pid_clus_asgn_data['participant_ids']) if datasplit_pid == pid]
+        #clust_asgn_dataset = GestureDataset([novel_pid_clus_asgn_data['feature'][i] for i in indices], [novel_pid_clus_asgn_data['labels'][i] for i in indices])
+        #clust_asgn_loader = DataLoader(clust_asgn_dataset, batch_size=config["batch_size"], shuffle=True)
+
+        ############## Novel Participant Cross Testing Dataset ##############
+        # This code is testing on all the other novel participants... I don't think we care about that right now
+        ## Idc but this will allow us to check cross perf. No real reason to remove...
+        #indices = [i for i, datasplit_pid in enumerate(novel_participant_test_data['participant_ids']) if datasplit_pid != pid]
+        #cross_test_dataset = GestureDataset([novel_participant_test_data['feature'][i] for i in indices], [novel_participant_test_data['labels'][i] for i in indices])
+        #cross_test_loader = DataLoader(cross_test_dataset, batch_size=config["batch_size"], shuffle=True)
+
+        # 2) Test the full pretrained (centralized) model
+        generic_clus_res = evaluate_model(pretrained_generic_model, intra_test_loader)
+        novel_pid_res_dict[pid]["centralized_acc"] = generic_clus_res["accuracy"]
+
+        # 3) Test finetuned pretrained (centralized) model
+        ft_centralized_model, _, ft_centralized_train_loss_log, ft_centralized_test_loss_log = fine_tune_model(
+            pretrained_generic_model, ft_loader, config, config['timestamp'], test_loader=intra_test_loader, pid=pid)
+        ft_centralized_res = evaluate_model(ft_centralized_model, intra_test_loader)
+        novel_pid_res_dict[pid]["ft_centralized_acc"] = ft_centralized_res["accuracy"]
+        novel_pid_res_dict[pid]["ft_centralized_train_loss_log"] = ft_centralized_train_loss_log
+        novel_pid_res_dict[pid]["ft_centralized_test_loss_log"] = ft_centralized_test_loss_log
+
+        # 4) CLUSTER MODEL: Have the pretrained model from the best cluster do inference
+        #   - Have all cluster models do inference and compare assign to whichever cluster gives best results
+        # Apply all the cluster models at the chosen iteration on the given participant data
+        ## Record that cluster's performance (all cluster's performances?... Ideally)
+        clus_model_res_dict = {}
+        cluster_lst = list(nested_clus_model_dict[cluster_iter_str].keys())
+        for clus_id in cluster_lst:
+            clus_model = nested_clus_model_dict[cluster_iter_str][clus_id]
+            clus_res = evaluate_model(clus_model, ft_loader)  # clust_asgn_loader) 
+            clus_acc = clus_res["accuracy"]
+            clus_model_res_dict[clus_id] = clus_acc
+        # Assign participant to highest scoring cluster
+        # Find the key with the highest accuracy
+        max_key = max(clus_model_res_dict, key=clus_model_res_dict.get)
+        max_value = clus_model_res_dict[max_key]
+        # Is this saved anywhere or just printed? Presumably just printed...
+        print(f"Cluster {max_key} had the highest accuracy ({max_value})")
+        if config['verbose']:
+            print("Full cluster assignment results dict:")
+            print(clus_model_res_dict)
+        original_cluster_model = nested_clus_model_dict[cluster_iter_str][max_key]
+        # Have the pretrained model from the best cluster do inference
+        pretrained_clus_res = evaluate_model(original_cluster_model, intra_test_loader)
+        novel_pid_res_dict[pid]["pretrained_cluster_acc"] = pretrained_clus_res["accuracy"]
+
+        # 5) FT the pretrained cluster model on the participant
+        ft_cluster_model, original_cluster_model, ft_cluster_train_loss_log, ft_cluster_test_loss_log = fine_tune_model(
+            original_cluster_model, ft_loader, config, config['timestamp'], test_loader=intra_test_loader, pid=pid)
+        ft_clus_res = evaluate_model(ft_cluster_model, intra_test_loader)
+        novel_pid_res_dict[pid]["ft_cluster_acc"] = ft_clus_res["accuracy"]
+        novel_pid_res_dict[pid]["ft_cluster_train_loss_log"] = ft_cluster_train_loss_log
+        novel_pid_res_dict[pid]["ft_cluster_test_loss_log"] = ft_cluster_test_loss_log
+    full_data_output_dict = novel_pid_res_dict
+
+    centralized_acc_res = [] 
+    ft_centralized_acc_res = []
+    pretrained_cluster_acc_res = []
+    ft_cluster_acc_res = [] 
+    # Collecting data from the dictionary 
+    for pid in novel_pid_res_dict: 
+        centralized_acc_res.append(novel_pid_res_dict[pid]['centralized_acc']) 
+        ft_centralized_acc_res.append(novel_pid_res_dict[pid]['ft_centralized_acc']) 
+        pretrained_cluster_acc_res.append(novel_pid_res_dict[pid]['pretrained_cluster_acc']) 
+        ft_cluster_acc_res.append(novel_pid_res_dict[pid]['ft_cluster_acc']) 
+
+    final_user_res_dict = {'centralized_acc_data':centralized_acc_res, 'ft_centralized_acc_data':ft_centralized_acc_res, 'pretrained_cluster_acc_data':pretrained_cluster_acc_res, 'ft_cluster_acc_data':ft_cluster_acc_res}
+    return final_user_res_dict, full_data_output_dict
+
+
+def create_shared_trial_data_splits(expdef_df, all_participants, test_participants, num_monte_carlo_runs=5, num_train_gesture_trials=8, num_ft_gesture_trials=1):
+    trial_data_splits_lst = [0]*num_monte_carlo_runs
+    for i in range(num_monte_carlo_runs):
+        # Prepare data
+        trial_data_splits = prepare_data(
+            expdef_df, 'feature', 'Gesture_Encoded', 
+            all_participants, test_participants, 
+            training_trials_per_gesture=num_train_gesture_trials, finetuning_trials_per_gesture=num_ft_gesture_trials,
+        )
+        trial_data_splits_lst[i] = trial_data_splits
+    return trial_data_splits_lst
+
+
+def finetuning_run(trial_data_splits_lst, config, pretrained_generic_model, nested_clus_model_dict):
+    """This function IMPLICITLY does MonteCarlo averaging, and the number of elements (separate datasplits) in trial_data_splits_lst determines how many repetitions there are. """
+    num_monte_carlo_runs = len(trial_data_splits_lst)
+    num_ft_users =  config["num_testft_users"]
+    lst_of_res_dicts = [0]*num_monte_carlo_runs
+    for i in range(num_monte_carlo_runs):
+        lst_of_res_dicts[i] = finetuning_comparison_run(trial_data_splits_lst[i], config, pretrained_generic_model,
+                                nested_clus_model_dict, cluster_iter_str='Iter18')
+
+    data_dict = {}    
+    data_dict['centralized_acc_data'] = np.zeros(num_ft_users, dtype=np.float32)
+    data_dict['ft_centralized_acc_data'] = np.zeros(num_ft_users, dtype=np.float32)
+    data_dict['pretrained_cluster_acc_data'] = np.zeros(num_ft_users, dtype=np.float32)
+    data_dict['ft_cluster_acc_data'] = np.zeros(num_ft_users, dtype=np.float32)
+
+    for idx, res_dict in enumerate(lst_of_res_dicts):
+        # The train/test loss logs are in res_dict[][1]
+        data_dict['centralized_acc_data'] += np.array(res_dict[0]['centralized_acc_data'])
+        data_dict['ft_centralized_acc_data'] += np.array(res_dict[0]['ft_centralized_acc_data'])
+        data_dict['pretrained_cluster_acc_data'] += np.array(res_dict[0]['pretrained_cluster_acc_data'])
+        data_dict['ft_cluster_acc_data'] += np.array(res_dict[0]['ft_cluster_acc_data'])
+
+    data_dict['centralized_acc_data'] /= (idx+1)
+    data_dict['ft_centralized_acc_data'] /= (idx+1)
+    data_dict['pretrained_cluster_acc_data'] /= (idx+1)
+    data_dict['ft_cluster_acc_data'] /= (idx+1)
+
+    return data_dict

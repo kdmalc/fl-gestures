@@ -769,7 +769,7 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     #if config["lr_scheduler_gamma"]<1.0:
     #    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config["lr_scheduler_gamma"])
     early_stopping = SmoothedEarlyStopping(patience=config["earlystopping_patience"], min_delta=config["earlystopping_min_delta"])
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=config["lr_scheduler_patience"], factor=config["lr_scheduler_factor"], verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=config["lr_scheduler_patience"], factor=config["lr_scheduler_factor"], verbose=False)
 
     # Fine-tuning training loop
     train_loss_log = []
