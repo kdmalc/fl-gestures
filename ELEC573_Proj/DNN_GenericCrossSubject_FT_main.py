@@ -2,59 +2,60 @@
 ## NO CLUSTERING!!!
 
 import numpy as np
+import pickle
+from sklearn.preprocessing import LabelEncoder
 from moments_engr import *
 from DNN_FT_funcs import *
-from hyperparam_tuned_configs import *
-np.random.seed(101) 
-import json
+np.random.seed(42) 
 import os
 cwd = os.getcwd()
 print("Current Working Directory: ", cwd)
-from datetime import datetime
-timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
 
-FINETUNE = True
-LOG_AND_VISUALIZE = True
-MODEL_STR = "ELEC573Net" #"DynamicMomonaNet"
-FEATENG = "FS"  # "moments" "FS" None
-if FEATENG is not None and MODEL_STR=="DynamicMomonaNet":
-    NUM_CHANNELS = 1
-    SEQ_LEN = 80
-    MY_CONFIG = DynamicMomonaNet_config
-elif FEATENG is None and MODEL_STR=="DynamicMomonaNet":
-    NUM_CHANNELS = 16
-    SEQ_LEN = 64
-    MY_CONFIG = DynamicMomonaNet_config
-elif FEATENG=="moments" and MODEL_STR=="ELEC573Net":
-    NUM_CHANNELS = 80
-    SEQ_LEN = 1 
-    MY_CONFIG = ELEC573Net_config
-elif FEATENG=="FS" and MODEL_STR=="ELEC573Net":
-    NUM_CHANNELS = 184
-    SEQ_LEN = 1 
-    MY_CONFIG = ELEC573Net_config
-elif FEATENG is None and MODEL_STR=="ELEC573Net":
-    NUM_CHANNELS = 16
-    SEQ_LEN = 64  # I think this will break with ELEC573Net... not integrated AFAIK
-    MY_CONFIG = ELEC573Net_config
+finetune = False
+do_normal_logging = True
 
-MY_CONFIG["feature_engr"] = FEATENG
-MY_CONFIG["num_channels"] = NUM_CHANNELS
-MY_CONFIG["sequence_length"] = SEQ_LEN
+config = {
+    "learning_rate": 0.0001,
+    "batch_size": 32,
+    "num_epochs": 50,
+    "optimizer": "adam",
+    "weight_decay": 1e-4,
+    "dropout_rate": 0.3,
+    "num_conv_layers": 3,
+    "conv_layer_sizes": [32, 64, 128], 
+    "kernel_size": 5,
+    "stride": 2,
+    "padding": 1,
+    "maxpool": 1,
+    "use_batchnorm": True
+}
 
+##################################################
 
-expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])
+path1 = 'C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'
+with open(path1, 'rb') as file:
+    raw_userdef_data_df = pickle.load(file)  # (204800, 19)
 
-# Load the fixed user splits
-with open("ELEC573_Proj\\24_8_user_splits.json", "r") as f:
-    splits = json.load(f)
-all_participants = splits["all_users"]
-test_participants = splits["test_users"]
+userdef_df = raw_userdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_feature_vectors)
+userdef_df = userdef_df.reset_index(drop=True)
+
+all_participants = userdef_df['Participant'].unique()
+# Shuffle the participants
+np.random.shuffle(all_participants)
+# Split into two groups
+#train_participants = all_participants[:24]  # First 24 participants
+test_participants = all_participants[24:]  # Remaining 8 participants
+
+#convert Gesture_ID to numerical with new Gesture_Encoded column
+label_encoder = LabelEncoder()
+userdef_df['Gesture_Encoded'] = label_encoder.fit_transform(userdef_df['Gesture_ID'])
+label_encoder2 = LabelEncoder()
+userdef_df['Cluster_ID'] = label_encoder2.fit_transform(userdef_df['Participant'])
 
 # Prepare data
 data_splits = prepare_data(
-    expdef_df, 'feature', 'Gesture_Encoded', 
+    userdef_df, 'feature', 'Gesture_Encoded', 
     all_participants, test_participants, 
     training_trials_per_gesture=8, finetuning_trials_per_gesture=3,
 )
@@ -64,43 +65,36 @@ results = main_training_pipeline(
     data_splits, 
     all_participants=all_participants, 
     test_participants=test_participants,
-    model_type=MODEL_STR,
-    config=MY_CONFIG)
+    model_type='CNN',  # Or 'RNN'
+    num_epochs=50, config=config)
 
-#full_path = os.path.join(cwd, 'ELEC573_Proj', 'models', 'generic_CNN_model.pth')
-full_path = MY_CONFIG['models_save_dir']
-os.makedirs(full_path, exist_ok=True)  # Ensure the directory exists
+full_path = os.path.join(cwd, 'ELEC573_Proj', 'models', 'generic_CNN_model.pth')
 print("Full Path:", full_path)
-# TODO: Could just use my existing save_model() func here...
-torch.save(results["model"].state_dict(), f"{full_path}\\pretrained_{MODEL_STR}_model.pth")
+torch.save(results["model"].state_dict(), full_path)
 
-# TODO: This only finetunes on one person lol should at least finetune over a couple
-## Well I guess if this is just for debugging not performance this is fine
-if FINETUNE:
+if finetune:
     # Fine-tune on first test participant's data
     first_test_participant_data = data_splits['novel_trainFT']
     # Select just the first given participant ID from this dataset, probably for both train_data and labels
 
-    participant_id = first_test_participant_data['participant_ids'][0]
+    participant_id = 'P132'
     # Filter based on participant_id
     indices = [i for i, pid in enumerate(first_test_participant_data['participant_ids']) if pid == participant_id]
-    ft_dataset = GestureDataset([first_test_participant_data['feature'][i] for i in indices], [first_test_participant_data['labels'][i] for i in indices])
-    ft_loader = DataLoader(ft_dataset, batch_size=MY_CONFIG["batch_size"], shuffle=True)
+    # Extract the corresponding features and labels
+    features_p132 = [first_test_participant_data['features'][i] for i in indices]
+    labels_p132 = [first_test_participant_data['labels'][i] for i in indices]
 
-    indices = [i for i, datasplit_pid in enumerate(first_test_participant_data['participant_ids']) if datasplit_pid == participant_id]
-    # ^ These indices should be the same as the above indices I think...
-    intra_test_dataset = GestureDataset([first_test_participant_data['feature'][i] for i in indices], [first_test_participant_data['labels'][i] for i in indices])
-    intra_test_loader = DataLoader(intra_test_dataset, batch_size=MY_CONFIG["batch_size"], shuffle=True)
-
-    finetuned_model, frozen_original_model, train_loss_log, test_loss_log = fine_tune_model(
-        results['model'], ft_loader, MY_CONFIG, MY_CONFIG["timestamp"], test_loader=intra_test_loader, pid=participant_id
+    fine_tuned_model = fine_tune_model(
+        results['model'], 
+        {'features':features_p132, 'labels':labels_p132}
     )
 
-if LOG_AND_VISUALIZE:
-    # Does this visualize ONLY heatmaps, and not train/test loss curves? I only really care about the latter...
-    #visualize_model_acc_heatmap(results)
+    # NEED TO EVALUATE FINETUNED MODEL, at least on said user's data...
 
-    visualize_train_test_loss_curves(results, MY_CONFIG)
-    visualize_train_test_loss_curves(None, MY_CONFIG, train_loss_log, test_loss_log, my_title="1subj FT Train Test Curves", ft=True)
+if do_normal_logging:
+    # Example usage in main script
+    visualize_model_performance(results)
 
-    log_performance(results, MY_CONFIG)
+    # Example usage in main script
+    log_file = log_performance(results)
+    print(f"Detailed performance log saved to: {log_file}")

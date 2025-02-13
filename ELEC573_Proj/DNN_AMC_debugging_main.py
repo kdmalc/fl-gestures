@@ -1,71 +1,82 @@
 import pandas as pd
-#import numpy as np
-#np.random.seed(42) 
-#import random
+import pickle
+import numpy as np
+from sklearn.model_selection import KFold
 from sklearn.preprocessing import LabelEncoder
-#from sklearn.model_selection import KFold
-#from sklearn.cross_decomposition import CCA
-#from sklearn.decomposition import PCA
+from sklearn.cross_decomposition import CCA
+from sklearn.decomposition import PCA
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+np.random.seed(42) 
 
 from moments_engr import *
 from agglo_model_clust import *
 from DNN_FT_funcs import *
 from DNN_AMC_funcs import *
-from hyperparam_tuned_configs import * 
 
 
-MODEL_STR = "ELEC573Net" #"DynamicMomonaNet"
-FEATENG = "FS"  # "moments" "FS" None
-if FEATENG is not None and MODEL_STR=="DynamicMomonaNet":
-    NUM_CHANNELS = 1
-    SEQ_LEN = 80
-    MY_CONFIG = DynamicMomonaNet_config
-elif FEATENG is None and MODEL_STR=="DynamicMomonaNet":
-    NUM_CHANNELS = 16
-    SEQ_LEN = 64
-    MY_CONFIG = DynamicMomonaNet_config
-elif FEATENG=="moments" and MODEL_STR=="ELEC573Net":
-    NUM_CHANNELS = 80
-    SEQ_LEN = 1 
-    MY_CONFIG = ELEC573Net_config
-elif FEATENG=="FS" and MODEL_STR=="ELEC573Net":
-    NUM_CHANNELS = 184
-    SEQ_LEN = 1 
-    MY_CONFIG = ELEC573Net_config
-elif FEATENG is None and MODEL_STR=="ELEC573Net":
-    NUM_CHANNELS = 16
-    SEQ_LEN = 64  # I think this will break with ELEC573Net... not integrated AFAIK
-    MY_CONFIG = ELEC573Net_config
+path1 = 'C:\\Users\\kdmen\\Box\\Meta_Gesture_2024\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl'
+with open(path1, 'rb') as file:
+    raw_userdef_data_df = pickle.load(file)  # (204800, 19)
 
-MY_CONFIG["feature_engr"] = FEATENG
-MY_CONFIG["num_channels"] = NUM_CHANNELS
-MY_CONFIG["sequence_length"] = SEQ_LEN
-
-
-expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])
-data_splits = make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3)
-# Fit LabelEncoder once on all participant IDs for consistency
-all_participant_ids = data_splits['train']['participant_ids'] + data_splits['intra_subject_test']['participant_ids'] + data_splits['cross_subject_test']['participant_ids']
+# STEP 1: Train a classification model on every single individual user
+userdef_df = raw_userdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_feature_vectors)
+#output is df with particpant, gesture_ID, gesture_num and feature (holds 80 len vector)
+userdef_df = userdef_df.reset_index(drop=True)
+#convert Gesture_ID to numerical with new Gesture_Encoded column
 label_encoder = LabelEncoder()
-label_encoder.fit(all_participant_ids)
-# Process train and test sets
-train_df = process_split(data_splits, 'train', label_encoder)
-intra_test_df = process_split(data_splits, 'intra_subject_test', label_encoder)
-cross_test_df = process_split(data_splits, 'cross_subject_test', label_encoder)
-data_dfs_dict = {'train':train_df, 'test':intra_test_df}
+userdef_df['Gesture_Encoded'] = label_encoder.fit_transform(userdef_df['Gesture_ID'])
+label_encoder2 = LabelEncoder()
+userdef_df['Cluster_ID'] = label_encoder2.fit_transform(userdef_df['Participant'])
 
-# Only clustering wrt intra_test results, not cross_test results, for now...
-data_dfs_dict = {'train':train_df, 'test':intra_test_df}
-merge_log, intra_cluster_performance, cross_cluster_performance, nested_clus_model_dict = DNN_agglo_merge_procedure(data_dfs_dict, MODEL_STR, MY_CONFIG, n_splits=2)
+all_participants = userdef_df['Participant'].unique()
+# Shuffle the participants
+np.random.shuffle(all_participants)
+# Split into two groups
+#train_participants = all_participants[:24]  # First 24 participants
+test_participants = all_participants[24:]  # Remaining 8 participants
 
-# Save the data to a file
-print(f'{MY_CONFIG["results_save_dir"]}')
-# Create log directory if it doesn't exist
-os.makedirs(MY_CONFIG["results_save_dir"], exist_ok=True)
-# Include timestamp in file name? I think it is already included in results_save_dir?
-with open(f'{MY_CONFIG["results_save_dir"]}\\{MY_CONFIG["timestamp"]}_{MODEL_STR}_agglo_merge_res.pkl', 'wb') as f:
-    pickle.dump(merge_log, f)
-    pickle.dump(intra_cluster_performance, f)
-    pickle.dump(cross_cluster_performance, f)
-    pickle.dump(nested_clus_model_dict, f)
-print("Data has been saved successfully!")
+# Prepare data
+data_splits = prepare_data(
+    userdef_df, 'feature', 'Gesture_Encoded', 
+    all_participants, test_participants, 
+    training_trials_per_gesture=8, finetuning_trials_per_gesture=3,
+)
+
+features_df = pd.DataFrame(data_splits['train']['feature'])
+# Create a new column 'features' that contains all 80 columns as lists
+features_df['feature'] = features_df.apply(lambda row: row.tolist(), axis=1)
+# Keep only the new combined column
+features_df = features_df[['feature']]
+# Combine with labels and participant_ids into a single DataFrame
+train_df = pd.concat([features_df, pd.Series(data_splits['train']['labels'], name='Gesture_Encoded'), pd.Series(data_splits['train']['participant_ids'], name='participant_ids')], axis=1)
+label_encoder = LabelEncoder()
+train_df['Cluster_ID'] = label_encoder.fit_transform(train_df['participant_ids'])
+
+features_df = pd.DataFrame(data_splits['intra_subject_test']['feature'])
+# Create a new column 'features' that contains all 80 columns as lists
+features_df['feature'] = features_df.apply(lambda row: row.tolist(), axis=1)
+# Keep only the new combined column
+features_df = features_df[['feature']]
+# Combine with labels and participant_ids into a single DataFrame
+test_df = pd.concat([features_df, pd.Series(data_splits['intra_subject_test']['labels'], name='Gesture_Encoded'), pd.Series(data_splits['intra_subject_test']['participant_ids'], name='participant_ids')], axis=1)
+label_encoder = LabelEncoder()
+test_df['Cluster_ID'] = label_encoder.fit_transform(test_df['participant_ids'])
+
+# ENTIRELY WITHHOLDING CROSS CLUSTER DATASET (NOVEL TEST SUBJECTS) FOR NOW. 
+#test_df
+#features_df = pd.DataFrame(data_splits['train']['features'])
+## Create a new column 'features' that contains all 80 columns as lists
+#features_df['features'] = features_df.apply(lambda row: row.tolist(), axis=1)
+## Keep only the new combined column
+#features_df = features_df[['features']]
+## Combine with labels and participant_ids into a single DataFrame
+#train_df = pd.concat([features_df, pd.Series(data_splits['train']['labels'], name='Gesture_Encoded'), pd.Series(data_splits['train']['participant_ids'], name='participant_ids')], axis=1)
+
+data_dfs_dict = {'train':train_df, 'test':test_df}
+
+merge_log, intra_cluster_performance, cross_cluster_performance = DNN_agglo_merge_procedure(data_dfs_dict, "CNN", n_splits=2)
+
