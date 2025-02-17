@@ -14,11 +14,7 @@ print("Current Working Directory: ", cwd)
 
 
 MY_CONFIG = DynamicMomonaNet_config
-MODEL_STR = 'DynamicMomonaNet'  # [CNN, RNN, HybridCNNLSTM, CRNN, EMGHandNet, MomonaNet]
-if MODEL_STR in ["CNN", "DynamicCNN"]:  # Is CNN just DynamicCNN now? Pretty sure yes
-    do_feature_engr = True
-else:
-    do_feature_engr = False
+MODEL_STR = 'DynamicMomonaNet'  # [CNN, CNNLSTM, DynamicMomonaNet, ELEC573Net]
 finetune = False
 do_normal_logging = True
 
@@ -32,7 +28,7 @@ print(f'Directory {MY_CONFIG["models_save_dir"]} created successfully!')
 
 ##################################################
 
-expdef_df = load_expdef_gestures(apply_hc_feateng=do_feature_engr)
+expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])
 
 all_participants = expdef_df['Participant'].unique()
 # Shuffle the participants for train/test user split --> UNIQUE
@@ -81,7 +77,7 @@ if finetune:
     # NEED TO EVALUATE FINETUNED MODEL, at least on said user's data...
 
 if do_normal_logging:
-    visualize_model_performance(results)
+    #visualize_model_performance(results)  # This isn't defined anymore... what happened...
 
     log_file = log_performance(results, base_filename=MODEL_STR, config=MY_CONFIG)
     print(f"Detailed performance log saved to: {log_file}")

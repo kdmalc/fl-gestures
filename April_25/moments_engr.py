@@ -318,6 +318,8 @@ def create_abbaspour_FS_vectors(group):
     emg_columns = [col for col in group.columns if col.startswith('EMG')]
     # Compute features for individual channels
     emg_data = {col: np.array(group[col]) for col in emg_columns}
+
+    # TODO: Rectify EMG data (so it is all positive and mean is not zero)?
     
     for emg_col, data in emg_data.items():
         fs_vector.append(Var(data))  # variance

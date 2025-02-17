@@ -1,8 +1,8 @@
-import pandas as pd
+#import pandas as pd
 #import numpy as np
 #import random
 #np.random.seed(42) 
-from sklearn.preprocessing import LabelEncoder
+#from sklearn.preprocessing import LabelEncoder
 #from sklearn.model_selection import KFold
 #from sklearn.cross_decomposition import CCA
 #from sklearn.decomposition import PCA
@@ -15,12 +15,15 @@ from hyperparam_tuned_configs import *
 from full_study_funcs import *
 
 
-MODEL_STR = "DynamicMomonaNet"
-MY_CONFIG = DynamicMomonaNet_config
-NUM_LOCAL_MODELS = 15
+MODEL_STR = "CNN"
+MY_CONFIG = DynamicCNN_config
+MY_CONFIG["feature_engr"] = "moments"  # None, "moments", "FS"
+# Overwrite just in case...
+MY_CONFIG["model_str"] = MODEL_STR
+NUM_LOCAL_MODELS = 1
 NUM_LOCAL_TRAIN_GESTURE_SAMPLES = 3
 
-expdef_df = load_expdef_gestures(apply_hc_feateng=False)
+expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])
 all_participants = list(expdef_df['Participant'].unique())
 
 # Choosing NUM_LOCAL_MODELS somewhat arbitrarily, don't need to look at all 32 results... save some computation ig
@@ -36,9 +39,10 @@ input_dim = data_splits['train']['feature'].shape[1]
 user_dict = prepare_data_for_local_models(data_splits, MODEL_STR, MY_CONFIG)
 
 res_dict_lst = []
-#for pid in train_df['participant_ids'].unique():
-for p_idx, pid in enumerate(list(set(data_splits['train']['participant_ids']))):
-    print(f"Training local model for {pid} ({p_idx}/{NUM_LOCAL_MODELS})")
+# Does len(list(set(data_splits['train']['participant_ids']))) == NUM_LOCAL_MODELS? NOPE!
+#for p_idx, pid in enumerate(list(set(data_splits['train']['participant_ids']))):
+for p_idx, pid in enumerate(list(set(data_splits['train']['participant_ids'][:NUM_LOCAL_MODELS]))):
+    print(f"Training local model for {pid} ({p_idx+1}/{NUM_LOCAL_MODELS})")
 
     res_dict_lst.append(main_training_pipeline(data_splits=None, all_participants=all_participants, 
                                                test_participants=data_splits['cross_subject_test']['participant_ids'], 

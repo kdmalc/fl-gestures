@@ -77,7 +77,7 @@ def evaluate_configuration_on_ft(datasplit, pretrained_model, config, model_str,
             print(f"Fine-tuning on user {pid}")
 
         # Prepare datasets
-        my_gesture_dataset = select_dataset_class(model_str)
+        my_gesture_dataset = select_dataset_class(config)
         ft_train_dataset = my_gesture_dataset(
             *ft_user_data[pid], sl=config['sequence_length'], ts=config['time_steps']
         )
@@ -106,7 +106,7 @@ def make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_tri
     """This is just a wrapper function around prepare_data(), downside is you can't access all_participants and test_participants"""
 
     # Load the fixed user splits
-    with open("ELEC573_Proj\\24_8_user_splits.json", "r") as f:
+    with open("April_25\\24_8_user_splits.json", "r") as f:
         splits = json.load(f)
     all_participants = splits["all_users"]
     test_participants = splits["test_users"]
@@ -517,7 +517,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         intra_pids = data_splits['intra_subject_test']['participant_ids']
         cross_pids = data_splits['cross_subject_test']['participant_ids']
     
-        my_gesture_dataset = select_dataset_class(model_type)
+        my_gesture_dataset = select_dataset_class(config)
         
         train_dataset = my_gesture_dataset(
             data_splits['train']['feature'], 

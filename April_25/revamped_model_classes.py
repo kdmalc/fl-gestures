@@ -63,44 +63,27 @@ class EarlyStopping:
 
 def select_model(model_type, config):  #, device="cpu", input_dim=16, num_classes=10):
     if isinstance(model_type, str):
-        if model_type == 'CNN':  # 2D
-            # Not sure if this is working, not really using this one anymore
-            model = DynamicCNNModel(config, input_dim=80, num_classes=10)
+        if model_type in ['CNN', 'DynamicCNN']:  # ?
+            model = DynamicCNN(config)
+        elif model_type in ['CNNLSTM', 'DynamicCNNLSTM']:  # ?
+            model = DynamicCNNLSTM(config)
         elif model_type == 'ELEC573Net':  # 2D:
             model = ELEC573Net(config)
+        elif model_type == "DynamicMomonaNet":  # 2D
+            model = DynamicMomonaNet(config)
+        # THE BELOW ARE NOT INTEGRATED/WORKING YET
         elif model_type == 'HybridCNNLSTM':  # 3D
             model = HybridCNNLSTM()  # TODO: This needs to be modified to take input sizes smh
         elif model_type == 'CRNN':  # 3D
             model = CRNN(input_channels=80, window_size=1, num_classes=10)
         elif model_type == 'EMGHandNet':  # 4D
             model = EMGHandNet(input_channels=80, num_classes=10)
-        elif model_type == 'MomonaNet':  # 2D
-            model = MomonaNet(config)  # Arch is hardcoded in but it'e fine
-            # Overwriting... basically hardcoding these in...
-            ## There's a better way to do this (since you could use the default vals)
-            #sequence_length = 1
-            #time_steps = 64
-            # Nvm just hardcode the reshape...
-            ## It really ought to be 3 tho... but I have to reshape no matter what I think
-        elif model_type == "DynamicMomonaNet":  # 2D
-            model = DynamicMomonaNet(config) # Config should specify everything about arch?
         else:
             raise ValueError(f"{model_type} not recognized.")
     else:
         model = model_type
 
     return model
-
-
-def select_dataset_class(model_str):
-    if model_str in ["CNN",  "MomonaNet", "DynamicMomonaNet", "ELEC573Net"]:
-        return GestureDataset  # This is 2D
-    elif model_str in ["RNN", "HybridCNNLSTM", "CRNN"]:
-        return GestureDataset_3D
-    elif model_str in ["EMGHandNet"]:
-        return GestureDataset_4D
-    else:
-        raise ValueError
 
 
 # Utility functions for modular design
@@ -124,7 +107,7 @@ def calculate_flattened_size(input_dim, layers):
 
 
 ######################################
-# FIXED MODELS
+# January 2025 Models
 ######################################
 
 
@@ -211,8 +194,6 @@ class ELEC573Net(nn.Module):
         #print(f"After bn3: {x.shape}")
         x = self.relu(x)
         #print(f"After relu: {x.shape}")
-        # This last maxpool shrinks it down too much so turn it off
-        x = self.maxpool(x)  
 
         # Flatten and Fully Connected Layers
         x = x.view(x.size(0), -1)  # Flatten while preserving batch size
@@ -226,86 +207,6 @@ class ELEC573Net(nn.Module):
         x = self.fc2(x)
         #print(f"After fc2: {x.shape}")
         return x
-
-
-class MomonaNet(nn.Module):
-    #https://github.com/my-13/biosignals-gesture-analysis/blob/main/2024_UIST_CodeOcean/algorithms1.py
-    def __init__(self, config):
-        hidden_size = 12
-        tlen = 62  # TODO: Pass this in as a param? Or dynamically calc it?
-        super().__init__()
-
-        #self.bs = config['batch_size']
-        self.nc = config['num_channels']
-        self.sl = config['sequence_length']
-
-        # Replacing 88 everywhere with 16 (88 is 72IMU + 16EMG)
-        #CNN
-        self.conv1 = nn.Conv1d(in_channels=16, out_channels=16, kernel_size=2, stride=1)
-        self.pool = nn.MaxPool1d(kernel_size=2, stride=1)
-        # Dense layer connecting CNN to LSTM
-        self.dense = nn.Linear(16,16)
-        self.relu = nn.ReLU()
-        # LSTM
-        self.lstm = nn.LSTM(input_size=16, hidden_size=hidden_size, num_layers=2, batch_first=True, dropout=0.8)
-        self.flatten = nn.Flatten()
-
-        # Fully connected layers for classification
-        self.linear_relu_stack = nn.Sequential( 
-            nn.Linear(int(hidden_size*tlen), hidden_size),
-            nn.ReLU(),
-            nn.Linear(hidden_size, 10),
-        )
-
-    def forward(self, x):
-        #x = x.view(self.bs, self.nc, self.sl)
-        # Dynamically infer batch size from input tensor
-        batch_size = x.size(0)  # Get the batch size from the input tensor
-        # Reshape input to (batch_size, num_channels, sequence_length)
-        x = x.view(batch_size, self.nc, self.sl)  # Use dynamic batch size
-        x = self.pool(self.conv1(x)) # CNN layer + pooling
-        x = torch.swapaxes(x, 1, 2)
-        x = self.relu(self.dense(x))
-        x, _ = self.lstm(x) # 2 LSTM layers
-        x = self.flatten(x) 
-        logits = self.linear_relu_stack(x) # FFNN/dense layer for classification
-        return logits
-    
-
-######################################
-# DYNAMIC MODELS
-######################################
-
-class DynamicCNNModel(nn.Module):
-    # THIS IS NOT UP TO DATE
-
-    def __init__(self, config, input_dim, num_classes):
-        super().__init__()
-        self.conv_layers = nn.Sequential(*[
-            get_conv_block(
-                config["conv_layer_sizes"][i - 1] if i > 0 else 1,
-                config["conv_layer_sizes"][i],
-                kernel_size=config["kernel_size"],
-                stride=config["stride"],
-                padding=config["padding"],
-                maxpool=config["maxpool"],
-                use_batch_norm=config["use_batchnorm"]
-            ) for i in range(config["num_conv_layers"])
-        ])
-        flattened_size = calculate_flattened_size(input_dim, self.conv_layers)
-        self.fc = nn.Sequential(
-            nn.Linear(flattened_size, 128),
-            nn.ReLU(),
-            nn.Dropout(config["dropout_rate"]),
-            nn.Linear(128, num_classes),
-            nn.Softmax(dim=1)
-        )
-
-    def forward(self, x):
-        x = x.unsqueeze(1)  # (batch_size, 1, seq_length)
-        x = self.conv_layers(x)
-        x = x.view(x.size(0), -1)
-        return self.fc(x)
 
 
 class DynamicMomonaNet(nn.Module):
@@ -424,6 +325,143 @@ class DynamicMomonaNet(nn.Module):
         # Output layer
         logits = self.output_layer(x)
         return logits
+    
+
+######################################
+# Dynamic Models
+######################################
+
+
+class DynamicCNN(nn.Module):
+    def __init__(self, config):
+        super(DynamicCNN, self).__init__()
+        self.config = config
+        self.input_channels = config["num_channels"]
+        self.num_classes = config["num_classes"]
+        if config["feature_engr"] is None:
+            # TODO: Would need to add windowing or something for this to work out...
+            self.use_2d_conv = False
+        else:
+            self.use_2d_conv = False
+
+        # Activation & Pooling
+        self.relu = nn.ReLU()
+        self.softmax = nn.Softmax(dim=1)
+
+        # Convolutional Layers
+        self.conv_layers = nn.ModuleList()
+        in_channels = 1 if not self.use_2d_conv else self.input_channels  # 1D conv assumes single input channel
+        for out_channels, kernel_size, stride in config["conv_layers"]:
+            conv_layer = nn.Conv1d(in_channels, out_channels, kernel_size, stride) if not self.use_2d_conv \
+                else nn.Conv2d(in_channels, out_channels, kernel_size, stride)
+            self.conv_layers.append(nn.Sequential(
+                conv_layer,
+                nn.BatchNorm1d(out_channels) if not self.use_2d_conv else nn.BatchNorm2d(out_channels),
+                nn.ReLU()
+            ))
+            in_channels = out_channels
+
+        # Global pooling to handle variable sequence lengths
+        self.global_pool = nn.AdaptiveAvgPool1d(1) if not self.use_2d_conv else nn.AdaptiveAvgPool2d((1, 1))
+
+        # Fully Connected Layers
+        self.fc1 = nn.Linear(in_channels, config["fc_layers"][0])
+        self.dropout = nn.Dropout(config["fc_dropout"])
+        self.fc2 = nn.Linear(config["fc_layers"][0], self.num_classes)
+
+    def forward(self, x):
+        # I think this isn't quite right / always true...
+        if len(x.shape) == 2:  # Feature-engineered input case
+            if self.use_2d_conv:
+                x = x.unsqueeze(1)  # Reshape to (batch, 1, num_channels, 5)
+            else:
+                x = x.unsqueeze(1)  # Reshape to (batch, 1, num_channels * 5) for 1D conv
+        else:
+            x = x.unsqueeze(1)  # Time-series case (batch, 1, sequence_length)
+
+        for layer in self.conv_layers:
+            x = layer(x)
+
+        x = self.global_pool(x).view(x.size(0), -1)  # Flatten pooled output
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.fc2(x)
+        return x
+
+
+class DynamicCNNLSTM(nn.Module):
+    def __init__(self, config):
+        super(DynamicCNNLSTM, self).__init__()
+        self.config = config
+        self.input_channels = config["num_channels"]
+        self.num_classes = config["num_classes"]
+        self.lstm_hidden_size = config["lstm_hidden_size"]
+        self.lstm_num_layers = config["lstm_num_layers"]
+        if config["feature_engr"] is None:
+            # TODO: Would need to add windowing or something for this to work out...
+            self.use_2d_conv = False
+        else:
+            self.use_2d_conv = False
+
+        # Convolutional Layers
+        self.conv_layers = nn.ModuleList()
+        in_channels = 1 if not self.use_2d_conv else self.input_channels
+        for out_channels, kernel_size, stride in config["conv_layers"]:
+            conv_layer = nn.Conv1d(in_channels, out_channels, kernel_size, stride) if not self.use_2d_conv \
+                else nn.Conv2d(in_channels, out_channels, kernel_size, stride)
+            self.conv_layers.append(nn.Sequential(
+                conv_layer,
+                nn.BatchNorm1d(out_channels) if not self.use_2d_conv else nn.BatchNorm2d(out_channels),
+                nn.ReLU()
+            ))
+            in_channels = out_channels
+
+        # Adaptive Pooling to handle arbitrary input sizes
+        self.global_pool = nn.AdaptiveAvgPool1d(1) if not self.use_2d_conv else nn.AdaptiveAvgPool2d((1, 1))
+
+        # LSTM Layer
+        self.lstm = nn.LSTM(input_size=in_channels, hidden_size=self.lstm_hidden_size,
+                            num_layers=self.lstm_num_layers, batch_first=True)
+
+        # Fully Connected Layers
+        self.fc1 = nn.Linear(self.lstm_hidden_size, config["fc_layers"][0])
+        self.dropout = nn.Dropout(config["fc_dropout"])
+        self.fc2 = nn.Linear(config["fc_layers"][0], self.num_classes)
+
+    def forward(self, x):
+        #print(x.shape)
+        if len(x.shape) == 2:  # Feature-engineered input case
+            if self.use_2d_conv:
+                x = x.view(x.shape[0], self.num_channels, -1, 5)  # (batch, 16, ?, 5)
+            else:
+                x = x.view(x.shape[0], 1, -1)  # (batch, 1, num_channels * 5)
+        else:
+            #x = x.unsqueeze(1)  # Time-series case (batch, 1, sequence_length)
+            if self.use_2d_conv:
+                x = x.permute(0, 2, 1)  # Change (batch, seq_len, num_features) -> (batch, num_features, seq_len)
+                x = x.unsqueeze(-1)  # For the 2D case, unsqueeze last dim to be the "width" of this 2D time series "image"
+                #print("Input shape after permuting:", x.shape) 
+
+        for layer in self.conv_layers:
+            #print(f"PRE LAYER: {x.shape}")
+            x = layer(x)
+
+        x = self.global_pool(x).squeeze(-1)  # Remove last dimension
+        # TODO: There is only one pooling, after all the conv blocks? ... apparently this is somewhat common for time series...
+        #print(f"x after global pool: {x.shape}")
+        # Unsqueezing here kind of hardcodes this for the case where the output from pooling is 2D
+        ## Maybe the conditional will make it less hardcoded?
+        if len(x.shape)==2:  #self.use_2d_conv==False:
+            x = x.unsqueeze(1)
+        x, _ = self.lstm(x)  # LSTM processing
+        #print(f"x after LSTM: {x.shape}")
+        x = x[:, -1, :]  # Take last timestep
+
+        x = self.fc1(x)
+        x = self.dropout(x)
+        x = self.fc2(x)
+        return x
     
 
 ######################################

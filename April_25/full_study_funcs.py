@@ -222,7 +222,7 @@ def prepare_data_for_local_models(data_splits, model_str, config):
 
     # Get all unique participant IDs across all splits
     all_pids = set(train_groups.keys()).union(intra_groups.keys())#.union(cross_groups.keys())
-    my_gesture_dataset = select_dataset_class(model_str)
+    my_gesture_dataset = select_dataset_class(config)
 
     #features, labels = cross_groups[pid]
     cross_dataset = my_gesture_dataset(

@@ -5,7 +5,102 @@ NUM_TRAIN_GESTURES = 8
 NUM_FT_GESTURES = 1  # Oneshot
 
 
+# This one has not actually been hyperparamtuned...
+DynamicCNNLSTM_config = {
+    "model_str": "CNNLSTM",
+    "feature_engr": None, 
+    "time_steps": 1,
+    "sequence_length": 64,
+    "num_train_gesture_trials": NUM_TRAIN_GESTURES, 
+    "num_ft_gesture_trials": NUM_FT_GESTURES,
+    "num_pretrain_users": 24, 
+    "num_testft_users": 8, 
+    "weight_decay": 0.0,
+    "fc_layers": [128, 64],
+    "fc_dropout": 0.3,
+    "dense_cnnlstm_dropout": 0.3,
+    "conv_layers": [
+        [64, 3, 1],
+        [128, 3, 1]],
+    "cnn_dropout": 0.3,
+    "batch_size": 16,
+    "added_dense_ft_hidden_size": 64, 
+    "verbose": False,
+    "use_dense_cnn_lstm": True,  # TODO: Is this used rn?
+    "timestamp": timestamp,
+    "pooling_layers": [True, True, True, True],
+    "optimizer": "sgd",
+    "num_epochs": 100,
+    "num_classes": 10,
+    "num_channels": NUM_CHANNELS,
+    "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
+    "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
+    "lstm_num_layers": 1,
+    "lstm_hidden_size": 8,
+    "lstm_dropout": 0.8,
+    "log_each_pid_results": False,
+    "learning_rate": 0.001,
+    "finetune_strategy": "progressive_unfreeze",
+    "progressive_unfreezing_schedule": 5,
+    "ft_weight_decay": 0.0,
+    "ft_learning_rate": 0.001,
+    "ft_batch_size": 10,
+    "num_ft_epochs": 100,
+    "save_ft_models": False,
+    #"use_earlystopping": True,
+    #"lr_scheduler_gamma": 1.0,
+    "lr_scheduler_patience": 4, 
+    "lr_scheduler_factor": 0.1, 
+    "earlystopping_patience": 6,
+    "earlystopping_min_delta": 0.01
+}
+DynamicCNN_config = {
+    "model_str": "CNN",
+    "feature_engr": None, 
+    "time_steps": 1,
+    "sequence_length": 64,
+    "num_train_gesture_trials": NUM_TRAIN_GESTURES, 
+    "num_ft_gesture_trials": NUM_FT_GESTURES,
+    "num_pretrain_users": 24, 
+    "num_testft_users": 8, 
+    "weight_decay": 0.0,
+    "fc_layers": [128, 64],
+    "fc_dropout": 0.3,
+    "conv_layers": [
+        [64, 3, 1],
+        [128, 3, 1]],
+    "cnn_dropout": 0.3,
+    "batch_size": 16,
+    "added_dense_ft_hidden_size": 64, 
+    "verbose": False,
+    "timestamp": timestamp,
+    "pooling_layers": [True, True, True, True],
+    "optimizer": "sgd",
+    "num_epochs": 100,
+    "num_classes": 10,
+    "num_channels": NUM_CHANNELS,
+    "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
+    "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
+    "log_each_pid_results": False,
+    "learning_rate": 0.001,
+    "finetune_strategy": "progressive_unfreeze",
+    "progressive_unfreezing_schedule": 5,
+    "ft_weight_decay": 0.0,
+    "ft_learning_rate": 0.001,
+    "ft_batch_size": 10,
+    "num_ft_epochs": 100,
+    "save_ft_models": False,
+    #"use_earlystopping": True,
+    #"lr_scheduler_gamma": 1.0,
+    "lr_scheduler_patience": 4, 
+    "lr_scheduler_factor": 0.1, 
+    "earlystopping_patience": 6,
+    "earlystopping_min_delta": 0.01
+}
+
+
 DynamicMomonaNet_config = {
+    "model_str": "DynamicMomonaNet",
     "num_train_gesture_trials": NUM_TRAIN_GESTURES, 
     "num_ft_gesture_trials": NUM_FT_GESTURES,
     "num_pretrain_users": 24, 
@@ -54,44 +149,9 @@ DynamicMomonaNet_config = {
 }
 
 
-old_DynamicMomonaNet_config = {
-    "num_channels": NUM_CHANNELS,  #(int): Number of input channels.
-    "sequence_length": 64,  #(int): Length of the input sequence.
-    # ^ 32 wasn't working, it doesn't support time_steps to do multiple sequence batches for each slice
-    "time_steps": None,  # Required so that reused code doesn't break. Not used in DynamicMomonaNet
-    "conv_layers": [(32, 5, 1), (64, 3, 1), (128, 2, 1)], 
-    "pooling_layers": [True, False, False, False],  # Max pooling only after the first conv layer
-    "use_dense_cnn_lstm": True,  # Use dense layer between CNN and LSTM
-    "lstm_hidden_size": 16,  #(int): Hidden size for LSTM layers.
-    "lstm_num_layers": 1,  #(int): Number of LSTM layers.
-    "fc_layers": [128, 64],  #(list of int): List of integers specifying the sizes of fully connected layers.
-    "num_classes": 10, #(int): Number of output classes.
-    # HYPERPARAMS
-    "batch_size": 16,  #SHARED_BS #(int): Batch size.
-    "lstm_dropout": 0.8,  #(float): Dropout probability for LSTM layers.
-    "cnn_dropout": 0.0,
-    "dense_cnnlstm_dropout": 0.0, 
-    "fc_dropout": 0.0, 
-    "learning_rate": 0.001,
-    "num_epochs": 500,
-    "optimizer": "adam",
-    "weight_decay": 1e-4,
-    "ft_learning_rate": 0.01,
-    "num_ft_epochs": 500,
-    "ft_weight_decay": 1e-4, 
-    "ft_batch_size": 1, 
-    "use_earlystopping": False,  # Always use this to save time, in ft and earlier training
-    # METADATA
-    "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
-    "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
-    "timestamp": timestamp,
-    "verbose": False,
-    "log_each_pid_results": False, 
-    "save_ft_models": False  # KEEP FALSE WHEN HYPERPARAM TUNING
-}
-
 # BEST PARAMS FOR GENERIC MODEL
 ELEC573Net_config = {
+    "model_str": "ELEC573Net",
     "num_train_gesture_trials": NUM_TRAIN_GESTURES, 
     "num_ft_gesture_trials": NUM_FT_GESTURES,
     "feature_engr": "moments", 
@@ -108,7 +168,7 @@ ELEC573Net_config = {
     "fc_layers": [128],  #(list of int): List of integers specifying the sizes of fully connected layers.
     "use_batchnorm": True,
     "padding": 1,
-    "pooling_layers": [None],  # In ELEC573Net pooling is on by default, see below
+    "pooling_layers": None,  # In ELEC573Net pooling is on by default, see below. Should this be set to None or...
     "maxpool": 1,  # Just adding/passing this through 
     "cnn_dropout": 0.0,
     "fc_dropout": 0.3, 
