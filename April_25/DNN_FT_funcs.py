@@ -564,19 +564,27 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     intra_test_loss_log = []
     cross_test_loss_log = []
 
+    if save_loss_here: 
+        # Is this by participant? Or just once per config?
+        ## Don't really want to save here anyways I don't think...
+        # Open a text file for logging
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        log_file = open(f"{config['results_save_dir']}\\{timestamp}_{model_type}_pretrained_training_log.txt", "w")
+
     max_epochs = config["num_epochs"]
     epoch = 0
     done = False
     #if config['use_earlystopping']:
     #    earlystopping = EarlyStopping()
-    
-    # Is this by participant? Or just once per config?
-    if save_loss_here:
-        # Open a text file for logging
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        log_file = open(f"{config['results_save_dir']}\\{timestamp}_{model_type}_pretrained_training_log.txt", "w")
+    # Initialize a generator for reproducible shuffling (that can be different for each epoch!)
+    dl_shuffler_generator = torch.Generator()
     while not done and epoch < max_epochs:
         epoch += 1
+        # Update the generator's seed for a fresh shuffle each epoch
+        dl_shuffler_generator.manual_seed(epoch)  # Ensures different shuffles for each epoch
+        # Reinitialize DataLoader with the new shuffle
+        train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, generator=dl_shuffler_generator)
+
         train_loss = train_model(model, train_loader, optimizer)
         train_loss_log.append(train_loss)
 
@@ -588,21 +596,12 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
 
         # Anneal the learning rate (advance scheduler) if applicable
         #if config["lr_scheduler_gamma"]<1.0:
-        #    scheduler.step()
+        #    scheduler.step() 
+        # TODO: Should this be toggle-able...
         # Reduce LR if validation loss plateaus
         scheduler.step(intra_test_loss)
-
         # Early stopping check
-        #if config['use_earlystopping'] and earlystopping(model, intra_test_loss):
-        #    done = True
-        #    earlystopping_status = earlystopping.status
-        #else:
-        #    earlystopping_status = ""
-        # THIS IS VERY SENSITIVE TO NOISE AND WONT TRIGGER
-        #if scheduler.num_bad_epochs >= config["earlystopping_patience"]:  # Custom stopping condition
-        #    done = True
-        # Early stopping check
-        if early_stopping(intra_test_loss):
+        if config['use_earlystopping'] and early_stopping(intra_test_loss):
             done = True
 
         # Log metrics to the console and the text file
@@ -779,13 +778,16 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     test_loss_log = []
     epoch = 0
     done = False
-    #if use_earlystopping:
-    #    earlystopping = EarlyStopping()
+    # Initialize a generator for reproducible shuffling (that can be different for each epoch!)
+    #dl_shuffler_generator = torch.Generator()
     # Open a text file for logging
     if config["log_each_pid_results"]:
         log_file = open(f"{timestamp}_{pid}ft_log.txt", "w")
     while not done and epoch < max_epochs:
         epoch += 1
+        #dl_shuffler_generator.manual_seed(epoch)
+        # Reinitialize DataLoader with the new shuffle
+        #fine_tune_loader = DataLoader(ft_dataset, batch_size=config["batch_size"], shuffle=True, generator=dl_shuffler_generator)
 
         # Progressive unfreezing logic
         if (finetune_strategy == "progressive_unfreeze" and 

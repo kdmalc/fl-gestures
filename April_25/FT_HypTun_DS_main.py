@@ -2,12 +2,13 @@
 ## 1: must train a pretrained model from scratch every time
 ## 2: we do multiple datasplits for cross validation to ensure generalizability
 
-import random
-random.seed(42)
 from datetime import datetime
 import os
 cwd = os.getcwd()
 print("Current Working Directory: ", cwd)
+
+from global_seed import set_seed
+set_seed()
 
 from DNN_FT_funcs import *
 from revamped_model_classes import *

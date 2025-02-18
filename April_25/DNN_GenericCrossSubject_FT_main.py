@@ -5,7 +5,10 @@ import numpy as np
 from moments_engr import *
 from DNN_FT_funcs import *
 from hyperparam_tuned_configs import *
-np.random.seed(101) 
+
+from global_seed import set_seed
+set_seed()
+
 import json
 import os
 cwd = os.getcwd()

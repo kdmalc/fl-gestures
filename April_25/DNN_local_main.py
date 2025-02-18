@@ -1,11 +1,5 @@
-#import pandas as pd
-#import numpy as np
-#import random
-#np.random.seed(42) 
-#from sklearn.preprocessing import LabelEncoder
-#from sklearn.model_selection import KFold
-#from sklearn.cross_decomposition import CCA
-#from sklearn.decomposition import PCA
+from global_seed import set_seed
+set_seed()
 
 from moments_engr import *
 from agglo_model_clust import *

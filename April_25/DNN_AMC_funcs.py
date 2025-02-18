@@ -7,8 +7,6 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import StratifiedKFold
 import torch
 
-np.random.seed(42) 
-
 from moments_engr import *
 from agglo_model_clust import *
 from DNN_FT_funcs import *

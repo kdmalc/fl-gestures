@@ -3,7 +3,8 @@ import numpy as np
 #import matplotlib.pyplot as plt
 #import pandas as pd
 
-np.random.seed(42) 
+from global_seed import set_seed
+set_seed()
 
 from agglo_model_clust import *
 from cluster_acc_viz_funcs import *

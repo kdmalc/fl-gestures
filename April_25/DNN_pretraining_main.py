@@ -7,10 +7,12 @@ from sklearn.preprocessing import LabelEncoder
 from moments_engr import *
 from DNN_FT_funcs import *
 from hyperparam_tuned_configs import *
-np.random.seed(42) 
 import os
 cwd = os.getcwd()
 print("Current Working Directory: ", cwd)
+
+from global_seed import set_seed
+set_seed()
 
 
 MY_CONFIG = DynamicMomonaNet_config
