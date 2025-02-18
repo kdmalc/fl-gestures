@@ -3,9 +3,9 @@ import json
 from sklearn.model_selection import KFold
 
 
-SETUP_KFCV = True
+SETUP_KFCV = False
 K = 5  # Number of folds for cross-validation
-RANDOM_SEED = 101
+RANDOM_SEED = 17
 np.random.seed(RANDOM_SEED)
 
 all_users = ['P008', 'P119', 'P131', 'P122', 'P110', 'P111', 'P010', 'P132',
