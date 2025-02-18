@@ -13,12 +13,14 @@ from DNN_FT_funcs import *
 from revamped_model_classes import *
 
 
-NUM_CONFIGS = 100
+NUM_CONFIGS = 20
 NUM_TRAIN_TRIALS = 8
 NUM_FT_TRIALS = 1
-NUM_DATASPLITS = 4
+NUM_DATASPLITS = 1
+NUM_CHANNELS = 1  # ... or 16...
 MODEL_STR = "DynamicMomonaNet"
-expdef_df = load_expdef_gestures(apply_hc_feateng=False, filepath_pkl="D:\\Kai_MetaGestureClustering_24\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl")
+raise ValueError("Remember to set feateng_method to the correct FE")
+expdef_df = load_expdef_gestures(feateng_method=None, filepath_pkl="D:\\Kai_MetaGestureClustering_24\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl")
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
 # Define the search space

@@ -45,19 +45,7 @@ MY_CONFIG["sequence_length"] = SEQ_LEN
 
 
 expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])
-
-# Load the fixed user splits
-with open("ELEC573_Proj\\24_8_user_splits.json", "r") as f:
-    splits = json.load(f)
-all_participants = splits["all_users"]
-test_participants = splits["test_users"]
-
-# Prepare data
-data_splits = prepare_data(
-    expdef_df, 'feature', 'Gesture_Encoded', 
-    all_participants, test_participants, 
-    training_trials_per_gesture=8, finetuning_trials_per_gesture=3,
-)
+data_splits, all_participants, test_participants = make_data_split(expdef_df, MY_CONFIG, return_participants=True)
 
 # Train base model
 results = main_training_pipeline(

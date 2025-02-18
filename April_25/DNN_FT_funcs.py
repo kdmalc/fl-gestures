@@ -102,11 +102,11 @@ def evaluate_configuration_on_ft(datasplit, pretrained_model, config, model_str,
     return user_accuracies
 
 
-def make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3, num_train_users=24):
+def make_data_split(expdef_df, config, return_participants=False):
     """This is just a wrapper function around prepare_data(), downside is you can't access all_participants and test_participants"""
 
     # Load the fixed user splits
-    with open("April_25\\24_8_user_splits.json", "r") as f:
+    with open(config["user_split_json_filepath"], "r") as f:
         splits = json.load(f)
     all_participants = splits["all_users"]
     test_participants = splits["test_users"]
@@ -115,10 +115,13 @@ def make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_tri
     data_splits = prepare_data(
         expdef_df, 'feature', 'Gesture_Encoded', 
         all_participants, test_participants, 
-        training_trials_per_gesture=num_gesture_training_trials, finetuning_trials_per_gesture=num_gesture_ft_trials,
+        training_trials_per_gesture=config["num_train_gesture_trials"], finetuning_trials_per_gesture=config["num_ft_gesture_trials"],
     )
 
-    return data_splits
+    if return_participants==False:
+        return data_splits
+    else:
+        return data_splits, all_participants, test_participants
 
 
 def save_model(model, model_str, save_dir, model_scenario_str, verbose=True, timestamp=None):

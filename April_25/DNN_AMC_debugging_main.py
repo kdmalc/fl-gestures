@@ -14,8 +14,8 @@ from DNN_AMC_funcs import *
 from hyperparam_tuned_configs import * 
 
 
-MODEL_STR = "ELEC573Net" #"DynamicMomonaNet"
-FEATENG = "FS"  # "moments" "FS" None
+MODEL_STR = "DynamicMomonaNet" #"DynamicMomonaNet"
+FEATENG = None  # "moments" "FS" None
 if FEATENG is not None and MODEL_STR=="DynamicMomonaNet":
     NUM_CHANNELS = 1
     SEQ_LEN = 80
@@ -43,7 +43,7 @@ MY_CONFIG["sequence_length"] = SEQ_LEN
 
 
 expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])
-data_splits = make_data_split(expdef_df, num_gesture_training_trials=8, num_gesture_ft_trials=3)
+data_splits = make_data_split(expdef_df, MY_CONFIG)
 # Fit LabelEncoder once on all participant IDs for consistency
 all_participant_ids = data_splits['train']['participant_ids'] + data_splits['intra_subject_test']['participant_ids'] + data_splits['cross_subject_test']['participant_ids']
 label_encoder = LabelEncoder()

@@ -33,6 +33,7 @@ DynamicCNNLSTM_config = {
     "num_epochs": 100,
     "num_classes": 10,
     "num_channels": NUM_CHANNELS,
+    "user_split_json_filepath": "April_25\\fixed_user_splits\\24_8_user_splits.json",  # Mystery seed. Rerun with other user splits... ought to kfcv...
     "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
     "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
     "lstm_num_layers": 1,
@@ -79,6 +80,7 @@ DynamicCNN_config = {
     "num_epochs": 100,
     "num_classes": 10,
     "num_channels": NUM_CHANNELS,
+    "user_split_json_filepath": "April_25\\fixed_user_splits\\24_8_user_splits.json",  # Mystery seed. Rerun with other user splits... ought to kfcv...
     "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
     "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
     "log_each_pid_results": False,
@@ -126,6 +128,7 @@ DynamicMomonaNet_config = {
     "num_epochs": 100,
     "num_classes": 10,
     "num_channels": NUM_CHANNELS,
+    "user_split_json_filepath": "April_25\\fixed_user_splits\\24_8_user_splits.json",  # Mystery seed. Rerun with other user splits... ought to kfcv...
     "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
     "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
     "lstm_num_layers": 1,
@@ -181,6 +184,7 @@ ELEC573Net_config = {
     # UNSURE ABOUT HOW THIS WORKS
     "ft_batch_size": 32,  # How was this using 32 as its batch_size if there's only 30 total finetuning gestures...
     # METADATA
+    "user_split_json_filepath": "April_25\\fixed_user_splits\\24_8_user_splits.json",  # Mystery seed. Rerun with other user splits... ought to kfcv...
     "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
     "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
     "timestamp": timestamp,

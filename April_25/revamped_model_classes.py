@@ -30,7 +30,7 @@ class SmoothedEarlyStopping:
 
 
 class EarlyStopping:
-    # This has been removed
+    # This has been mostly depreciated (still used in AMC clustering code...)
     ## This version actually has everything except the smoothing... 
     def __init__(self, patience=5, min_delta=0, restore_best_weights=True):
         self.patience = patience
@@ -73,37 +73,17 @@ def select_model(model_type, config):  #, device="cpu", input_dim=16, num_classe
             model = DynamicMomonaNet(config)
         # THE BELOW ARE NOT INTEGRATED/WORKING YET
         elif model_type == 'HybridCNNLSTM':  # 3D
-            model = HybridCNNLSTM()  # TODO: This needs to be modified to take input sizes smh
+            model = HybridCNNLSTM(config)
         elif model_type == 'CRNN':  # 3D
-            model = CRNN(input_channels=80, window_size=1, num_classes=10)
+            model = CRNN(config)
         elif model_type == 'EMGHandNet':  # 4D
-            model = EMGHandNet(input_channels=80, num_classes=10)
+            model = EMGHandNet(config)
         else:
             raise ValueError(f"{model_type} not recognized.")
     else:
         model = model_type
 
     return model
-
-
-# Utility functions for modular design
-def get_conv_block(in_channels, out_channels, kernel_size, stride, padding, maxpool, use_batch_norm, activation=nn.ReLU()):
-    """Create a convolutional block with optional batch normalization and max pooling."""
-    layers = [nn.Conv1d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding)]
-    if use_batch_norm:
-        layers.append(nn.BatchNorm1d(out_channels))
-    layers.append(activation)
-    if maxpool > 1:
-        layers.append(nn.MaxPool1d(maxpool))
-    return nn.Sequential(*layers)
-
-
-def calculate_flattened_size(input_dim, layers):
-    """Dynamically calculate the flattened size of a convolutional block."""
-    with torch.no_grad():
-        test_input = torch.randn(1, 1, input_dim)  # Simulate a single input
-        test_output = layers(test_input)
-    return test_output.view(1, -1).size(1)
 
 
 ######################################
@@ -350,7 +330,8 @@ class DynamicCNN(nn.Module):
 
         # Convolutional Layers
         self.conv_layers = nn.ModuleList()
-        in_channels = 1 if not self.use_2d_conv else self.input_channels  # 1D conv assumes single input channel
+        in_channels = 1 if not self.use_2d_conv else self.input_channels
+        # 1D conv assumes single input channel --> TODO: Wait why did I do this? Could I do this with conv2D too??
         for out_channels, kernel_size, stride in config["conv_layers"]:
             conv_layer = nn.Conv1d(in_channels, out_channels, kernel_size, stride) if not self.use_2d_conv \
                 else nn.Conv2d(in_channels, out_channels, kernel_size, stride)
@@ -407,6 +388,7 @@ class DynamicCNNLSTM(nn.Module):
         # Convolutional Layers
         self.conv_layers = nn.ModuleList()
         in_channels = 1 if not self.use_2d_conv else self.input_channels
+        # ^ TODO: Again with 1D conv a single input stream is assumed...
         for out_channels, kernel_size, stride in config["conv_layers"]:
             conv_layer = nn.Conv1d(in_channels, out_channels, kernel_size, stride) if not self.use_2d_conv \
                 else nn.Conv2d(in_channels, out_channels, kernel_size, stride)
