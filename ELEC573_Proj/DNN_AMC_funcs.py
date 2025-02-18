@@ -62,22 +62,20 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids,
     num_folds_processed = 0
     clus_model_dict = {}
     for cluster in cluster_ids:
-        
-        #######################################################################
-        #######################################################################
-        #######################################################################
-        
+
         # Filter data for the current cluster
         cluster_data = train_df[train_df[cluster_column] == cluster]
-        #X = np.array([x.flatten() for x in cluster_data[feature_column]])
         X = np.array([x for x in cluster_data[feature_column]])
         y = np.array(cluster_data[target_column])
 
-        # Stratified K-Fold for validation splits
-        ## IDK IF THIS WILL WORK WITH PYTORCH FORMATTED DATA...
-        skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+        if n_splits > 1:
+            skf = StratifiedKFold(n_splits=n_splits, shuffle=True)  # Uses the global seed if set in main
+            splits = skf.split(X, y)
+        else:
+            splits = [(list(range(len(X))), list(range(len(X))))]  # Train on full dataset
+
         cluster_val_accuracy = 0
-        for idx, (train_idx, val_idx) in enumerate(skf.split(X, y)):
+        for idx, (train_idx, val_idx) in enumerate(splits):
             X_train, X_val = X[train_idx], X[val_idx]
             y_train, y_val = y[train_idx], y[val_idx]
             
@@ -116,7 +114,7 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids,
             fold_true_labels = []
             with torch.no_grad():
                 # Validation loop
-                predictions = []
+                #predictions = []
                 for X_val, y_val in val_loader:  # Assuming you have a validation DataLoader
                     outputs = fold_model(X_val)
                     _, preds = torch.max(outputs, 1)
@@ -143,12 +141,8 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids,
         total_val_accuracy += cluster_val_accuracy
         num_folds_processed += 1
         
-        #######################################################################
-        #######################################################################
-        #######################################################################
-
     # Overall average accuracy across all clusters
-    avg_val_accuracy = total_val_accuracy / num_folds_processed
+    #avg_val_accuracy = total_val_accuracy / num_folds_processed
     #print(f"\nOverall Average Validation Accuracy: {avg_val_accuracy:.4f}")
     
     return clus_model_dict
