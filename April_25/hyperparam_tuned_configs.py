@@ -26,7 +26,7 @@ DynamicCNNLSTM_config = {
     "batch_size": 16,
     "added_dense_ft_hidden_size": 64, 
     "verbose": False,
-    "use_dense_cnn_lstm": True,  # TODO: Is this used rn?
+    "use_dense_cnn_lstm": False,  # Not used with this network!
     "timestamp": timestamp,
     "pooling_layers": [True, True, True, True],
     "optimizer": "sgd",
@@ -34,8 +34,8 @@ DynamicCNNLSTM_config = {
     "num_classes": 10,
     "num_channels": NUM_CHANNELS,
     "user_split_json_filepath": "April_25\\fixed_user_splits\\24_8_user_splits.json",  # Mystery seed. Rerun with other user splits... ought to kfcv...
-    "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
-    "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
+    "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\April_25\\results\\{timestamp}",  # \\hyperparam_tuning
+    "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\April_25\\models\\{timestamp}",  # \\hyperparam_tuning
     "lstm_num_layers": 1,
     "lstm_hidden_size": 8,
     "lstm_dropout": 0.8,
@@ -48,7 +48,7 @@ DynamicCNNLSTM_config = {
     "ft_batch_size": 10,
     "num_ft_epochs": 100,
     "save_ft_models": False,
-    #"use_earlystopping": True,
+    "use_earlystopping": True,
     #"lr_scheduler_gamma": 1.0,
     "lr_scheduler_patience": 4, 
     "lr_scheduler_factor": 0.1, 
@@ -81,8 +81,8 @@ DynamicCNN_config = {
     "num_classes": 10,
     "num_channels": NUM_CHANNELS,
     "user_split_json_filepath": "April_25\\fixed_user_splits\\24_8_user_splits.json",  # Mystery seed. Rerun with other user splits... ought to kfcv...
-    "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
-    "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
+    "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\April_25\\results\\{timestamp}",  # \\hyperparam_tuning
+    "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\April_25\\models\\{timestamp}",  # \\hyperparam_tuning
     "log_each_pid_results": False,
     "learning_rate": 0.001,
     "finetune_strategy": "progressive_unfreeze",
@@ -92,7 +92,7 @@ DynamicCNN_config = {
     "ft_batch_size": 10,
     "num_ft_epochs": 100,
     "save_ft_models": False,
-    #"use_earlystopping": True,
+    "use_earlystopping": True,
     #"lr_scheduler_gamma": 1.0,
     "lr_scheduler_patience": 4, 
     "lr_scheduler_factor": 0.1, 
@@ -129,8 +129,8 @@ DynamicMomonaNet_config = {
     "num_classes": 10,
     "num_channels": NUM_CHANNELS,
     "user_split_json_filepath": "April_25\\fixed_user_splits\\24_8_user_splits.json",  # Mystery seed. Rerun with other user splits... ought to kfcv...
-    "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
-    "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
+    "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\April_25\\results\\{timestamp}",  # \\hyperparam_tuning
+    "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\April_25\\models\\{timestamp}",  # \\hyperparam_tuning
     "lstm_num_layers": 1,
     "lstm_hidden_size": 8,
     "lstm_dropout": 0.8,
@@ -143,7 +143,7 @@ DynamicMomonaNet_config = {
     "ft_batch_size": 10,
     "num_ft_epochs": 100,
     "save_ft_models": False,
-    #"use_earlystopping": True,
+    "use_earlystopping": True,
     #"lr_scheduler_gamma": 1.0,
     "lr_scheduler_patience": 4, 
     "lr_scheduler_factor": 0.1, 
@@ -185,13 +185,13 @@ ELEC573Net_config = {
     "ft_batch_size": 32,  # How was this using 32 as its batch_size if there's only 30 total finetuning gestures...
     # METADATA
     "user_split_json_filepath": "April_25\\fixed_user_splits\\24_8_user_splits.json",  # Mystery seed. Rerun with other user splits... ought to kfcv...
-    "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\{timestamp}",  # \\hyperparam_tuning
-    "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\models\\{timestamp}",  # \\hyperparam_tuning
+    "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\April_25\\results\\{timestamp}",  # \\hyperparam_tuning
+    "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\April_25\\models\\{timestamp}",  # \\hyperparam_tuning
     "timestamp": timestamp,
     "verbose": False,
     "log_each_pid_results": False, 
     "save_ft_models": False,  # Not even applicable here
-    #"use_earlystopping": True,
+    "use_earlystopping": True,
     #"lr_scheduler_gamma": 1.0,
     "lr_scheduler_patience": 4, 
     "lr_scheduler_factor": 0.1, 

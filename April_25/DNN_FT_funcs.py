@@ -457,6 +457,47 @@ def gesture_performance_by_participant(predictions, true_labels, all_unique_part
     return performance
 
 
+def plot_train_test_curves(res_dict, my_title, print_acc=True, acc_keys=None, log_keys=None):
+    if acc_keys is None:
+        train_acc_key = 'train_accuracy'
+        intra_acc_key = 'intra_test_accuracy'
+        cross_acc_key = 'cross_test_accuracy'
+    else:
+        train_acc_key = log_keys[0]
+        intra_acc_key = log_keys[1]
+        cross_acc_key = log_keys[2]
+    
+    if log_keys is None:
+        train_key = 'train_loss_log'
+        intra_key = 'intra_test_loss_log'
+        cross_key = 'cross_test_loss_log'
+    else:
+        train_key = log_keys[0]
+        intra_key = log_keys[1]
+        cross_key = log_keys[2]
+
+    if print_acc:
+        print("Final Accuracies (averaged across users and gestures)")
+        if train_acc_key is not None:
+            print(f"Train accuracy: {res_dict[train_acc_key]*100:.2f}%")
+        if intra_acc_key is not None:
+            print(f"Intra test accuracy: {res_dict[intra_acc_key]*100:.2f}%")
+        if cross_acc_key is not None:
+            print(f"Cross test accuracy: {res_dict[cross_acc_key]*100:.2f}%")
+
+    if train_key is not None:
+            plt.plot(res_dict[train_key], label="Train")
+    if intra_key is not None:
+            plt.plot(res_dict[intra_key], label="Intra Test")
+    if cross_key is not None:
+            plt.plot(res_dict[cross_key], label="Cross Test")
+    plt.title(my_title)
+    plt.legend()
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.show()
+
+
 def main_training_pipeline(data_splits, all_participants, test_participants, model_type, config, 
                            train_intra_cross_loaders=None, save_loss_here=False):
     """
@@ -516,7 +557,11 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         #num_classes = len(unique_gestures)
         #input_dim = data_splits['train']['feature'].shape[1]
 
-        train_pids = data_splits['train']['participant_ids']  # THIS IS IN ORDER! NOT SHUFFLED!!
+        train_pids = data_splits['train']['participant_ids']  
+        # ^THIS IS IN ORDER! NOT SHUFFLED!!
+        # TODO: Verfiy the above...
+
+
         intra_pids = data_splits['intra_subject_test']['participant_ids']
         cross_pids = data_splits['cross_subject_test']['participant_ids']
     
@@ -539,8 +584,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         intra_test_loader = DataLoader(intra_test_dataset, batch_size=bs, shuffle=False) #, drop_last=True)
 
         # CROSS SUBJECT (560)
-        ## Wait shouldn't I have 2 cross datasets? Are these the withheld users??
-        ## I should have finetuning and withheld right? Presumably cross_test is withheld?
+        ## AKA Novel user testing data (FT data not extracted here since it's not used)
         cross_test_dataset = my_gesture_dataset(
             data_splits['cross_subject_test']['feature'], 
             data_splits['cross_subject_test']['labels'], 
@@ -556,8 +600,10 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     # Annealing the learning rate if applicable
     #if config["lr_scheduler_gamma"]<1.0:
     #    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config["lr_scheduler_gamma"])
-    early_stopping = SmoothedEarlyStopping(patience=config["earlystopping_patience"], min_delta=config["earlystopping_min_delta"])
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=config["lr_scheduler_patience"], factor=config["lr_scheduler_factor"], verbose=False)
+    if config['use_earlystopping']:
+        early_stopping = SmoothedEarlyStopping(patience=config["earlystopping_patience"], min_delta=config["earlystopping_min_delta"])
+    if config["lr_scheduler_factor"]>0.0:
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=config["lr_scheduler_patience"], factor=config["lr_scheduler_factor"], verbose=False)
 
     # Training
     train_loss_log = []
@@ -574,16 +620,15 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     max_epochs = config["num_epochs"]
     epoch = 0
     done = False
-    #if config['use_earlystopping']:
-    #    earlystopping = EarlyStopping()
     # Initialize a generator for reproducible shuffling (that can be different for each epoch!)
-    dl_shuffler_generator = torch.Generator()
+    #dl_shuffler_generator = torch.Generator()
     while not done and epoch < max_epochs:
         epoch += 1
         # Update the generator's seed for a fresh shuffle each epoch
-        dl_shuffler_generator.manual_seed(epoch)  # Ensures different shuffles for each epoch
+        #dl_shuffler_generator.manual_seed(epoch)  # Ensures different shuffles for each epoch
         # Reinitialize DataLoader with the new shuffle
-        train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, generator=dl_shuffler_generator)
+        ## TODO: This also doesnt work here bc train_dataset is not always available (when train_intra_cross_loaders is not None...)
+        #train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True, generator=dl_shuffler_generator)
 
         train_loss = train_model(model, train_loader, optimizer)
         train_loss_log.append(train_loss)
@@ -597,9 +642,9 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         # Anneal the learning rate (advance scheduler) if applicable
         #if config["lr_scheduler_gamma"]<1.0:
         #    scheduler.step() 
-        # TODO: Should this be toggle-able...
-        # Reduce LR if validation loss plateaus
-        scheduler.step(intra_test_loss)
+        if config["lr_scheduler_factor"]>0.0:
+            # Reduce LR if validation loss plateaus
+            scheduler.step(intra_test_loss)
         # Early stopping check
         if config['use_earlystopping'] and early_stopping(intra_test_loss):
             done = True
@@ -656,6 +701,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
 
     return {
         'model': model,
+        # These are (train??) accuracies broken up by 1) user and then 2) gesture class
         'train_performance': train_performance,
         'intra_test_performance': intra_test_performance,
         'cross_test_performance': cross_test_performance,
@@ -663,6 +709,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
         'train_accuracy': train_results['accuracy'],
         'intra_test_accuracy': intra_test_results['accuracy'],
         'cross_test_accuracy': cross_test_results['accuracy'], 
+        # Train/test curves
         'train_loss_log': train_loss_log,
         'intra_test_loss_log': intra_test_loss_log,
         'cross_test_loss_log': cross_test_loss_log
@@ -770,8 +817,10 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     # Set up learning rate scheduler if applicable
     #if config["lr_scheduler_gamma"]<1.0:
     #    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config["lr_scheduler_gamma"])
-    early_stopping = SmoothedEarlyStopping(patience=config["earlystopping_patience"], min_delta=config["earlystopping_min_delta"])
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=config["lr_scheduler_patience"], factor=config["lr_scheduler_factor"], verbose=False)
+    if config["use_earlystopping"]==True:
+        early_stopping = SmoothedEarlyStopping(patience=config["earlystopping_patience"], min_delta=config["earlystopping_min_delta"])
+    if config["lr_scheduler_factor"]>0.0:
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=config["lr_scheduler_patience"], factor=config["lr_scheduler_factor"], verbose=False)
 
     # Fine-tuning training loop
     train_loss_log = []
@@ -809,20 +858,12 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         # Anneal the learning rate if applicable (advance the scheduler)
         #if config["lr_scheduler_gamma"]<1.0:
         #    scheduler.step()
-        # Reduce LR if validation loss plateaus
-        scheduler.step(novel_intra_test_loss)
-
+        if config["lr_scheduler_factor"]>0.0:
+            # Reduce LR if validation loss plateaus
+            scheduler.step(novel_intra_test_loss)
         # Early stopping check
-        #if use_earlystopping==True and earlystopping(finetuned_model, novel_intra_test_loss):
-        #    done = True
-        #    earlystopping_status = earlystopping.status
-        #else:
-        #    earlystopping_status = ""
-        # THIS IS VERY SENSITIVE TO NOISE AND WONT TRIGGER
-        #if scheduler.num_bad_epochs >= config["earlystopping_patience"]:  # Custom stopping condition
-        #    done = True
-        # Early stopping check
-        if early_stopping(novel_intra_test_loss):
+        if config["use_earlystopping"]==True and early_stopping(novel_intra_test_loss):
+            print(f"FT {pid}: Early stopping reached after {epoch} epochs")
             done = True
 
     # Log metrics to the console and the text file, AFTER the while loop has finished

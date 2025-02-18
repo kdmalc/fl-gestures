@@ -202,7 +202,7 @@ def group_data_by_pid(features, labels, pids):
     return pid_data
 
 
-def prepare_data_for_local_models(data_splits, model_str, config):
+def prepare_data_for_local_models(data_splits, config):
 
     bs = config["batch_size"]
     sequence_length = config["sequence_length"]
@@ -371,14 +371,19 @@ def create_shared_trial_data_splits(expdef_df, all_participants, test_participan
 
 
 def finetuning_run(trial_data_splits_lst, config, pretrained_generic_model, nested_clus_model_dict):
-    """This function IMPLICITLY does MonteCarlo averaging, and the number of elements (separate datasplits) in trial_data_splits_lst determines how many repetitions there are. """
+    """This function de facto does MonteCarlo averaging, and the number of elements (separate datasplits) in trial_data_splits_lst determines how many repetitions there are. """
     num_monte_carlo_runs = len(trial_data_splits_lst)
-    num_ft_users =  config["num_testft_users"]
-    lst_of_res_dicts = [0]*num_monte_carlo_runs
+    num_ft_users = config["num_testft_users"]
+    
+    lst_of_res_dicts = [0] * num_monte_carlo_runs
+    train_test_logs_list = []  # Store train/test logs separately
+    
     for i in range(num_monte_carlo_runs):
-        lst_of_res_dicts[i] = finetuning_comparison_run(trial_data_splits_lst[i], config, pretrained_generic_model,
-                                nested_clus_model_dict, cluster_iter_str='Iter18')
-
+        res, logs = finetuning_comparison_run(trial_data_splits_lst[i], config, pretrained_generic_model,
+                                              nested_clus_model_dict, cluster_iter_str='Iter18')
+        lst_of_res_dicts[i] = res
+        train_test_logs_list.append(logs)  # Save logs without averaging
+    
     data_dict = {}    
     data_dict['centralized_acc_data'] = np.zeros(num_ft_users, dtype=np.float32)
     data_dict['ft_centralized_acc_data'] = np.zeros(num_ft_users, dtype=np.float32)
@@ -386,15 +391,16 @@ def finetuning_run(trial_data_splits_lst, config, pretrained_generic_model, nest
     data_dict['ft_cluster_acc_data'] = np.zeros(num_ft_users, dtype=np.float32)
 
     for idx, res_dict in enumerate(lst_of_res_dicts):
-        # The train/test loss logs are in res_dict[][1]
-        data_dict['centralized_acc_data'] += np.array(res_dict[0]['centralized_acc_data'])
-        data_dict['ft_centralized_acc_data'] += np.array(res_dict[0]['ft_centralized_acc_data'])
-        data_dict['pretrained_cluster_acc_data'] += np.array(res_dict[0]['pretrained_cluster_acc_data'])
-        data_dict['ft_cluster_acc_data'] += np.array(res_dict[0]['ft_cluster_acc_data'])
+        data_dict['centralized_acc_data'] += np.array(res_dict['centralized_acc_data'])
+        data_dict['ft_centralized_acc_data'] += np.array(res_dict['ft_centralized_acc_data'])
+        data_dict['pretrained_cluster_acc_data'] += np.array(res_dict['pretrained_cluster_acc_data'])
+        data_dict['ft_cluster_acc_data'] += np.array(res_dict['ft_cluster_acc_data'])
 
-    data_dict['centralized_acc_data'] /= (idx+1)
-    data_dict['ft_centralized_acc_data'] /= (idx+1)
-    data_dict['pretrained_cluster_acc_data'] /= (idx+1)
-    data_dict['ft_cluster_acc_data'] /= (idx+1)
+    data_dict['centralized_acc_data'] /= num_monte_carlo_runs
+    data_dict['ft_centralized_acc_data'] /= num_monte_carlo_runs
+    data_dict['pretrained_cluster_acc_data'] /= num_monte_carlo_runs
+    data_dict['ft_cluster_acc_data'] /= num_monte_carlo_runs
 
+    # Return both averaged results and raw logs
+    data_dict['train_test_logs_list'] = train_test_logs_list
     return data_dict

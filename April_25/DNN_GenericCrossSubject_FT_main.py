@@ -9,7 +9,6 @@ from hyperparam_tuned_configs import *
 from global_seed import set_seed
 set_seed()
 
-import json
 import os
 cwd = os.getcwd()
 print("Current Working Directory: ", cwd)
@@ -17,10 +16,10 @@ from datetime import datetime
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
 
-FINETUNE = True
-LOG_AND_VISUALIZE = True
-MODEL_STR = "ELEC573Net" #"DynamicMomonaNet"
-FEATENG = "FS"  # "moments" "FS" None
+FINETUNE = False
+LOG_AND_VISUALIZE = False
+MODEL_STR = "DynamicMomonaNet" #"DynamicMomonaNet" "ELEC573Net"
+FEATENG = None  # "moments" "FS" None
 if FEATENG is not None and MODEL_STR=="DynamicMomonaNet":
     NUM_CHANNELS = 1
     SEQ_LEN = 80
@@ -45,6 +44,8 @@ elif FEATENG is None and MODEL_STR=="ELEC573Net":
 MY_CONFIG["feature_engr"] = FEATENG
 MY_CONFIG["num_channels"] = NUM_CHANNELS
 MY_CONFIG["sequence_length"] = SEQ_LEN
+
+MY_CONFIG["user_split_json_filepath"] = "April_25\\fixed_user_splits\\24_8_user_splits_RS17.json"
 
 
 expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])

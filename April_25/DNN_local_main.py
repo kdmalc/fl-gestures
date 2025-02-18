@@ -30,7 +30,7 @@ unique_gestures = np.unique(data_splits['train']['labels'])
 num_classes = len(unique_gestures)
 input_dim = data_splits['train']['feature'].shape[1]
 
-user_dict = prepare_data_for_local_models(data_splits, MODEL_STR, MY_CONFIG)
+user_dict = prepare_data_for_local_models(data_splits, MY_CONFIG)
 
 res_dict_lst = []
 # Does len(list(set(data_splits['train']['participant_ids']))) == NUM_LOCAL_MODELS? NOPE!
