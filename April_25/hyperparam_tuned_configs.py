@@ -6,6 +6,42 @@ NUM_TRAIN_GESTURES = 8  # For pretrained models
 NUM_FT_GESTURES = 1  # Oneshot finetuning
 
 
+def determine_config(model_str, feateng=None):
+    if feateng is None and model_str == "DynamicMomonaNet":
+        num_channels = 1
+        seq_len = 80
+        my_config = DynamicMomonaNet_config
+        feateng = my_config["feature_engr"]  # Sets itself, just dummying so it can run without issue below
+    elif feateng == "None" and model_str == "DynamicMomonaNet":
+        num_channels = 16
+        seq_len = 64
+        my_config = DynamicMomonaNet_config
+    elif feateng == "moments" and model_str == "ELEC573Net":
+        num_channels = 80
+        seq_len = 1
+        my_config = ELEC573Net_config
+    elif feateng == "FS" and model_str == "ELEC573Net":
+        num_channels = 184
+        seq_len = 1
+        my_config = ELEC573Net_config
+    elif feateng == "None" and model_str == "ELEC573Net":
+        num_channels = 16
+        seq_len = 64  # I think this will break with ELEC573Net... not integrated AFAIK
+        my_config = ELEC573Net_config
+    elif feateng == "moments" and model_str == "OriginalELEC573CNN":
+        num_channels = 1
+        seq_len = 64
+        my_config = OriginalELEC573CNN_config
+    else:
+        raise ValueError("Either feature engineering method or model string not recognized")
+    
+    my_config["feature_engr"] = feateng
+    my_config["num_channels"] = num_channels
+    my_config["sequence_length"] = seq_len
+    
+    return my_config
+
+
 # Base configuration, shared between all other configs (unless they get overwritten)
 base_config = {
     "feature_engr": None, 
@@ -60,9 +96,9 @@ DynamicMomonaNetR_config.update({
     "lstm_num_layers": 1,
     "lstm_hidden_size": 64,
     "lstm_dropout": 0.0,  # When there is only 1 LSTM layer, dropout doesn't do anything!
-    "fc_layers": [128, 64],
+    "fc_layers": [128, 64], 
     "added_dense_ft_hidden_size": 64, 
-    "use_dense_cnn_lstm": True,  
+    "use_dense_cnn_lstm": True
 })
 DynamicMomonaNetR_config["weight_decay"] = 1e-4
 DynamicMomonaNetR_config["fc_dropout"] = 0.4
@@ -85,7 +121,7 @@ DynamicMomonaNet_config.update({
     "lstm_dropout": 0.0,
     "fc_layers": [128, 64],
     "added_dense_ft_hidden_size": 64, 
-    "use_dense_cnn_lstm": False,  
+    "use_dense_cnn_lstm": True 
 })
 
 
@@ -99,7 +135,7 @@ ELEC573Net_config.update({
     "use_batchnorm": True,  # I don't think this exists / is implemented rn?
     "padding": 1 , # I don't think this is implemented rn...
     "pooling_layers": None,  # In ELEC573Net pooling is on by default, see below. Should this be set to None or...
-    "maxpool": 1,  # Just adding/passing this through --> Does this do anything...
+    "maxpool": 1  # Just adding/passing this through --> Does this do anything...
 })
 ELEC573Net_config["batch_size"] = 32
 ELEC573Net_config["ft_batch_size"] = 32  # How was this using 32 as its batch_size if there's only 30 total finetuning gestures...
@@ -124,7 +160,7 @@ DynamicCNNLSTM_config.update({
     "lstm_dropout": 0.0,
     "fc_layers": [128, 64],
     "added_dense_ft_hidden_size": 64, 
-    "use_dense_cnn_lstm": False,  
+    "use_dense_cnn_lstm": False
 })
 
 
@@ -135,6 +171,43 @@ DynamicCNN_config.update({
         [64, 3, 1],
         [128, 3, 1]],
     "pooling_layers": [True, True, True, True],
-    "fc_layers": [128, 64],
+    "fc_layers": [128, 64]
 })
 DynamicCNN_config["cnn_dropout"] = 0.3
+
+
+OriginalELEC573CNN_config = base_config.copy()
+OriginalELEC573CNN_config.update({
+    "model_str": "OriginalELEC573CNN",
+    "conv_layers": [
+	    [32, 5, 2], 
+        [64, 5, 2],
+        [128, 5, 2]],
+    "fc_layers": [128], 
+    "use_batchnorm": True,  # I don't think this exists / is implemented rn?
+    "padding": 1 , # I don't think this is implemented rn...
+    "pooling_layers": [True, True, True, True],  # In ELEC573Net pooling is on by default, see below. Should this be set to None or...
+    "maxpool": 1  # Just adding/passing this through --> Does this do anything...
+})
+OriginalELEC573CNN_config["learning_rate"] = 0.0001
+OriginalELEC573CNN_config["num_epochs"] = 50
+OriginalELEC573CNN_config["feature_engr"] = "moments" 
+OriginalELEC573CNN_config["batch_size"] = 32
+OriginalELEC573CNN_config["ft_batch_size"] = 32  # How was this using 32 as its batch_size if there's only 30 total finetuning gestures...
+OriginalELEC573CNN_config["num_channels"] = 80
+OriginalELEC573CNN_config["cnn_dropout"] = 0.0
+OriginalELEC573CNN_config["ft_learning_rate"] = 0.001
+OriginalELEC573CNN_config["ft_weight_decay"] = 1e-4
+OriginalELEC573CNN_config["num_ft_epochs"] = 50
+OriginalELEC573CNN_config["finetune_strategy"] = "full"
+OriginalELEC573CNN_config["num_channels"] = 1
+# Not sure what to do about these... turn them off?
+OriginalELEC573CNN_config["use_earlystopping"] = False
+OriginalELEC573CNN_config["lr_scheduler_patience"] = 10000
+OriginalELEC573CNN_config["lr_scheduler_factor"] = 0.0
+OriginalELEC573CNN_config["earlystopping_patience"] = 10000
+OriginalELEC573CNN_config["earlystopping_min_delta"] = 0.01
+OriginalELEC573CNN_config["ft_lr_scheduler_patience"] = 10000 
+OriginalELEC573CNN_config["ft_lr_scheduler_factor"] = 0.1
+OriginalELEC573CNN_config["ft_earlystopping_patience"] = 10000
+OriginalELEC573CNN_config["ft_earlystopping_min_delta"] = 0.01

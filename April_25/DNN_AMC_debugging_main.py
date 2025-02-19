@@ -12,33 +12,9 @@ from DNN_AMC_funcs import *
 from hyperparam_tuned_configs import * 
 
 
-MODEL_STR = "DynamicMomonaNet" #"DynamicMomonaNet"
-FEATENG = None  # "moments" "FS" None
-if FEATENG is not None and MODEL_STR=="DynamicMomonaNet":
-    NUM_CHANNELS = 1
-    SEQ_LEN = 80
-    MY_CONFIG = DynamicMomonaNet_config
-elif FEATENG is None and MODEL_STR=="DynamicMomonaNet":
-    NUM_CHANNELS = 16
-    SEQ_LEN = 64
-    MY_CONFIG = DynamicMomonaNet_config
-elif FEATENG=="moments" and MODEL_STR=="ELEC573Net":
-    NUM_CHANNELS = 80
-    SEQ_LEN = 1 
-    MY_CONFIG = ELEC573Net_config
-elif FEATENG=="FS" and MODEL_STR=="ELEC573Net":
-    NUM_CHANNELS = 184
-    SEQ_LEN = 1 
-    MY_CONFIG = ELEC573Net_config
-elif FEATENG is None and MODEL_STR=="ELEC573Net":
-    NUM_CHANNELS = 16
-    SEQ_LEN = 64  # I think this will break with ELEC573Net... not integrated AFAIK
-    MY_CONFIG = ELEC573Net_config
-
-MY_CONFIG["feature_engr"] = FEATENG
-MY_CONFIG["num_channels"] = NUM_CHANNELS
-MY_CONFIG["sequence_length"] = SEQ_LEN
-
+MODEL_STR = "OriginalELEC573CNN" #"DynamicMomonaNet" "ELEC573Net"
+FEATENG = "moments"  # "moments" "FS" None
+MY_CONFIG = determine_config(MODEL_STR, feateng=FEATENG)
 
 expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])
 data_splits = make_data_split(expdef_df, MY_CONFIG)

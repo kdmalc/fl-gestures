@@ -1,7 +1,6 @@
 # THIS TRAINS A SINGLE GENERIC CNN AND TESTS ON WITHHELD USERS
 ## NO CLUSTERING!!!
 
-import numpy as np
 from moments_engr import *
 from DNN_FT_funcs import *
 from hyperparam_tuned_configs import *
@@ -18,33 +17,9 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
 FINETUNE = False
 LOG_AND_VISUALIZE = False
-MODEL_STR = "DynamicMomonaNet" #"DynamicMomonaNet" "ELEC573Net"
-FEATENG = None  # "moments" "FS" None
-if FEATENG is not None and MODEL_STR=="DynamicMomonaNet":
-    NUM_CHANNELS = 1
-    SEQ_LEN = 80
-    MY_CONFIG = DynamicMomonaNet_config
-elif FEATENG is None and MODEL_STR=="DynamicMomonaNet":
-    NUM_CHANNELS = 16
-    SEQ_LEN = 64
-    MY_CONFIG = DynamicMomonaNet_config
-elif FEATENG=="moments" and MODEL_STR=="ELEC573Net":
-    NUM_CHANNELS = 80
-    SEQ_LEN = 1 
-    MY_CONFIG = ELEC573Net_config
-elif FEATENG=="FS" and MODEL_STR=="ELEC573Net":
-    NUM_CHANNELS = 184
-    SEQ_LEN = 1 
-    MY_CONFIG = ELEC573Net_config
-elif FEATENG is None and MODEL_STR=="ELEC573Net":
-    NUM_CHANNELS = 16
-    SEQ_LEN = 64  # I think this will break with ELEC573Net... not integrated AFAIK
-    MY_CONFIG = ELEC573Net_config
-
-MY_CONFIG["feature_engr"] = FEATENG
-MY_CONFIG["num_channels"] = NUM_CHANNELS
-MY_CONFIG["sequence_length"] = SEQ_LEN
-
+MODEL_STR = "OriginalELEC573CNN" #"DynamicMomonaNet" "ELEC573Net"
+FEATENG = "moments"  # "moments" "FS" None
+MY_CONFIG = determine_config(MODEL_STR, feateng=FEATENG)
 MY_CONFIG["user_split_json_filepath"] = "April_25\\fixed_user_splits\\24_8_user_splits_RS17.json"
 
 

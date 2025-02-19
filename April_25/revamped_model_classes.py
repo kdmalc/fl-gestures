@@ -63,9 +63,9 @@ class EarlyStopping:
 
 def select_model(model_type, config):  #, device="cpu", input_dim=16, num_classes=10):
     if isinstance(model_type, str):
-        if model_type in ['CNN', 'DynamicCNN']:  # ?
+        if model_type in ['CNN', 'DynamicCNN', 'OriginalELEC573CNN']:  # ?D
             model = DynamicCNN(config)
-        elif model_type in ['CNNLSTM', 'DynamicCNNLSTM']:  # ?
+        elif model_type in ['CNNLSTM', 'DynamicCNNLSTM']:  # ?D
             model = DynamicCNNLSTM(config)
         elif model_type == 'ELEC573Net':  # 2D:
             model = ELEC573Net(config)

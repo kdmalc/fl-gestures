@@ -76,7 +76,7 @@ def train_and_cv_DNN_cluster_model(train_df, model_type, cluster_ids, config,
             # Load the saved initial weights from the variable
             #fold_model.load_state_dict(initial_state)
             fold_model = select_model(model_type, config)
-            optimizer = set_optimizer(fold_model, lr=lr, use_weight_decay=config["weight_decay"]>0, weight_decay=config["weight_decay"])
+            optimizer = set_optimizer(fold_model, lr=lr, use_weight_decay=config["weight_decay"]>0, weight_decay=config["weight_decay"], optimizer_name=config["optimizer"])
             
             # Now train your fold_model
             epoch = 0

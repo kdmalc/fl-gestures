@@ -232,7 +232,7 @@ def load_expdef_gestures(feateng_method, filepath_pkl='C:\\Users\\kdmen\\Box\\Me
     with open(filepath_pkl, 'rb') as file:
         raw_expdef_data_df = pickle.load(file)  # (204800, 19)
 
-    if feateng_method is None:
+    if feateng_method=="None":
         # Group by metadata columns and combine data into a matrix
         condensed_df = (
             raw_expdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num'], as_index=False)
@@ -802,8 +802,20 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         '''
 
         # Unfreeze the last FC layer
-        for param in finetuned_model.fc_layers[-1].parameters():
-            param.requires_grad = True
+        if hasattr(finetuned_model, 'fc_layers'):
+            for param in finetuned_model.fc_layers[-1].parameters():
+                param.requires_grad = True
+        else:
+            # Fallback: Use last fc layer if fc_layers doesn't exist
+            if hasattr(finetuned_model, 'fc2'):
+                for param in finetuned_model.fc2.parameters():
+                    param.requires_grad = True
+            elif hasattr(finetuned_model, 'fc1'):
+                for param in finetuned_model.fc1.parameters():
+                    param.requires_grad = True
+            elif hasattr(finetuned_model, 'fc'):
+                for param in finetuned_model.fc.parameters():
+                    param.requires_grad = True
     elif finetune_strategy == "progressive_unfreeze":
         # Freeze everything first
         for param in finetuned_model.parameters():
@@ -825,12 +837,25 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         '''
         
         # Identify trainable layers in reverse order (last layers first)
-        trainable_layers = [
-            finetuned_model.fc_layers,  # Assuming these are the final dense layers
-            finetuned_model.lstm,
-            finetuned_model.conv_layers
-        ]
+        trainable_layers = []
+        # Final dense layers:
+        if hasattr(finetuned_model, 'fc_layers'):
+            trainable_layers.append(finetuned_model.fc_layers)
+        else:
+            # Fallback: Use fc2 if fc_layers doesn't exist
+            if hasattr(finetuned_model, 'fc2'):
+                trainable_layers.append(finetuned_model.fc2)
+            if hasattr(finetuned_model, 'fc1'):
+                trainable_layers.append(finetuned_model.fc1)
+            if hasattr(finetuned_model, 'fc'):
+                trainable_layers.append(finetuned_model.fc)
+        # LSTM (if present)
+        if hasattr(finetuned_model, 'lstm'):
+            trainable_layers.append(finetuned_model.lstm)
+        # CNN 
+        trainable_layers.append(finetuned_model.conv_layers)
         # Unfreeze the very last layer so it can FT at start
+        ## Index 0 but we saved in reserve order remember
         for param in trainable_layers[0].parameters():
                 param.requires_grad = True
         # Gradually unfreeze starting from the last layer
