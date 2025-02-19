@@ -261,16 +261,22 @@ def load_expdef_gestures(feateng_method, filepath_pkl='C:\\Users\\kdmen\\Box\\Me
     return expdef_df
 
 
-def set_optimizer(model, lr=0.001, use_weight_decay=False, weight_decay=0.01, optimizer_name="ADAM"):
+def set_optimizer(model, lr, use_weight_decay, weight_decay, optimizer_name):
     """Configure optimizer with optional weight decay."""
 
-    if optimizer_name!="ADAM":
-        raise ValueError("Only ADAM is supported right now")
-    
-    if use_weight_decay:
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    if optimizer_name.upper() == "ADAM":
+        if use_weight_decay:
+            optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+        else:
+            optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    elif optimizer_name.upper() == "SGD":
+        if use_weight_decay:
+            optimizer = torch.optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay)
+        else:
+            optimizer = torch.optim.SGD(model.parameters(), lr=lr)
     else:
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+        raise ValueError("Only ADAM and SGD are supported right now")
+        
     return optimizer
 
 
@@ -596,7 +602,7 @@ def main_training_pipeline(data_splits, all_participants, test_participants, mod
     # Select model
     model = select_model(model_type, config) #, device=device, input_dim=input_dim, num_classes=num_classes)
     # Loss and optimizer
-    optimizer = set_optimizer(model, lr=lr, use_weight_decay=weight_decay>0, weight_decay=weight_decay)
+    optimizer = set_optimizer(model, lr=lr, use_weight_decay=weight_decay>0, weight_decay=weight_decay, optimizer_name=config["optimizer"])
     # Annealing the learning rate if applicable
     #if config["lr_scheduler_gamma"]<1.0:
     #    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config["lr_scheduler_gamma"])
@@ -831,7 +837,7 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         raise ValueError(f"finetune_strategy ({finetune_strategy}) not recognized!")
 
     # Loss and optimizer (with different learning rate for fine-tuning)
-    optimizer = set_optimizer(finetuned_model, lr=config["ft_learning_rate"], use_weight_decay=config["ft_weight_decay"] > 0, weight_decay=config["ft_weight_decay"])
+    optimizer = set_optimizer(finetuned_model, lr=config["ft_learning_rate"], use_weight_decay=config["ft_weight_decay"] > 0, weight_decay=config["ft_weight_decay"], optimizer_name=config["optimizer"])
     # Set up learning rate scheduler if applicable
     #if config["lr_scheduler_gamma"]<1.0:
     #    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config["lr_scheduler_gamma"])
