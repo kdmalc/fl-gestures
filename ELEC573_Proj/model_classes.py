@@ -163,7 +163,7 @@ class DynamicCNNModel(nn.Module):
         x = self.dropout(x)
         x = self.fc2(x)
         #print(f"After fc2: {x.shape}")
-        x = self.softmax(x)
+        #x = self.softmax(x)
         return x
     
 class CNNModel_2layer(nn.Module):
@@ -232,7 +232,7 @@ class CNNModel_2layer(nn.Module):
         #print(f"After dropout: {x.shape}")
         x = self.fc2(x)
         #print(f"After fc2: {x.shape}")
-        x = self.softmax(x)
+        #x = self.softmax(x)
         #print(f"After softmax: {x.shape}")
         return x
 
@@ -334,6 +334,6 @@ class CNNModel_3layer(nn.Module):
         #print(f"After dropout: {x.shape}")
         x = self.fc2(x)
         #print(f"After fc2: {x.shape}")
-        x = self.softmax(x)
+        #x = self.softmax(x)
         #print(f"After softmax: {x.shape}")
         return x
