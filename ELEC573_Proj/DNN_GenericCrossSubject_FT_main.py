@@ -11,9 +11,12 @@ import os
 cwd = os.getcwd()
 print("Current Working Directory: ", cwd)
 
+from datetime import datetime
+timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+
 
 finetune = False
-do_normal_logging = True
+do_normal_logging = False
 
 config = {
     "learning_rate": 0.0001,
@@ -42,7 +45,7 @@ userdef_df = userdef_df.reset_index(drop=True)
 
 import json
 # Load the fixed user splits
-with open("fixed_user_splits\\24_8_user_splits_RS17.json", "r") as f:
+with open("ELEC573_Proj\\fixed_user_splits\\24_8_user_splits_RS17.json", "r") as f:
     splits = json.load(f)
 all_participants = splits["all_users"]
 test_participants = splits["test_users"]
@@ -68,7 +71,7 @@ results = main_training_pipeline(
     model_type='CNN',  # Or 'RNN'
     num_epochs=50, config=config)
 
-full_path = os.path.join(cwd, 'ELEC573_Proj', 'models', 'generic_CNN_model.pth')
+full_path = os.path.join(cwd, 'ELEC573_Proj', 'models', f'{timestamp}_generic_CNN_model.pth')
 print("Full Path:", full_path)
 torch.save(results["model"].state_dict(), full_path)
 

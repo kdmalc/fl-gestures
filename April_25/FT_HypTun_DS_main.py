@@ -21,7 +21,7 @@ NUM_DATASPLITS = 1
 NUM_CHANNELS = 1  # ... or 16...
 MODEL_STR = "DynamicMomonaNet"
 raise ValueError("Remember to set feateng_method to the correct FE")
-expdef_df = load_expdef_gestures(feateng_method=None, filepath_pkl="D:\\Kai_MetaGestureClustering_24\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl")
+expdef_df = load_expdef_gestures(feateng_method="None", filepath_pkl="D:\\Kai_MetaGestureClustering_24\\saved_datasets\\filtered_datasets\\$BStand_EMG_df.pkl")
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
 # Define the search space

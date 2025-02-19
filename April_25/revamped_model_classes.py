@@ -342,6 +342,7 @@ class DynamicCNN(nn.Module):
             ))
             in_channels = out_channels
 
+        # TODO: Switch this to do maxpool after each conv, not at the end of all of them
         # Global pooling to handle variable sequence lengths
         self.global_pool = nn.AdaptiveAvgPool1d(1) if not self.use_2d_conv else nn.AdaptiveAvgPool2d((1, 1))
 

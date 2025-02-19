@@ -297,6 +297,8 @@ def main_training_pipeline(data_splits,
         num_classes = 10
         input_dim = 80
 
+        # THESE ARE THE LISTS OF ALL PIDS (long list)
+        ## This might actually be different than the other lol whatever
         train_pids = [pid for pid in all_participants if pid not in test_participants]
         intra_pids = train_pids
         cross_pids = test_participants
@@ -305,6 +307,7 @@ def main_training_pipeline(data_splits,
         num_classes = len(unique_gestures)
         input_dim = data_splits['train']['feature'].shape[1]
 
+        # THESE ARE THE LISTS OF ALL PIDS (long list)
         train_pids = data_splits['train']['participant_ids']
         intra_pids = data_splits['intra_subject_test']['participant_ids']
         cross_pids = data_splits['cross_subject_test']['participant_ids']
@@ -375,21 +378,21 @@ def main_training_pipeline(data_splits,
         train_performance = gesture_performance_by_participant(
             train_results['predictions'], 
             train_results['true_labels'], 
-            all_participants, train_pids, 
+            train_pids, all_participants,
             unique_gestures
         )
         
         intra_test_performance = gesture_performance_by_participant(
             intra_test_results['predictions'], 
             intra_test_results['true_labels'], 
-            all_participants, intra_pids, 
+            intra_pids, all_participants,
             unique_gestures
         )
 
         cross_test_performance = gesture_performance_by_participant(
             cross_test_results['predictions'], 
             cross_test_results['true_labels'], 
-            all_participants, cross_pids, 
+            cross_pids, all_participants,
             unique_gestures
         )
     else:

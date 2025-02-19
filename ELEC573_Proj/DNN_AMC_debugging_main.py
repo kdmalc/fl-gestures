@@ -1,14 +1,10 @@
 import pandas as pd
 import pickle
 import numpy as np
-from sklearn.model_selection import KFold
 from sklearn.preprocessing import LabelEncoder
-from sklearn.cross_decomposition import CCA
-from sklearn.decomposition import PCA
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-import matplotlib.pyplot as plt
-import seaborn as sns
+
+from datetime import datetime
+timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
 np.random.seed(42) 
 
@@ -34,7 +30,7 @@ userdef_df['Cluster_ID'] = label_encoder2.fit_transform(userdef_df['Participant'
 
 import json
 # Load the fixed user splits
-with open("fixed_user_splits\\24_8_user_splits_RS17.json", "r") as f:
+with open("ELEC573_Proj\\fixed_user_splits\\24_8_user_splits_RS17.json", "r") as f:
     splits = json.load(f)
 all_participants = splits["all_users"]
 test_participants = splits["test_users"]
@@ -78,5 +74,17 @@ test_df['Cluster_ID'] = label_encoder.fit_transform(test_df['participant_ids'])
 
 data_dfs_dict = {'train':train_df, 'test':test_df}
 
-merge_log, intra_cluster_performance, cross_cluster_performance = DNN_agglo_merge_procedure(data_dfs_dict, "CNN", n_splits=2)
+merge_log, intra_cluster_performance, cross_cluster_performance, nested_clus_model_dict = DNN_agglo_merge_procedure(data_dfs_dict, "CNN", n_splits=1)
 
+# Save the data to a file
+res_dir = 'C:\\Users\\kdmen\\Repos\\fl-gestures\\ELEC573_Proj\\results\\clustering_models'
+print(res_dir)
+# Create log directory if it doesn't exist
+os.makedirs(res_dir, exist_ok=True)
+# Include timestamp in file name? I think it is already included in results_save_dir?
+with open(f'{res_dir}\\{timestamp}_CNN_agglo_merge_res.pkl', 'wb') as f:
+    pickle.dump(merge_log, f)
+    pickle.dump(intra_cluster_performance, f)
+    pickle.dump(cross_cluster_performance, f)
+    pickle.dump(nested_clus_model_dict, f)
+print("Data has been saved successfully!")
