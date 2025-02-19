@@ -75,9 +75,9 @@ base_config = {
     "lr_scheduler_factor": 0.1, 
     "earlystopping_patience": 6,
     "earlystopping_min_delta": 0.01, 
-    "ft_lr_scheduler_patience": 6, 
+    "ft_lr_scheduler_patience": 3, 
     "ft_lr_scheduler_factor": 0.1, 
-    "ft_earlystopping_patience": 8,
+    "ft_earlystopping_patience": 7,
     "ft_earlystopping_min_delta": 0.01,
     "verbose": False,
     "save_ft_models": False,
@@ -190,7 +190,7 @@ OriginalELEC573CNN_config.update({
     "maxpool": 1  # Just adding/passing this through --> Does this do anything...
 })
 OriginalELEC573CNN_config["learning_rate"] = 0.0001
-OriginalELEC573CNN_config["num_epochs"] = 50
+OriginalELEC573CNN_config["num_epochs"] = 100  # 50 if no ES
 OriginalELEC573CNN_config["feature_engr"] = "moments" 
 OriginalELEC573CNN_config["batch_size"] = 32
 OriginalELEC573CNN_config["ft_batch_size"] = 32  # How was this using 32 as its batch_size if there's only 30 total finetuning gestures...
@@ -198,16 +198,17 @@ OriginalELEC573CNN_config["num_channels"] = 80
 OriginalELEC573CNN_config["cnn_dropout"] = 0.0
 OriginalELEC573CNN_config["ft_learning_rate"] = 0.001
 OriginalELEC573CNN_config["ft_weight_decay"] = 1e-4
-OriginalELEC573CNN_config["num_ft_epochs"] = 50
+OriginalELEC573CNN_config["num_ft_epochs"] = 100  # 50 if no ES
 OriginalELEC573CNN_config["finetune_strategy"] = "full"
 OriginalELEC573CNN_config["num_channels"] = 1
 # Not sure what to do about these... turn them off?
-OriginalELEC573CNN_config["use_earlystopping"] = False
-OriginalELEC573CNN_config["lr_scheduler_patience"] = 10000
-OriginalELEC573CNN_config["lr_scheduler_factor"] = 0.0
-OriginalELEC573CNN_config["earlystopping_patience"] = 10000
-OriginalELEC573CNN_config["earlystopping_min_delta"] = 0.01
-OriginalELEC573CNN_config["ft_lr_scheduler_patience"] = 10000 
-OriginalELEC573CNN_config["ft_lr_scheduler_factor"] = 0.1
-OriginalELEC573CNN_config["ft_earlystopping_patience"] = 10000
-OriginalELEC573CNN_config["ft_earlystopping_min_delta"] = 0.01
+## Actually it seems like models would do better with these on
+#OriginalELEC573CNN_config["use_earlystopping"] = False
+#OriginalELEC573CNN_config["lr_scheduler_patience"] = 10000
+#OriginalELEC573CNN_config["lr_scheduler_factor"] = 0.0
+#OriginalELEC573CNN_config["earlystopping_patience"] = 10000
+#OriginalELEC573CNN_config["earlystopping_min_delta"] = 0.01
+#OriginalELEC573CNN_config["ft_lr_scheduler_patience"] = 10000 
+#OriginalELEC573CNN_config["ft_lr_scheduler_factor"] = 0.1
+#OriginalELEC573CNN_config["ft_earlystopping_patience"] = 10000
+#OriginalELEC573CNN_config["ft_earlystopping_min_delta"] = 0.01
