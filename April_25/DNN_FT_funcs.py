@@ -783,7 +783,8 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         # Freeze everything first
         for param in finetuned_model.parameters():
             param.requires_grad = False
-        
+
+        '''
         # Now unfreeze last layer at start so it doesn't immediately break
         # Get all named layers in reverse order (last layer first)
         layers = list(finetuned_model.named_parameters())[::-1]  
@@ -792,11 +793,17 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         last_layer_param.requires_grad = True
         # TODO: Should I augment this so it can leave multiple final dense layers unfrozen?
         ## It seems more common to just use 1 unfrozen dense layer (or add one dense layer)
+        '''
+
+        # Unfreeze the last FC layer
+        for param in finetuned_model.fc_layers[-1].parameters():
+            param.requires_grad = True
     elif finetune_strategy == "progressive_unfreeze":
         # Freeze everything first
         for param in finetuned_model.parameters():
             param.requires_grad = False
         
+        '''
         # Now unfreeze last layer at start so it doesn't immediately break
         # Get all named layers in reverse order (last layer first)
         layers = list(finetuned_model.named_parameters())[::-1]  
@@ -809,6 +816,17 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         total_layers = len(layers)  # Total number of layers
         # Define unfreeze step
         unfreeze_step = 1  # Adjust this as needed
+        '''
+        
+        # Identify trainable layers in reverse order (last layers first)
+        trainable_layers = [
+            finetuned_model.fc_layers,  # Assuming these are the final dense layers
+            finetuned_model.lstm,
+            finetuned_model.conv_layers
+        ]
+        # Gradually unfreeze starting from the last layer
+        current_unfreeze_step = 0
+        total_steps = len(trainable_layers)
     else:
         raise ValueError(f"finetune_strategy ({finetune_strategy}) not recognized!")
 
@@ -818,9 +836,9 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
     #if config["lr_scheduler_gamma"]<1.0:
     #    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=config["lr_scheduler_gamma"])
     if config["use_earlystopping"]==True:
-        early_stopping = SmoothedEarlyStopping(patience=config["earlystopping_patience"], min_delta=config["earlystopping_min_delta"])
-    if config["lr_scheduler_factor"]>0.0:
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=config["lr_scheduler_patience"], factor=config["lr_scheduler_factor"], verbose=False)
+        early_stopping = SmoothedEarlyStopping(patience=config["ft_earlystopping_patience"], min_delta=config["ft_earlystopping_min_delta"])
+    if config["ft_lr_scheduler_factor"]>0.0:
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=config["ft_lr_scheduler_patience"], factor=config["ft_lr_scheduler_factor"], verbose=False)
 
     # Fine-tuning training loop
     train_loss_log = []
@@ -839,16 +857,24 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         #fine_tune_loader = DataLoader(ft_dataset, batch_size=config["batch_size"], shuffle=True, generator=dl_shuffler_generator)
 
         # Progressive unfreezing logic
+        '''
         if (finetune_strategy == "progressive_unfreeze" and 
             num_unfrozen < total_layers and 
             epoch % config["progressive_unfreezing_schedule"] == 0):
-
             # Unfreeze one additional layer
             num_unfreeze = min(num_unfrozen + unfreeze_step, total_layers)
             for name, param in layers[num_unfrozen:num_unfreeze]:
                 param.requires_grad = True
                 #print(f"Unfroze layer: {name}")
             num_unfrozen = num_unfreeze  # Update unfrozen layer count
+        '''
+        if (finetune_strategy == "progressive_unfreeze" and
+            epoch % config["progressive_unfreezing_schedule"] == 0 and 
+            current_unfreeze_step < total_steps):
+            # Unfreeze the next layer group
+            for param in trainable_layers[current_unfreeze_step].parameters():
+                param.requires_grad = True
+            current_unfreeze_step += 1
 
         train_loss = train_model(finetuned_model, fine_tune_loader, optimizer)
         train_loss_log.append(train_loss)
@@ -858,7 +884,7 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
         # Anneal the learning rate if applicable (advance the scheduler)
         #if config["lr_scheduler_gamma"]<1.0:
         #    scheduler.step()
-        if config["lr_scheduler_factor"]>0.0:
+        if config["ft_lr_scheduler_factor"]>0.0:
             # Reduce LR if validation loss plateaus
             scheduler.step(novel_intra_test_loss)
         # Early stopping check
