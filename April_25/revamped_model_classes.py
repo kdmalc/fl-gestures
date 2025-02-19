@@ -508,6 +508,7 @@ class EMGHandNet(nn.Module):
         x = x.mean(dim=1)  # Average over sequence length SL
         
         # TODO: Swap from softmax to ReLU if we are using CrossEntropyLoss? Or just drop entirely...
+        ## If their network was using it I'll keep it... although maybe they accounted for the fact that CE includes softmax?
         return F.softmax(x, dim=-1) 
 
 
@@ -573,6 +574,7 @@ class CRNN(nn.Module):
         
         # Apply softmax for classification
         ## TODO: Switch from softmax to ReLU? Or just drop
+        ## If their network was using it I'll keep it... although maybe they accounted for the fact that CE includes softmax?
         return F.softmax(x, dim=-1)
     
     def clip_gradients(self):
