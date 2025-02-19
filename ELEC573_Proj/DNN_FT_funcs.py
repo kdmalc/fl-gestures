@@ -68,7 +68,7 @@ def prepare_data(df, feature_column, target_column, participants, test_participa
         'labels': [],
         'participant_ids': []
     }
-    # novel_trainFT_data and cross_subject_test_data are train/test pairs!
+    # novel_trainFT_data and cross_subject_test_data are train/test pairs (both from the withheld users)!
     novel_trainFT_data = {
         'feature': [],
         'labels': [],
@@ -147,6 +147,47 @@ def prepare_data(df, feature_column, target_column, participants, test_participa
             'participant_ids': cross_subject_test_data['participant_ids']
         }
     }
+
+
+def plot_train_test_curves(res_dict, my_title, print_acc=True, acc_keys=None, log_keys=None):
+    if acc_keys is None:
+        train_acc_key = 'train_accuracy'
+        intra_acc_key = 'intra_test_accuracy'
+        cross_acc_key = 'cross_test_accuracy'
+    else:
+        train_acc_key = log_keys[0]
+        intra_acc_key = log_keys[1]
+        cross_acc_key = log_keys[2]
+    
+    if log_keys is None:
+        train_key = 'train_loss_log'
+        intra_key = 'intra_test_loss_log'
+        cross_key = 'cross_test_loss_log'
+    else:
+        train_key = log_keys[0]
+        intra_key = log_keys[1]
+        cross_key = log_keys[2]
+
+    if print_acc:
+        print("Final Accuracies (averaged across users and gestures)")
+        if train_acc_key is not None:
+            print(f"Train accuracy: {res_dict[train_acc_key]*100:.2f}%")
+        if intra_acc_key is not None:
+            print(f"Intra test accuracy: {res_dict[intra_acc_key]*100:.2f}%")
+        if cross_acc_key is not None:
+            print(f"Cross test accuracy: {res_dict[cross_acc_key]*100:.2f}%")
+
+    if train_key is not None:
+            plt.plot(res_dict[train_key], label="Train")
+    if intra_key is not None:
+            plt.plot(res_dict[intra_key], label="Intra Test")
+    if cross_key is not None:
+            plt.plot(res_dict[cross_key], label="Cross Test")
+    plt.title(my_title)
+    plt.legend()
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.show()
 
 
 def train_model(model, train_loader, optimizer, criterion=nn.CrossEntropyLoss(), device=None):
@@ -312,7 +353,14 @@ def main_training_pipeline(data_splits,
     intra_test_loss_log = []
     cross_test_loss_log = []
     for epoch in range(num_epochs):
-        train_loss_log.append(train_model(model, train_loader, optimizer))
+        # TODO:
+        # Original:
+        #train_loss_log.append(train_model(model, train_loader, optimizer))
+        # 1) what does this return and append --> Appears to return the avg loss for that epoch
+        # 2) so... is model updated LOL what
+
+        _ = train_model(model, train_loader, optimizer)
+        train_loss_log.append(evaluate_model(model, intra_test_loader)['loss'])
         intra_test_loss_log.append(evaluate_model(model, intra_test_loader)['loss'])
         cross_test_loss_log.append(evaluate_model(model, cross_test_loader)['loss'])
     
@@ -387,13 +435,16 @@ def fine_tune_model(finetuned_model, fine_tune_loader, test_loader=None, num_epo
     train_loss_log = []
     test_loss_log = []
     for epoch in range(num_epochs):
-        train_loss_log.append(train_model(finetuned_model, fine_tune_loader, optimizer))
+        # TODO: Fix / double check the same issue here...
+        _ = train_model(finetuned_model, fine_tune_loader, optimizer)
+        train_loss_log.append(evaluate_model(finetuned_model, fine_tune_loader)['loss'])
         if test_loader is not None:
             test_loss_log.append(evaluate_model(finetuned_model, test_loader)['loss'])
 
+    # Why am I bothering to do this...
     original_model = finetuned_model.__class__(input_dim=finetuned_model.input_dim, num_classes=finetuned_model.num_classes)  
     original_model.load_state_dict(frozen_base_model_state)  # Load pretrained weights into the new model
-    assert(not finetuned_model == original_model)
+    assert(finetuned_model != original_model)
 
     return finetuned_model, original_model, train_loss_log, test_loss_log
 

@@ -32,12 +32,12 @@ userdef_df['Gesture_Encoded'] = label_encoder.fit_transform(userdef_df['Gesture_
 label_encoder2 = LabelEncoder()
 userdef_df['Cluster_ID'] = label_encoder2.fit_transform(userdef_df['Participant'])
 
-all_participants = userdef_df['Participant'].unique()
-# Shuffle the participants
-np.random.shuffle(all_participants)
-# Split into two groups
-#train_participants = all_participants[:24]  # First 24 participants
-test_participants = all_participants[24:]  # Remaining 8 participants
+import json
+# Load the fixed user splits
+with open("fixed_user_splits\\24_8_user_splits_RS17.json", "r") as f:
+    splits = json.load(f)
+all_participants = splits["all_users"]
+test_participants = splits["test_users"]
 
 # Prepare data
 data_splits = prepare_data(

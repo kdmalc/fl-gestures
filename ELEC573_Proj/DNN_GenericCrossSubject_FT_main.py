@@ -40,12 +40,12 @@ with open(path1, 'rb') as file:
 userdef_df = raw_userdef_data_df.groupby(['Participant', 'Gesture_ID', 'Gesture_Num']).apply(create_feature_vectors)
 userdef_df = userdef_df.reset_index(drop=True)
 
-all_participants = userdef_df['Participant'].unique()
-# Shuffle the participants
-np.random.shuffle(all_participants)
-# Split into two groups
-#train_participants = all_participants[:24]  # First 24 participants
-test_participants = all_participants[24:]  # Remaining 8 participants
+import json
+# Load the fixed user splits
+with open("fixed_user_splits\\24_8_user_splits_RS17.json", "r") as f:
+    splits = json.load(f)
+all_participants = splits["all_users"]
+test_participants = splits["test_users"]
 
 #convert Gesture_ID to numerical with new Gesture_Encoded column
 label_encoder = LabelEncoder()
