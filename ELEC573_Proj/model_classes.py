@@ -289,6 +289,7 @@ class CNNModel_3layer(nn.Module):
     def forward(self, x):
         #print(f"Input x shape: {x.shape}")
         # Ensure input is the right shape
+        ## Why was this unsqueeze necessary? 
         x = x.unsqueeze(1)  # Reshape input to (batch_size, 1, sequence_length)
         #print(f"After unsqueeze: {x.shape}")
         
@@ -320,7 +321,10 @@ class CNNModel_3layer(nn.Module):
         x = self.relu(x)
         #print(f"After relu: {x.shape}")
         if x.shape[-1]>1:
+            print("Aur maxpool!")
             x = self.maxpool(x)
+        else:
+            print("Naur maxpool")
         #print(f"After maxpool: {x.shape}")
         
         # Flatten and Fully Connected Layers

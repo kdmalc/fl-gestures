@@ -253,5 +253,9 @@ ELEC573Net_config = {
     "lr_scheduler_patience": 4, 
     "lr_scheduler_factor": 0.1, 
     "earlystopping_patience": 6,
-    "earlystopping_min_delta": 0.01
+    "earlystopping_min_delta": 0.01,
+    "ft_lr_scheduler_patience": 6, 
+    "ft_lr_scheduler_factor": 0.1, 
+    "ft_earlystopping_patience": 8,
+    "ft_earlystopping_min_delta": 0.01
 }
