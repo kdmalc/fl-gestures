@@ -830,8 +830,11 @@ def fine_tune_model(finetuned_model, fine_tune_loader, config, timestamp, test_l
             finetuned_model.lstm,
             finetuned_model.conv_layers
         ]
+        # Unfreeze the very last layer so it can FT at start
+        for param in trainable_layers[0].parameters():
+                param.requires_grad = True
         # Gradually unfreeze starting from the last layer
-        current_unfreeze_step = 0
+        current_unfreeze_step = 1  # Start on 1 since we already unfroze one layer
         total_steps = len(trainable_layers)
     else:
         raise ValueError(f"finetune_strategy ({finetune_strategy}) not recognized!")
