@@ -12,9 +12,11 @@ from DNN_AMC_funcs import *
 from hyperparam_tuned_configs import * 
 
 
-MODEL_STR = "OriginalELEC573CNN" #"DynamicMomonaNet" "ELEC573Net"
+MODEL_STR = "CNNModel3layer" #"DynamicMomonaNet" "ELEC573Net" "OriginalELEC573CNN"
 FEATENG = "moments"  # "moments" "FS" None
 MY_CONFIG = determine_config(MODEL_STR, feateng=FEATENG)
+# TODO: Turn this on!
+#MY_CONFIG["user_split_json_filepath"] = "April_25\\fixed_user_splits\\24_8_user_splits_RS17.json"
 
 expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])
 data_splits = make_data_split(expdef_df, MY_CONFIG)

@@ -8,30 +8,41 @@ NUM_FT_GESTURES = 1  # Oneshot finetuning
 
 def determine_config(model_str, feateng=None):
     if feateng is None and model_str == "DynamicMomonaNet":
+        print("Setting default FE DynamicMomonaNet config")
         num_channels = 1
         seq_len = 80
         my_config = DynamicMomonaNet_config
         feateng = my_config["feature_engr"]  # Sets itself, just dummying so it can run without issue below
     elif feateng == "None" and model_str == "DynamicMomonaNet":
+        print("Setting no FE DynamicMomonaNet config")
         num_channels = 16
         seq_len = 64
         my_config = DynamicMomonaNet_config
     elif feateng == "moments" and model_str == "ELEC573Net":
+        print("Setting moments ELEC573Net config")
         num_channels = 80
         seq_len = 1
         my_config = ELEC573Net_config
     elif feateng == "FS" and model_str == "ELEC573Net":
+        print("Setting FS ELEC573Net config")
         num_channels = 184
         seq_len = 1
         my_config = ELEC573Net_config
     elif feateng == "None" and model_str == "ELEC573Net":
+        print("Setting no FE ELEC573Net config")
         num_channels = 16
         seq_len = 64  # I think this will break with ELEC573Net... not integrated AFAIK
         my_config = ELEC573Net_config
     elif feateng == "moments" and model_str == "OriginalELEC573CNN":
-        num_channels = 1
+        print("Setting moments OriginalELEC573CNN config")
+        num_channels = 80  # I think this should be 80, but the first in_channels is hardcoded as 1
         seq_len = 64
         my_config = OriginalELEC573CNN_config
+    elif feateng == "moments" and model_str == "CNNModel3layer":
+        print("Setting moments CNNModel3layer config")
+        num_channels = 80  # I think this should be 80, but the first in_channels is hardcoded as 1
+        seq_len = 64
+        my_config = CNNModel3layer_config
     else:
         raise ValueError("Either feature engineering method or model string not recognized")
     
@@ -54,12 +65,14 @@ base_config = {
     "weight_decay": 0.0,
     "fc_dropout": 0.3,
     "cnn_dropout": 0.0,
+    "padding": 0, 
     "batch_size": 16,
+    "use_batch_norm": False,
     "timestamp": timestamp,
     "optimizer": "adam",
     "num_epochs": 100,
     "num_classes": 10,
-    "num_channels": NUM_CHANNELS,
+    "num_channels": NUM_CHANNELS,  # This is 16 so why does it appear as 1...
     "user_split_json_filepath": "April_25\\fixed_user_splits\\24_8_user_splits.json",
     "results_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\April_25\\results\\{timestamp}",
     "models_save_dir": f"C:\\Users\\kdmen\\Repos\\fl-gestures\\April_25\\models\\{timestamp}",
@@ -132,7 +145,7 @@ ELEC573Net_config.update({
         [64, 3, 1],
         [128, 3, 1]],
     "fc_layers": [128],
-    "use_batchnorm": True,  # I don't think this exists / is implemented rn?
+    "use_batch_norm": True,  # I don't think this exists / is implemented rn?
     "padding": 1 , # I don't think this is implemented rn...
     "pooling_layers": None,  # In ELEC573Net pooling is on by default, see below. Should this be set to None or...
     "maxpool": 1  # Just adding/passing this through --> Does this do anything...
@@ -174,8 +187,10 @@ DynamicCNN_config.update({
     "fc_layers": [128, 64]
 })
 DynamicCNN_config["cnn_dropout"] = 0.3
+DynamicCNN_config["padding"] = 1
 
 
+# This is not really the original config, this is an attempted recreation that isn't that close
 OriginalELEC573CNN_config = base_config.copy()
 OriginalELEC573CNN_config.update({
     "model_str": "OriginalELEC573CNN",
@@ -184,11 +199,11 @@ OriginalELEC573CNN_config.update({
         [64, 5, 2],
         [128, 5, 2]],
     "fc_layers": [128], 
-    "use_batchnorm": True,  # I don't think this exists / is implemented rn?
-    "padding": 1 , # I don't think this is implemented rn...
     "pooling_layers": [True, True, True, True],  # In ELEC573Net pooling is on by default, see below. Should this be set to None or...
-    "maxpool": 1  # Just adding/passing this through --> Does this do anything...
+    "maxpool": 1  # kernel and stride (same value)  # Note that 1 doesn't do anything...
 })
+OriginalELEC573CNN_config["use_batch_norm"] = True
+OriginalELEC573CNN_config["padding"] = 1
 OriginalELEC573CNN_config["learning_rate"] = 0.0001
 OriginalELEC573CNN_config["num_epochs"] = 100  # 50 if no ES
 OriginalELEC573CNN_config["feature_engr"] = "moments" 
@@ -212,3 +227,43 @@ OriginalELEC573CNN_config["num_channels"] = 1
 #OriginalELEC573CNN_config["ft_lr_scheduler_factor"] = 0.1
 #OriginalELEC573CNN_config["ft_earlystopping_patience"] = 10000
 #OriginalELEC573CNN_config["ft_earlystopping_min_delta"] = 0.01
+
+
+CNNModel3layer_config = base_config.copy()
+CNNModel3layer_config.update({
+    "model_str": "CNNModel3layer",
+    "conv_layers": [
+	    [32, 5, 2], 
+        [64, 5, 2],
+        [128, 5, 2]],
+    "fc_layers": [128], 
+    "num_channels": 80,  # Hardcoding this in
+    "pooling_layers": [True, True, True, True],  # In ELEC573Net pooling is on by default, see below. Should this be set to None or...
+    "maxpool": 1  # kernel and stride (same value)  # Note that 1 doesn't do anything...
+})
+CNNModel3layer_config["num_channels"] = 80  # Hardcoding this in
+CNNModel3layer_config["use_batch_norm"] = True
+CNNModel3layer_config["padding"] = 1
+CNNModel3layer_config["learning_rate"] = 0.0001
+CNNModel3layer_config["num_epochs"] = 50  # 50 if no ES
+CNNModel3layer_config["feature_engr"] = "moments" 
+CNNModel3layer_config["batch_size"] = 32
+CNNModel3layer_config["ft_batch_size"] = 32  # How was this using 32 as its batch_size if there's only 30 total finetuning gestures...
+CNNModel3layer_config["num_channels"] = 80
+CNNModel3layer_config["cnn_dropout"] = 0.0
+CNNModel3layer_config["ft_learning_rate"] = 0.001
+CNNModel3layer_config["ft_weight_decay"] = 1e-4
+CNNModel3layer_config["num_ft_epochs"] = 50  # 50 if no ES
+CNNModel3layer_config["finetune_strategy"] = "full"
+CNNModel3layer_config["num_channels"] = 1
+# Not sure what to do about these... turn them off?
+## Actually it seems like models would do better with these on
+CNNModel3layer_config["use_earlystopping"] = False
+CNNModel3layer_config["lr_scheduler_patience"] = 10000
+CNNModel3layer_config["lr_scheduler_factor"] = 0.0
+CNNModel3layer_config["earlystopping_patience"] = 10000
+CNNModel3layer_config["earlystopping_min_delta"] = 0.01
+CNNModel3layer_config["ft_lr_scheduler_patience"] = 10000 
+CNNModel3layer_config["ft_lr_scheduler_factor"] = 0.1
+CNNModel3layer_config["ft_earlystopping_patience"] = 10000
+CNNModel3layer_config["ft_earlystopping_min_delta"] = 0.01

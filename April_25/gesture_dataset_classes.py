@@ -12,8 +12,7 @@ def select_dataset_class(config):
         #else:
         return GestureDataset  # This is 2D
 
-    # THESE HAVE FIXED FE
-    if config["model_str"] in ["MomonaNet", "DynamicMomonaNet", "ELEC573Net", "OriginalELEC573CNN"]:
+    if config["model_str"] in ["MomonaNet", "DynamicMomonaNet", "ELEC573Net", "OriginalELEC573CNN", "CNNModel3layer"]:
         return GestureDataset  # This is 2D
     elif config["model_str"] in ["RNN", "HybridCNNLSTM", "CRNN"]:
         return GestureDataset_3D

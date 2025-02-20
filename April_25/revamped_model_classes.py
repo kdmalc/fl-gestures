@@ -71,6 +71,8 @@ def select_model(model_type, config):  #, device="cpu", input_dim=16, num_classe
             model = ELEC573Net(config)
         elif model_type == "DynamicMomonaNet":  # 2D
             model = DynamicMomonaNet(config)
+        elif model_type == "CNNModel3layer":
+            model = CNNModel_3layer(config)
         # THE BELOW ARE NOT INTEGRATED/WORKING YET
         elif model_type == 'HybridCNNLSTM':  # 3D
             model = HybridCNNLSTM(config)
@@ -108,19 +110,19 @@ class ELEC573Net(nn.Module):
                                kernel_size=config["conv_layers"][0][1], 
                                stride=config["conv_layers"][0][2], 
                                padding=config["padding"])
-        self.bn1 = nn.BatchNorm1d(config["conv_layers"][0][0]) if config["use_batchnorm"] else nn.Identity()
+        self.bn1 = nn.BatchNorm1d(config["conv_layers"][0][0]) if config["use_batch_norm"] else nn.Identity()
         
         self.conv2 = nn.Conv1d(config["conv_layers"][0][0], config["conv_layers"][1][0], 
                                kernel_size=config["conv_layers"][1][1], 
                                stride=config["conv_layers"][1][2],
                                padding=config["padding"])
-        self.bn2 = nn.BatchNorm1d(config["conv_layers"][1][0]) if config["use_batchnorm"] else nn.Identity()
+        self.bn2 = nn.BatchNorm1d(config["conv_layers"][1][0]) if config["use_batch_norm"] else nn.Identity()
         
         self.conv3 = nn.Conv1d(config["conv_layers"][1][0], config["conv_layers"][2][0], 
                                kernel_size=config["conv_layers"][2][1], 
                                stride=config["conv_layers"][2][2], 
                                padding=config["padding"])
-        self.bn3 = nn.BatchNorm1d(config["conv_layers"][2][0]) if config["use_batchnorm"] else nn.Identity()
+        self.bn3 = nn.BatchNorm1d(config["conv_layers"][2][0]) if config["use_batch_norm"] else nn.Identity()
         
         self.flattened_size = self.config["conv_layers"][2][0] * self.compute_final_length()
 
@@ -226,7 +228,7 @@ class DynamicMomonaNet(nn.Module):
         in_channels = self.nc
         for out_channels, kernel_size, stride in config['conv_layers']:
             self.conv_layers.append(nn.Sequential(
-                nn.Conv1d(in_channels, out_channels, kernel_size, stride),
+                nn.Conv1d(in_channels, out_channels, kernel_size, stride, padding=config["padding"]),
                 nn.Dropout(self.cnn_dropout) if self.cnn_dropout > 0 else nn.Identity()
             ))
             in_channels = out_channels  # Update in_channels for the next layer
@@ -323,6 +325,7 @@ class DynamicCNN(nn.Module):
             self.use_2d_conv = False
         else:
             self.use_2d_conv = False
+        self.use_batch_norm = config["use_batch_norm"]
 
         # Activation & Pooling
         self.relu = nn.ReLU()
@@ -332,19 +335,32 @@ class DynamicCNN(nn.Module):
         self.conv_layers = nn.ModuleList()
         in_channels = 1 if not self.use_2d_conv else self.input_channels
         # 1D conv assumes single input channel --> TODO: Wait why did I do this? Could I do this with conv2D too??
-        for out_channels, kernel_size, stride in config["conv_layers"]:
-            conv_layer = nn.Conv1d(in_channels, out_channels, kernel_size, stride) if not self.use_2d_conv \
-                else nn.Conv2d(in_channels, out_channels, kernel_size, stride)
+        for layer_idx, (out_channels, kernel_size, stride) in enumerate(config["conv_layers"]):
+            conv_layer = nn.Conv1d(in_channels, out_channels, kernel_size, stride, padding=config["padding"]) if not self.use_2d_conv \
+                else nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding=config["padding"])
+            if self.use_batch_norm:
+                if self.use_2d_conv:
+                    layer_bn = nn.BatchNorm2d(out_channels)
+                else:
+                    layer_bn = nn.BatchNorm1d(out_channels) 
+            else:
+                layer_bn = nn.Identity()
+            #if layer_idx >= 1:
+            #    pool_layer = nn.Identity()
+            if True:  # TOGGLE THIS BACK IF YOU UNCOMMENT THE ABOVE!
+                pool_layer = nn.MaxPool1d(kernel_size=config["maxpool"]) if not self.use_2d_conv \
+                    else nn.MaxPool2d(kernel_size=config["maxpool"])
             self.conv_layers.append(nn.Sequential(
                 conv_layer,
-                nn.BatchNorm1d(out_channels) if not self.use_2d_conv else nn.BatchNorm2d(out_channels),
-                nn.ReLU()
+                layer_bn,
+                nn.ReLU(),
+                pool_layer
             ))
             in_channels = out_channels
 
         # TODO: Switch this to do maxpool after each conv, not at the end of all of them
         # Global pooling to handle variable sequence lengths
-        self.global_pool = nn.AdaptiveAvgPool1d(1) if not self.use_2d_conv else nn.AdaptiveAvgPool2d((1, 1))
+        #self.global_pool = nn.AdaptiveAvgPool1d(1) if not self.use_2d_conv else nn.AdaptiveAvgPool2d((1, 1))
 
         # Fully Connected Layers
         self.fc1 = nn.Linear(in_channels, config["fc_layers"][0])
@@ -361,10 +377,13 @@ class DynamicCNN(nn.Module):
         else:
             x = x.unsqueeze(1)  # Time-series case (batch, 1, sequence_length)
 
-        for layer in self.conv_layers:
+        for layer_idx, layer in enumerate(self.conv_layers):
             x = layer(x)
 
-        x = self.global_pool(x).view(x.size(0), -1)  # Flatten pooled output
+        ## Replaced with normal pooling after each layer above (a bit less robust tbf)
+        #x = self.global_pool(x).view(x.size(0), -1)  # Flatten pooled output
+        x = x.view(self.config["batch_size"], -1)  # Flatten to (batch, features)
+
         x = self.fc1(x)
         x = self.relu(x)
         x = self.dropout(x)
@@ -380,28 +399,38 @@ class DynamicCNNLSTM(nn.Module):
         self.num_classes = config["num_classes"]
         self.lstm_hidden_size = config["lstm_hidden_size"]
         self.lstm_num_layers = config["lstm_num_layers"]
-        if config["feature_engr"] is None:
-            # TODO: Would need to add windowing or something for this to work out...
-            self.use_2d_conv = False
-        else:
-            self.use_2d_conv = False
+        self.use_batch_norm = config["use_batch_norm"]
+
+        # Activation & Pooling
+        self.relu = nn.ReLU()
+        self.softmax = nn.Softmax(dim=1)
 
         # Convolutional Layers
         self.conv_layers = nn.ModuleList()
         in_channels = 1 if not self.use_2d_conv else self.input_channels
-        # ^ TODO: Again with 1D conv a single input stream is assumed...
+        # 1D conv assumes single input channel --> TODO: Wait why did I do this? Could I do this with conv2D too??
         for out_channels, kernel_size, stride in config["conv_layers"]:
-            conv_layer = nn.Conv1d(in_channels, out_channels, kernel_size, stride) if not self.use_2d_conv \
-                else nn.Conv2d(in_channels, out_channels, kernel_size, stride)
+            conv_layer = nn.Conv1d(in_channels, out_channels, kernel_size, stride, padding=config["padding"]) if not self.use_2d_conv \
+                else nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding=config["padding"])
+            if self.use_batch_norm:
+                if self.use_2d_conv:
+                    layer_bn = nn.BatchNorm2d(out_channels)
+                else:
+                    layer_bn = nn.BatchNorm1d(out_channels) 
+            else:
+                layer_bn = nn.Identity()
+            pool_layer = nn.MaxPool1d(kernel_size=config["maxpooling"]) if not self.use_2d_conv \
+                else nn.MaxPool2d(kernel_size=config["maxpooling"])
             self.conv_layers.append(nn.Sequential(
                 conv_layer,
-                nn.BatchNorm1d(out_channels) if not self.use_2d_conv else nn.BatchNorm2d(out_channels),
-                nn.ReLU()
+                layer_bn,
+                nn.ReLU(),
+                pool_layer
             ))
             in_channels = out_channels
 
         # Adaptive Pooling to handle arbitrary input sizes
-        self.global_pool = nn.AdaptiveAvgPool1d(1) if not self.use_2d_conv else nn.AdaptiveAvgPool2d((1, 1))
+        #self.global_pool = nn.AdaptiveAvgPool1d(1) if not self.use_2d_conv else nn.AdaptiveAvgPool2d((1, 1))
 
         # LSTM Layer
         self.lstm = nn.LSTM(input_size=in_channels, hidden_size=self.lstm_hidden_size,
@@ -430,7 +459,8 @@ class DynamicCNNLSTM(nn.Module):
             #print(f"PRE LAYER: {x.shape}")
             x = layer(x)
 
-        x = self.global_pool(x).squeeze(-1)  # Remove last dimension
+        ## Replaced with normal pooling after each layer above (a bit less robust tbf)
+        #x = self.global_pool(x).squeeze(-1)  # Remove last dimension
         # TODO: There is only one pooling, after all the conv blocks? ... apparently this is somewhat common for time series...
         #print(f"x after global pool: {x.shape}")
         # Unsqueezing here kind of hardcodes this for the case where the output from pooling is 2D
@@ -659,3 +689,228 @@ class HybridCNNLSTM(nn.Module):
         output = self.fusion_fc(hybrid_features)  # Shape: (batch_size, 64)
 
         return output
+
+
+######################################
+# ORIGINAL ELEC573 NET RECREATIONS
+######################################
+
+
+class CNNModel_3layer(nn.Module):
+    def __init__(self, config):
+        super(CNNModel_3layer, self).__init__()
+        self.input_dim = config['num_channels']
+        print(f"self.input_dim: {self.input_dim}")
+        self.num_classes = config['num_classes']
+        self.config = config
+
+        # Activation and Pooling
+        self.relu = nn.ReLU()
+        self.maxpool = nn.MaxPool1d(config["maxpool"])
+        self.softmax = nn.Softmax(dim=1)
+        
+        # Convolutional Layers
+        out_ch0, ks0, st0 = config["conv_layers"][0]
+        self.conv1 = nn.Conv1d(1, out_ch0, 
+                            kernel_size=ks0, 
+                            stride=st0, 
+                            padding=config["padding"])
+        self.bn1 = nn.BatchNorm1d(out_ch0) if config["use_batch_norm"] else nn.Identity()
+        
+        out_ch1, ks1, st1 = config["conv_layers"][1]
+        self.conv2 = nn.Conv1d(out_ch0, out_ch1, 
+                            kernel_size=ks1, 
+                            stride=st1, 
+                            padding=config["padding"])
+        self.bn2 = nn.BatchNorm1d(out_ch1) if config["use_batch_norm"] else nn.Identity()
+        
+        out_ch2, ks2, st2 = config["conv_layers"][2]
+        self.conv3 = nn.Conv1d(out_ch1, out_ch2, 
+                            kernel_size=ks2, 
+                            stride=st2, 
+                            padding=config["padding"])
+        self.bn3 = nn.BatchNorm1d(out_ch2) if config["use_batch_norm"] else nn.Identity()
+        
+        # Dynamically calculate flattened size
+        assert(self.input_dim!=1)
+        test_input = torch.randn(1, 1, self.input_dim)
+        # Run through conv layers to calculate final size
+        with torch.no_grad():
+            #print(f"test_input.shape: {test_input.shape}")
+            test_x = self.conv1(test_input)
+            #print(f"Shape after conv1: {test_x.shape}")
+            test_x = self.maxpool(test_x)
+            #print(f"Shape after maxpool: {test_x.shape}")
+            test_x = self.conv2(test_x)
+            #print(f"Shape after conv2: {test_x.shape}")
+            test_x = self.maxpool(test_x)
+            #print(f"Shape after maxpool: {test_x.shape}")
+            test_x = self.conv3(test_x)
+            #print(f"Shape after conv3: {test_x.shape}")
+            if test_x.shape[-1]>1:
+                test_x = self.maxpool(test_x)
+                #print(f"Shape after maxpool: {test_x.shape}")
+            flattened_size = test_x.view(1, -1).size(1)
+            #print(f"Shape after flattening: {test_x.shape}")
+            #print(f"flattened_size of test input: {flattened_size}")
+        
+        # Fully Connected Layers
+        ## Assumes only 1 FC weights set
+        self.fc1 = nn.Linear(flattened_size, config["fc_layers"][0])
+        self.dropout = nn.Dropout(config["fc_dropout"])
+        self.fc2 = nn.Linear(config["fc_layers"][0], self.num_classes)
+
+    def forward(self, x):
+        #print(f"Input x shape: {x.shape}")
+        # Ensure input is the right shape
+        ## Why was this unsqueeze necessary? 
+        x = x.unsqueeze(1)  # Reshape input to (batch_size, 1, sequence_length)
+        #print(f"After unsqueeze: {x.shape}")
+        
+        # Conv Block 1
+        x = self.conv1(x)
+        #print(f"After conv1: {x.shape}")
+        x = self.bn1(x)
+        #print(f"After bn1: {x.shape}")
+        x = self.relu(x)
+        #print(f"After relu: {x.shape}")
+        x = self.maxpool(x)
+        #print(f"After maxpool: {x.shape}")
+        
+        # Conv Block 2
+        x = self.conv2(x)
+        #print(f"After conv2: {x.shape}")
+        x = self.bn2(x)
+        #print(f"After bn2: {x.shape}")
+        x = self.relu(x)
+        #print(f"After relu: {x.shape}")
+        x = self.maxpool(x)
+        #print(f"After maxpool: {x.shape}")
+        
+        # Conv Block 3
+        x = self.conv3(x)
+        #print(f"After conv3: {x.shape}")
+        x = self.bn3(x)
+        #print(f"After bn3: {x.shape}")
+        x = self.relu(x)
+        #print(f"After relu: {x.shape}")
+        x = self.maxpool(x)
+        #print(f"After maxpool: {x.shape}")
+        
+        # Flatten and Fully Connected Layers
+        x = x.view(x.size(0), -1)  # Flatten while preserving batch size
+        #print(f"After flattening for FC: {x.shape}")
+        x = self.fc1(x)
+        #print(f"After fc1: {x.shape}")
+        x = self.relu(x)
+        #print(f"After relu: {x.shape}")
+        x = self.dropout(x)
+        #print(f"After dropout: {x.shape}")
+        x = self.fc2(x)
+        #print(f"After fc2: {x.shape}")
+        #x = self.softmax(x)
+        #print(f"After softmax: {x.shape}")
+        return x
+    
+
+class unedited_CNNModel_3layer(nn.Module):
+    def __init__(self, config, input_dim, num_classes):
+        super(CNNModel_3layer, self).__init__()
+        self.input_dim = input_dim
+        self.num_classes = num_classes
+        self.config = config
+
+        # Activation and Pooling
+        self.relu = nn.ReLU()
+        self.maxpool = nn.MaxPool1d(config["maxpool"])
+        self.softmax = nn.Softmax(dim=1)
+        
+        # Convolutional Layers
+        self.conv1 = nn.Conv1d(1, config["conv_layer_sizes"][0], 
+                            kernel_size=config["kernel_size"], 
+                            stride=config["stride"], 
+                            padding=config["padding"])
+        self.bn1 = nn.BatchNorm1d(config["conv_layer_sizes"][0]) if config["use_batch_norm"] else nn.Identity()
+        
+        self.conv2 = nn.Conv1d(config["conv_layer_sizes"][0], config["conv_layer_sizes"][1], 
+                            kernel_size=config["kernel_size"], 
+                            stride=config["stride"], 
+                            padding=config["padding"])
+        self.bn2 = nn.BatchNorm1d(config["conv_layer_sizes"][1]) if config["use_batch_norm"] else nn.Identity()
+        
+        self.conv3 = nn.Conv1d(config["conv_layer_sizes"][1], config["conv_layer_sizes"][2], 
+                            kernel_size=config["kernel_size"], 
+                            stride=config["stride"], 
+                            padding=config["padding"])
+        self.bn3 = nn.BatchNorm1d(config["conv_layer_sizes"][2]) if config["use_batch_norm"] else nn.Identity()
+        
+        # Dynamically calculate flattened size
+        test_input = torch.randn(1, 1, input_dim)
+        # Run through conv layers to calculate final size
+        with torch.no_grad():
+            test_x = self.conv1(test_input)
+            test_x = self.maxpool(test_x)
+            test_x = self.conv2(test_x)
+            test_x = self.maxpool(test_x)
+            test_x = self.conv3(test_x)
+            if test_x.shape[-1]>1:
+                test_x = self.maxpool(test_x)
+            flattened_size = test_x.view(1, -1).size(1)
+            #print(f"flattened_size of test input: {flattened_size}")
+        
+        # Fully Connected Layers
+        self.fc1 = nn.Linear(flattened_size, 128)
+        self.dropout = nn.Dropout(config["dropout_rate"])
+        self.fc2 = nn.Linear(128, num_classes)
+
+    def forward(self, x):
+        #print(f"Input x shape: {x.shape}")
+        # Ensure input is the right shape
+        ## Why was this unsqueeze necessary? 
+        x = x.unsqueeze(1)  # Reshape input to (batch_size, 1, sequence_length)
+        #print(f"After unsqueeze: {x.shape}")
+        
+        # Conv Block 1
+        x = self.conv1(x)
+        #print(f"After conv1: {x.shape}")
+        x = self.bn1(x)
+        #print(f"After bn1: {x.shape}")
+        x = self.relu(x)
+        #print(f"After relu: {x.shape}")
+        x = self.maxpool(x)
+        #print(f"After maxpool: {x.shape}")
+        
+        # Conv Block 2
+        x = self.conv2(x)
+        #print(f"After conv2: {x.shape}")
+        x = self.bn2(x)
+        #print(f"After bn2: {x.shape}")
+        x = self.relu(x)
+        #print(f"After relu: {x.shape}")
+        x = self.maxpool(x)
+        #print(f"After maxpool: {x.shape}")
+        
+        # Conv Block 3
+        x = self.conv3(x)
+        #print(f"After conv3: {x.shape}")
+        x = self.bn3(x)
+        #print(f"After bn3: {x.shape}")
+        x = self.relu(x)
+        #print(f"After relu: {x.shape}")
+        x = self.maxpool(x)
+        #print(f"After maxpool: {x.shape}")
+        
+        # Flatten and Fully Connected Layers
+        x = x.view(x.size(0), -1)  # Flatten while preserving batch size
+        #print(f"After flattening for FC: {x.shape}")
+        x = self.fc1(x)
+        #print(f"After fc1: {x.shape}")
+        x = self.relu(x)
+        #print(f"After relu: {x.shape}")
+        x = self.dropout(x)
+        #print(f"After dropout: {x.shape}")
+        x = self.fc2(x)
+        #print(f"After fc2: {x.shape}")
+        #x = self.softmax(x)
+        #print(f"After softmax: {x.shape}")
+        return x

@@ -8,7 +8,7 @@ from hyperparam_tuned_configs import *
 from global_seed import set_seed
 set_seed()
 
-import os
+import os  
 cwd = os.getcwd()
 print("Current Working Directory: ", cwd)
 from datetime import datetime
@@ -17,16 +17,17 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 
 FINETUNE = False
 LOG_AND_VISUALIZE = False
-MODEL_STR = "OriginalELEC573CNN" #"DynamicMomonaNet" "ELEC573Net"
+MODEL_STR = "CNNModel3layer" #"DynamicMomonaNet" "ELEC573Net" "OriginalELEC573CNN"
 FEATENG = "moments"  # "moments" "FS" None
 MY_CONFIG = determine_config(MODEL_STR, feateng=FEATENG)
-MY_CONFIG["user_split_json_filepath"] = "April_25\\fixed_user_splits\\24_8_user_splits_RS17.json"
+# TODO: Turn this on!
+#MY_CONFIG["user_split_json_filepath"] = "April_25\\fixed_user_splits\\24_8_user_splits_RS17.json"
 
 
 expdef_df = load_expdef_gestures(feateng_method=MY_CONFIG["feature_engr"])
 data_splits, all_participants, test_participants = make_data_split(expdef_df, MY_CONFIG, return_participants=True)
 
-# Train base model
+# Train base (AKA generic, pretrained) model
 results = main_training_pipeline(
     data_splits, 
     all_participants=all_participants, 
