@@ -8,146 +8,162 @@ from itertools import combinations
 def zero_order(df_freq):
     zero_order_moments_log = []
     zero_order_moments_raw = []
-
     for sensor in df_freq.columns:
         # Extract the frequency domain data for the sensor (column of the dataframe)
         time_data = df_freq[sensor].values
-        
         # Step 1: Square the signal (power) at each frequency
         signal_squared = np.abs(time_data) ** 2
-        
         # Step 2: Integrate (sum) the squared values to get the total power
         total_power = np.sum(signal_squared)
-        
-        # Step 3: Take the logarithm of the total power
+        # Step 3: Take the logarithm of the total 
+        ## Note if total power is <= 0 then this will return NANs...
         log_total_power = np.log(total_power)
-        
         # Store the result in the dictionary
         zero_order_moments_log.append(log_total_power)
         zero_order_moments_raw.append(total_power)
-        
+    # HAVE TO SAVE THE RAW BC IT IS USED DIRECTLY IN OTHERS FEATURES (could exponentiate ig...)
     return zero_order_moments_log, zero_order_moments_raw
 
 
-def first_order(df_freq, zero_order_raw):
+def second_order(df_freq, zero_order_raw):
     # Initialize lists to store the results for each sensor
-    first_order_moments_log = []
-    first_order_moments_raw = []
-    
+    second_order_moments_log = []
+    second_order_moments_raw = []
     for i,sensor in enumerate(df_freq.columns):
         # Extract the frequency domain data for the sensor (column of the dataframe)
         time_data = df_freq[sensor].values
-        
         # Step 1: Take first derivative
         first_deriv = np.gradient(time_data)
-        
         # Step 2: Square the signal (power) at each frequency of the first deriv
         signal_squared = np.abs(first_deriv) ** 2
-        
         # Step 3: Integrate (sum) the squared values to get the total power
+        ## Current approach assumes that fs is uniform. Could use:
+        ## total_power = np.trapz(signal_squared, dx=freq_step)  # if dx is known
         total_power = np.sum(signal_squared)
-        
         # Step 4: Take the logarithm of the total power
         log_total_power = np.log(total_power / (zero_order_raw[i]**2))
-        
         # Store the results in the lists
-        first_order_moments_log.append(log_total_power)
-        first_order_moments_raw.append(total_power)
-
+        second_order_moments_log.append(log_total_power)  # log(Normalized m2)
+        second_order_moments_raw.append(total_power)  # m2
     # Convert lists to numpy arrays for consistency
-    first_order_moments_log = np.array(first_order_moments_log)
-    first_order_moments_raw = np.array(first_order_moments_raw)
-    
-    return first_order_moments_log, first_order_moments_raw
+    return np.array(second_order_moments_log), np.array(second_order_moments_raw)
 
 
-def second_order(df_freq, zero_order_raw):
-    second_order_log = []
-    second_order_raw = []
-
+def fourth_order(df_freq, zero_order_raw):
+    fourth_order_log = []
+    fourth_order_raw = []
     for i, sensor in enumerate(df_freq.columns):
         # Extract the time domain data for the sensor (column of the dataframe)
         time_data = df_freq[sensor].values
-        
         # Step 1: Take first derivative
         first_deriv = np.gradient(time_data)
-        
         #Step 2: take second derivative
         second_deriv = np.gradient(first_deriv)
-        
         # Step 3: Square the signal (power) at each frequency of the first deriv
         signal_squared = np.abs(second_deriv) ** 2
-        
         # Step 4: Integrate (sum) the squared values to get the total power
         total_power = np.sum(signal_squared)
-        
         # Step 4: Take the logarithm of the total power
         log_total_power = np.log(total_power/(zero_order_raw[i]**4))
-        
         # Store the result in the dictionary
-        second_order_log.append(log_total_power)
-        second_order_raw.append(total_power)
-    
-    return second_order_log, second_order_raw
+        fourth_order_log.append(log_total_power)  # log(Normalized m4)
+        fourth_order_raw.append(total_power)  # m4
+    return np.array(fourth_order_log), np.array(fourth_order_raw)
 
 
-#working version of third_order that has precautions so no neg values inside log
-def third_order(second_order_raw, first_order_raw, zero_order_raw):
-    second_order_raw = np.array(second_order_raw)
-    first_order_raw = np.array(first_order_raw)
-    zero_order_raw = np.array(zero_order_raw)
-    
+def single_sparsity(fourth_order_raw, second_order_raw, zero_order_raw):
+    # Sanity Check: all zero_order should be bigger than its corresponding second and fourth
+    ## This allegedly checks pairwise, not setwise
+    assert np.all(zero_order_raw >= second_order_raw), "Error: zero_order_raw must be >= second_order_raw"
+    assert np.all(zero_order_raw >= fourth_order_raw), "Error: zero_order_raw must be >= fourth_order_raw"
     # Step 1: Compute the square roots (ensure no negative values before sqrt)
-    sqrt_first_diff = np.sqrt(np.maximum(zero_order_raw - first_order_raw, 1e-10))  # Handle small or negative values
-    sqrt_second_diff = np.sqrt(np.maximum(zero_order_raw - second_order_raw, 1e-10))  # Handle small or negative values
-    
-    # Step 2: Perform the dot product (ensure no division by zero by adding a small constant)
-    dot_product = np.dot(sqrt_first_diff, sqrt_second_diff)
-    dot_product = max(dot_product, 1e-10)  # Avoid division by zero or extremely small numbers
-    
-    # Step 3: Compute the sparseness ratio (ensure the result is positive)
+    sqrt_second_diff = np.sqrt(zero_order_raw - second_order_raw) 
+    sqrt_fourth_diff = np.sqrt(zero_order_raw - fourth_order_raw) 
+    # Step 2: Perform the dot product
+    ## Is this a dot product or just multiplication...
+    ## Should this be computed individually for each channel or all at once...
+    dot_product = np.dot(sqrt_second_diff, sqrt_fourth_diff)
+    dot_product = max(dot_product, 1e-10)
+    # Step 3: Compute the sparseness ratio
     sparseness = zero_order_raw / dot_product
-    
     # Step 4: Logarithm of the sparseness (ensure no negative or zero values inside the log)
     # We use np.maximum to ensure all values are at least 1e-10 to avoid taking log of non-positive values.
-    safe_sparseness = np.maximum(sparseness, 1e-10)
-    
+    ## I shouldn't need this...
+    #safe_sparseness = np.maximum(sparseness, 1e-10)
     #print("Safe sparseness:", safe_sparseness)
-    
     # Step 5: Apply the logarithm for third-order moments
-    third_order_moments_log = np.log(safe_sparseness)
-    
-    return third_order_moments_log
+    sparsity_log = np.log(sparseness)
+    return np.array(sparsity_log)
 
 
-def fourth_order(df_freq, zero_order_raw, first_order_raw, second_order_raw):
+def sparsity(zero_order_raw, second_order_raw, fourth_order_raw):
+    # Sanity Check: Ensure zero_order is greater than or equal to second and fourth for each sensor
+    assert np.all(zero_order_raw >= second_order_raw), "Error: zero_order_raw must be >= second_order_raw"
+    assert np.all(zero_order_raw >= fourth_order_raw), "Error: zero_order_raw must be >= fourth_order_raw"
+    # Step 1: Compute the square roots (element-wise)
+    sqrt_second_diff = np.sqrt(zero_order_raw - second_order_raw) 
+    sqrt_fourth_diff = np.sqrt(zero_order_raw - fourth_order_raw) 
+    # Step 2: Element-wise multiplication (not dot product)
+    elementwise_product = sqrt_second_diff * sqrt_fourth_diff  # No summing over all channels!
+    # Step 3: Avoid division by zero
+    elementwise_product = np.maximum(elementwise_product, 1e-10)  # Ensure denominator is nonzero
+    # Step 4: Compute the sparseness ratio per sensor
+    sparseness = zero_order_raw / elementwise_product
+    # Step 5: Compute logarithm of sparseness
+    sparsity_log = np.log(sparseness)
+    # Return per-sensor sparsity as a numpy array
+    return np.array(sparsity_log)  # This will have the same length as the number of channels
+
+
+def old_irregularity_factor(df_freq, zero_order_raw, second_order_raw, fourth_order_raw):
     # Initialize a list to store the fourth-order moments log for each sensor
-    fourth_order_moments_logs = []
-    
+    irregularity_factor_log = []
     for i,sensor in enumerate(df_freq.columns):
         # Extract the time domain data for the sensor (column of the dataframe)
         time_data = df_freq[sensor].values
-        
         # Step 1: Take first derivative
         first_deriv = np.gradient(time_data)
-        
         # Step 2: Absolute value of the signal (power) at each frequency of the first derivative
         signal_abs = np.abs(first_deriv)
-        
         # Step 3: Integrate (sum) the absolute values to get the total power
         total_power = np.sum(signal_abs)
-        
         # Step 4: Compute the fourth-order moments log for this sensor
-        moment_log = np.log(np.sqrt((first_order_raw[i]**2) / 
-                           (zero_order_raw[i] * second_order_raw[i])) / total_power)
-        
+        moment_log = np.log(np.sqrt((second_order_raw[i]**2) / 
+                           (zero_order_raw[i] * fourth_order_raw[i])) / total_power)
         # Store the result in the list
-        fourth_order_moments_logs.append(moment_log)
-    
+        irregularity_factor_log.append(moment_log)
     # Convert list to numpy array for consistency
-    fourth_order_moments_logs = np.array(fourth_order_moments_logs)
-    
-    return fourth_order_moments_logs
+    return np.array(irregularity_factor_log)
+
+
+def irregularity_factor(df_freq, zero_order_raw, second_order_raw, fourth_order_raw):
+    # Initialize a list to store the irregularity factor log for each sensor
+    irregularity_factor_log = []
+    # Small constant for numerical safety
+    epsilon = 1e-10
+    for i, sensor in enumerate(df_freq.columns):
+        # Extract the time domain data for the sensor (column of the dataframe)
+        time_data = df_freq[sensor].values
+        # Step 1: Compute first derivative
+        first_deriv = np.gradient(time_data)
+        # Step 2: Compute the absolute value of the first derivative
+        signal_abs = np.abs(first_deriv)
+        # Step 3: Integrate (sum) the absolute values to get WL
+        WL = np.sum(signal_abs)  # WL is the integrated absolute derivative
+        # Step 4: Compute IF = sqrt(m2^2 / (m0 * m4))
+        m0 = zero_order_raw[i]
+        m2 = second_order_raw[i]
+        m4 = fourth_order_raw[i]
+        # Ensure numerical safety in division
+        denominator = np.maximum(m0 * m4, epsilon)  # Avoid divide-by-zero
+        IF = np.sqrt((m2 ** 2) / denominator)
+        # Step 5: Compute log(IF / WL), ensuring WL is nonzero
+        WL = np.maximum(WL, epsilon)  # Avoid log(0)
+        moment_log = np.log(IF / WL)
+        # Store the result
+        irregularity_factor_log.append(moment_log)
+    # Convert list to numpy array for consistency
+    return np.array(irregularity_factor_log)
 
 
 def create_khushaba_spectralmomentsFE_vectors(group):
@@ -155,30 +171,23 @@ def create_khushaba_spectralmomentsFE_vectors(group):
     #can only run features on EMG columns
     ## This is a bit hardcoded in...
     emg_columns = [col for col in group.columns if col.startswith('EMG')]
-    
     for emg_col in emg_columns:
         data = group[[emg_col]] #run on EMG columns. convert to df with single column to run with all the features
-        
-        #zero-order
+        # zero-order
         zero_order_log, zero_order_raw = zero_order(data)
         result_vector.append(zero_order_log)
-        
-        #first-order
-        first_order_log, first_order_raw = first_order(data, zero_order_raw)
-        result_vector.append(first_order_log)
-        
-        #second-order
+        # second-order
         second_order_log, second_order_raw = second_order(data, zero_order_raw)
         result_vector.append(second_order_log)
-        
-        #third-order
-        third_order_log = third_order(second_order_raw, first_order_raw, zero_order_raw)
-        result_vector.append(third_order_log)
-        
-        #fourth-order
-        fourth_order_log = fourth_order(data, zero_order_raw, first_order_raw, second_order_raw)
+        # fourth-order
+        fourth_order_log, fourth_order_raw = second_order(data, zero_order_raw)
         result_vector.append(fourth_order_log)
-        
+        # sparsity
+        sparsity_log = sparsity(zero_order_raw, second_order_raw, fourth_order_raw)
+        result_vector.append(sparsity_log)
+        # irregularity factor
+        irregularity_factor_log = irregularity_factor(data, zero_order_raw, second_order_raw, fourth_order_raw)
+        result_vector.append(irregularity_factor_log)
     return pd.DataFrame({
         'Participant': [group['Participant'].iloc[0]],
         'Gesture_ID': [group['Gesture_ID'].iloc[0]],
